@@ -79,14 +79,11 @@ export default function HomePage() {
           gamificacaoResponse,
         ] = await Promise.all([
           fetch(`${process.env.NEXT_PUBLIC_API_URL}/financas?userId=${userId}`),
-          fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/compromissos?userId=${userId}`,
-          ),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/compromissos?userId=${userId}`),
           fetch(`${process.env.NEXT_PUBLIC_API_URL}/conteudo?userId=${userId}`),
-          fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/gamificacao?userId=${userId}`,
-          ),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/gamificacao?userId=${userId}`),
         ]);
+
         if (
           !financasResponse.ok ||
           !compromissosResponse.ok ||
@@ -97,21 +94,19 @@ export default function HomePage() {
         }
 
         const financasData: Financa[] = await financasResponse.json();
-        const compromissosData: Compromisso[] =
-          await compromissosResponse.json();
+        const compromissosData: Compromisso[] = await compromissosResponse.json();
         const conteudoData: Conteudo[] = await conteudoResponse.json();
         const gamificacaoData: Gamificacao[] = await gamificacaoResponse.json();
 
         const totalGastos = financasData.reduce(
           (sum, item) => sum + parseFloat(item.valor),
-          0,
+          0
         );
 
         const proximoCompromisso =
           compromissosData.length > 0
             ? compromissosData.sort(
-                (a, b) =>
-                  new Date(a.data).getTime() - new Date(b.data).getTime(),
+                (a, b) => new Date(a.data).getTime() - new Date(b.data).getTime()
               )[0].titulo
             : "Nenhum agendado";
 
@@ -119,8 +114,7 @@ export default function HomePage() {
           conteudoData.length > 0
             ? conteudoData.sort(
                 (a, b) =>
-                  new Date(b.createdAt).getTime() -
-                  new Date(a.createdAt).getTime(),
+                  new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
               )[0].ideia
             : "Nenhuma ideia";
 
@@ -141,7 +135,7 @@ export default function HomePage() {
         setError(
           err instanceof Error
             ? err.message
-            : "Erro desconhecido ao buscar resumo.",
+            : "Erro desconhecido ao buscar resumo."
         );
       } finally {
         setLoading(false);
@@ -152,48 +146,65 @@ export default function HomePage() {
 
   if (loading)
     return (
-      <div className="text-center p-6 flex items-center justify-center space-x-2">
+      <div className="text-center p-4 sm:p-6 flex items-center justify-center space-x-2 text-sm sm:text-base">
         <FaSpinner className="animate-spin" />
         <span>Carregando resumo...</span>
       </div>
     );
 
   if (error)
-    return <div className="text-center p-6 text-red-500">Erro: {error}</div>;
+    return (
+      <div className="text-center p-4 sm:p-6 text-red-500 text-sm sm:text-base">
+        Erro: {error}
+      </div>
+    );
 
   return (
-    <div className="flex flex-col min-h-screen p-4 bg-gray-100">
-      <header className="py-4 text-center">
-        <div className="p-4 bg-purple-200 rounded-xl shadow-md">
-          <h1 className="text-3xl font-bold text-gray-800">Lucy</h1>
+    <div className="flex flex-col min-h-screen p-2 sm:p-4 bg-gray-100 text-sm sm:text-base">
+      <header className="py-3 sm:py-4 text-center">
+        <div className="p-3 sm:p-4 bg-purple-200 rounded-xl shadow-md">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Lucy</h1>
           <p className="text-gray-500">Seu painel de controle pessoal</p>
         </div>
       </header>
-      <main className="flex-1 p-6 flex flex-col items-center">
-        <div className="w-full max-w-6xl space-y-8">
+
+      <main className="flex-1 p-2 sm:p-6 flex flex-col items-center">
+        <div className="w-full max-w-6xl space-y-6 sm:space-y-8">
+          {/* Resumo mensal */}
           <MonthSummary data={data} />
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">
-              Seu resumo de atividades
-            </h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={data.chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="uso"
-                  stroke="#ae43c6"
-                  activeDot={{ r: 8 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+
+          {/* 🧩 Cards em carrossel no mobile e grid no desktop */}
+          <div className="flex gap-4 overflow-x-auto snap-x sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:overflow-visible">
+            <div className="bg-white rounded-xl shadow-md p-4 min-w-[280px] sm:min-w-0 snap-center">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">
+                Seu resumo de atividades
+              </h3>
+              <div className="w-full overflow-x-auto">
+                <ResponsiveContainer width="100%" height={250}>
+                  <LineChart data={data.chartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="uso"
+                      stroke="#ae43c6"
+                      activeDot={{ r: 8 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Exemplo de card adicional futuro */}
+            {/* <div className="bg-white rounded-xl shadow-md p-4 min-w-[280px] sm:min-w-0 snap-center">...</div> */}
           </div>
         </div>
       </main>
     </div>
   );
 }
+
+
