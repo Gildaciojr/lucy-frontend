@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Header from "../components/Header";
+import Navigation from "../components/Navigation";
 import MonthSummary from "../components/MonthSummary";
 import { FaSpinner } from "react-icons/fa";
 import {
@@ -160,20 +162,13 @@ export default function HomePage() {
     );
 
   return (
-    <div className="flex flex-col min-h-screen p-2 sm:p-4 bg-gray-100 text-sm sm:text-base">
-      <header className="py-3 sm:py-4 text-center">
-        <div className="p-3 sm:p-4 bg-purple-200 rounded-xl shadow-md">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Lucy</h1>
-          <p className="text-gray-500">Seu painel de controle pessoal</p>
-        </div>
-      </header>
+    <div className="flex flex-col min-h-screen bg-gray-100 text-sm sm:text-base">
+      <Header />
 
-      <main className="flex-1 p-2 sm:p-6 flex flex-col items-center">
+      <main className="flex-1 p-2 sm:p-6 flex flex-col items-center mb-20">
         <div className="w-full max-w-6xl space-y-6 sm:space-y-8">
-          {/* Resumo mensal */}
           <MonthSummary data={data} />
 
-          {/* 🧩 Cards em carrossel no mobile e grid no desktop */}
           <div className="flex gap-4 overflow-x-auto snap-x sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:overflow-visible">
             <div className="bg-white rounded-xl shadow-md p-4 min-w-[280px] sm:min-w-0 snap-center">
               <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">
@@ -197,14 +192,14 @@ export default function HomePage() {
                 </ResponsiveContainer>
               </div>
             </div>
-
-            {/* Exemplo de card adicional futuro */}
-            {/* <div className="bg-white rounded-xl shadow-md p-4 min-w-[280px] sm:min-w-0 snap-center">...</div> */}
           </div>
         </div>
       </main>
+
+      <Navigation />
     </div>
   );
 }
+
 
 

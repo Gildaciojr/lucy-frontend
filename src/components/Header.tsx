@@ -27,7 +27,11 @@ export default function Header() {
       .then((res) => res.json())
       .then((data) => {
         setUser(data);
-        setForm({ name: data.name || "", phone: data.phone || "", password: "" });
+        setForm({
+          name: data.name || "",
+          phone: data.phone || "",
+          password: "",
+        });
       })
       .catch(() => setUser(null));
   }, []);
@@ -63,7 +67,7 @@ export default function Header() {
   };
 
   return (
-    <header className="w-full flex items-center justify-between px-6 py-4 bg-white shadow-md relative">
+    <header className="w-full flex items-center justify-between px-4 py-3 bg-white shadow-md relative">
       <Logo />
       {user && (
         <div className="relative">
@@ -71,7 +75,7 @@ export default function Header() {
             onClick={() => setOpen(!open)}
             className="px-4 py-2 bg-purple-500 text-white rounded-lg shadow hover:bg-purple-600 transition"
           >
-            {user.name}
+            {user.name || "Usuário"}
           </button>
           {open && (
             <div className="absolute right-0 mt-2 w-64 bg-white shadow-lg rounded-lg border p-4 space-y-3 z-50">
@@ -80,7 +84,9 @@ export default function Header() {
                 <input
                   type="text"
                   value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, name: e.target.value })
+                  }
                   className="w-full p-2 border rounded"
                 />
                 <button
@@ -95,7 +101,9 @@ export default function Header() {
                 <input
                   type="text"
                   value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, phone: e.target.value })
+                  }
                   className="w-full p-2 border rounded"
                 />
                 <button
@@ -110,7 +118,9 @@ export default function Header() {
                 <input
                   type="password"
                   value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, password: e.target.value })
+                  }
                   className="w-full p-2 border rounded"
                 />
                 <button
@@ -134,6 +144,7 @@ export default function Header() {
     </header>
   );
 }
+
 
 
 
