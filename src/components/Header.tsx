@@ -7,6 +7,8 @@ interface User {
   id: number;
   name: string;
   phone?: string;
+  email?: string;
+  username?: string;
 }
 
 export default function Header() {
@@ -15,40 +17,34 @@ export default function Header() {
   const [form, setForm] = useState({ name: "", phone: "", password: "" });
   const [message, setMessage] = useState("");
 
+  // ✅ Busca o usuário logado ao montar
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
-    const savedName = localStorage.getItem("user_name");
-    const savedId = localStorage.getItem("user_id");
-
-    // ⚡ Usa nome salvo localmente para exibir de imediato
-    if (savedName && savedId) {
-      setUser({ id: parseInt(savedId, 10), name: savedName });
-      setForm((prev) => ({ ...prev, name: savedName }));
-    }
-
     if (!token) return;
 
-    // ⚡ Confirma dados atualizados do backend
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data?.name) {
-          setUser(data);
-          localStorage.setItem("user_name", data.name);
-          setForm({
-            name: data.name || "",
-            phone: data.phone || "",
-            password: "",
-          });
-        }
+      .then((res) => {
+        if (!res.ok) throw new Error("Erro ao buscar usuário");
+        return res.json();
       })
-      .catch(() => null);
+      .then((data: User) => {
+        setUser(data);
+        setForm({
+          name: data.name || "",
+          phone: data.phone || "",
+          password: "",
+        });
+      })
+      .catch(() => {
+        setUser(null);
+      });
   }, []);
 
+  // ✅ Atualiza dados do próprio usuário logado
   const handleUpdate = async (field: "name" | "phone" | "password") => {
     const token = localStorage.getItem("auth_token");
     if (!token) return;
@@ -66,11 +62,8 @@ export default function Header() {
     });
 
     if (res.ok) {
-      if (field === "name") {
-        localStorage.setItem("user_name", form.name);
-        setUser((u) => (u ? { ...u, name: form.name } : u));
-      }
-
+      const updated = await res.json();
+      setUser(updated);
       setMessage("Dados atualizados com sucesso!");
       setTimeout(() => setMessage(""), 3000);
     } else {
@@ -81,7 +74,6 @@ export default function Header() {
   const handleLogout = () => {
     localStorage.removeItem("auth_token");
     localStorage.removeItem("user_id");
-    localStorage.removeItem("user_name");
     window.location.href = "/login";
   };
 
@@ -94,7 +86,7 @@ export default function Header() {
             onClick={() => setOpen(!open)}
             className="px-4 py-2 bg-purple-500 text-white rounded-lg shadow hover:bg-purple-600 transition"
           >
-            {user.name}
+            {user.name || user.username || "Usuário"}
           </button>
           {open && (
             <div className="absolute right-0 mt-2 w-64 bg-white shadow-lg rounded-lg border p-4 space-y-3 z-50">
@@ -133,7 +125,9 @@ export default function Header() {
                 <input
                   type="password"
                   value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, password: e.target.value })
+                  }
                   className="w-full p-2 border rounded"
                 />
                 <button
@@ -157,6 +151,7 @@ export default function Header() {
     </header>
   );
 }
+
 
 
 
