@@ -10,6 +10,7 @@
     "format": "prettier --write \"{src,app,components}/**/*.{js,ts,jsx,tsx,mdx,css}\""
   },
   "dependencies": {
+    "axios": "^1.12.2",
     "next": "15.5.2",
     "react": "19.1.0",
     "react-calendar": "^6.0.0",
@@ -20,6 +21,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4.1.13",
+    "@types/axios": "^0.9.36",
     "@types/d3-path": "^3.1.1",
     "@types/d3-shape": "^3.1.7",
     "@types/estree": "^1.0.8",
