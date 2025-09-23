@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FaSpinner, FaSignInAlt } from "react-icons/fa";
 import { apiFetch } from "@/lib/api";
-import Link from "next/link";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -12,6 +11,15 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+
+  // 🔑 Se já tem token salvo, redireciona direto para o dashboard
+  useEffect(() => {
+    const token = localStorage.getItem("auth_token");
+    const userId = localStorage.getItem("user_id");
+    if (token && userId) {
+      router.replace("/"); // não volta mais pro login
+    }
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,14 +87,15 @@ export default function LoginPage() {
 
         <p className="mt-6 text-center text-sm">
           Não tem conta?{" "}
-          <Link href="/register" className="text-purple-600 font-bold hover:underline">
+          <a href="/register" className="text-purple-600 hover:underline">
             Cadastre-se
-          </Link>
+          </a>
         </p>
       </div>
     </div>
   );
 }
+
 
 
 

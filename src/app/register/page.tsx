@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 
 export default function RegisterPage() {
@@ -13,6 +14,7 @@ export default function RegisterPage() {
   });
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -24,13 +26,22 @@ export default function RegisterPage() {
     setMessage("");
 
     try {
-      await apiFetch("/auth/register", {
-        method: "POST",
-        body: JSON.stringify(form),
-      });
+      const data = await apiFetch<{ access_token: string; user: { id: number; username: string } }>(
+        "/auth/register",
+        {
+          method: "POST",
+          body: JSON.stringify(form),
+        }
+      );
 
-      setMessage("✅ Conta ativada com sucesso! Agora você já pode fazer login.");
-      setForm({ name: "", username: "", email: "", phone: "", password: "" });
+      // login automático
+      localStorage.setItem("auth_token", data.access_token);
+      localStorage.setItem("user_id", String(data.user.id));
+
+      setMessage("✅ Conta criada com sucesso! Redirecionando...");
+      setTimeout(() => {
+        router.push("/");
+      }, 2000);
     } catch (err: unknown) {
       if (err instanceof Error) setMessage(err.message);
       else setMessage("Erro ao criar conta.");
@@ -43,7 +54,7 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600 p-4">
       <div className="bg-white shadow-lg rounded-xl w-full max-w-md p-8">
         <h1 className="text-3xl font-bold text-center text-purple-700 mb-6">Lucy</h1>
-        <p className="text-center text-gray-500 mb-6">Ative sua conta</p>
+        <p className="text-center text-gray-500 mb-6">Crie sua conta</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <input name="name" placeholder="Nome completo" value={form.name} onChange={handleChange} required className="w-full p-3 border rounded-lg" />

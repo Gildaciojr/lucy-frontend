@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import { FaSignInAlt, FaSpinner } from "react-icons/fa";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 
 export default function SignupPage() {
@@ -39,22 +38,29 @@ export default function SignupPage() {
     }
 
     try {
-      await apiFetch("/auth/register", {
-        method: "POST",
-        body: JSON.stringify({
-          name: formState.name,
-          email: formState.email,
-          username: formState.username,
-          password: formState.password,
-          phone: formState.phone,
-          address: formState.address,
-        }),
-      });
+      const data = await apiFetch<{ access_token: string; user: { id: number; username: string } }>(
+        "/auth/register",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            name: formState.name,
+            email: formState.email,
+            username: formState.username,
+            password: formState.password,
+            phone: formState.phone,
+            address: formState.address,
+          }),
+        }
+      );
 
-      setSuccess("Cadastro realizado com sucesso! Você será redirecionado em 3 segundos.");
+      // já loga após cadastro
+      localStorage.setItem("auth_token", data.access_token);
+      localStorage.setItem("user_id", String(data.user.id));
+
+      setSuccess("Cadastro realizado com sucesso! Redirecionando...");
       setTimeout(() => {
-        router.push("/login");
-      }, 3000);
+        router.push("/");
+      }, 2000);
     } catch (err: unknown) {
       if (err instanceof Error) setError(err.message);
       else setError("Erro desconhecido ao cadastrar usuário.");
@@ -91,14 +97,15 @@ export default function SignupPage() {
         </form>
         <p className="text-center text-sm text-gray-600 mt-4">
           Já tem uma conta?{" "}
-          <Link href="/login" className="text-lucy-purple font-bold hover:underline">
+          <a href="/login" className="text-lucy-purple font-bold hover:underline">
             Entrar
-          </Link>
+          </a>
         </p>
       </div>
     </div>
   );
 }
+
 
 
 
