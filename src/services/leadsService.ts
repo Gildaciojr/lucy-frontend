@@ -10,7 +10,7 @@ export interface Lead {
 
 export async function fetchLeads(): Promise<Lead[]> {
   const token = localStorage.getItem("auth_token");
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leads`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/leads`, {
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token ?? ""}`,

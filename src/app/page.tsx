@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Header from "../components/Header";
 import Navigation from "../components/Navigation";
 import MonthSummary from "../components/MonthSummary";
-import { FaSpinner } from "react-icons/fa";
+import { FaSpinner, FaWhatsapp } from "react-icons/fa";
 import {
   ResponsiveContainer,
   LineChart,
@@ -16,7 +16,6 @@ import {
   Legend,
 } from "recharts";
 import { apiFetch } from "@/lib/api";
-import { FaWhatsapp } from "react-icons/fa";
 
 interface Financa {
   id: number;
@@ -230,6 +229,7 @@ export default function HomePage() {
     </div>
   );
 }
+
 
 
 

@@ -32,7 +32,6 @@ function normalize(url: string): string {
 
 export const API_BASE = normalize(pickBaseUrl());
 
-// log de debug no navegador (sem eslint-disable)
 if (typeof window !== 'undefined') {
   console.info('[dashboard] API_BASE =', API_BASE);
 }
@@ -77,6 +76,7 @@ export async function getProfile() {
   const { data } = await api.get('/users/me');
   return data;
 }
+
 
 
 
