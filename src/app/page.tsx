@@ -54,7 +54,9 @@ interface ChartItem {
 }
 
 interface SummaryData {
-  financas: string;
+  totalReceitas: number;
+  totalDespesas: number;
+  saldo: number;
   proximoCompromisso: string;
   ultimaIdeia: string;
   chartData: ChartItem[];
@@ -62,7 +64,9 @@ interface SummaryData {
 
 export default function HomePage() {
   const [data, setData] = useState<SummaryData>({
-    financas: "R$ 0,00",
+    totalReceitas: 0,
+    totalDespesas: 0,
+    saldo: 0,
     proximoCompromisso: "Nenhum",
     ultimaIdeia: "Nenhuma",
     chartData: [],
@@ -108,11 +112,19 @@ export default function HomePage() {
         const conteudoData: Conteudo[] = await conteudoResponse.json();
         const gamificacaoData: Gamificacao[] = await gamificacaoResponse.json();
 
-        const totalGastos = financasData.reduce(
-          (sum, item) => sum + parseFloat(item.valor),
-          0
-        );
+        // 🔹 Cálculo de receitas, despesas e saldo
+        let totalReceitas = 0;
+        let totalDespesas = 0;
 
+        financasData.forEach((f) => {
+          const valor = parseFloat(f.valor);
+          if (valor >= 0) totalReceitas += valor;
+          else totalDespesas += Math.abs(valor);
+        });
+
+        const saldo = totalReceitas - totalDespesas;
+
+        // 🔹 Próximo compromisso
         const proximoCompromisso =
           compromissosData.length > 0
             ? compromissosData.sort(
@@ -120,6 +132,7 @@ export default function HomePage() {
               )[0].titulo
             : "Nenhum agendado";
 
+        // 🔹 Última ideia cadastrada
         const ultimaIdeia =
           conteudoData.length > 0
             ? conteudoData.sort(
@@ -128,6 +141,7 @@ export default function HomePage() {
               )[0].ideia
             : "Nenhuma ideia";
 
+        // 🔹 Dados do gráfico
         const chartData: ChartItem[] = [
           { name: "Finanças", uso: financasData.length },
           { name: "Agenda", uso: compromissosData.length },
@@ -136,7 +150,9 @@ export default function HomePage() {
         ];
 
         setData({
-          financas: `R$ ${totalGastos.toFixed(2).replace(".", ",")}`,
+          totalReceitas,
+          totalDespesas,
+          saldo,
           proximoCompromisso,
           ultimaIdeia,
           chartData,
@@ -175,6 +191,7 @@ export default function HomePage() {
 
       <main className="flex-1 p-6 flex flex-col items-center mb-20">
         <div className="w-full max-w-6xl space-y-8">
+          {/* ✅ Agora MonthSummary recebe o objeto correto */}
           <MonthSummary data={data} />
 
           <div className="flex gap-4 overflow-x-auto snap-x sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:overflow-visible">
@@ -208,6 +225,7 @@ export default function HomePage() {
     </div>
   );
 }
+
 
 
 
