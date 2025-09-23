@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { apiFetch } from "@/lib/api";
 
 interface User {
   id: number;
@@ -28,11 +29,8 @@ export default function ProfileMenu() {
       window.location.href = "/login";
       return;
     }
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((u: User) => setUser(u))
+    apiFetch<User>("/users/me")
+      .then((u) => setUser(u))
       .catch(() => {});
   }, []);
 
@@ -102,16 +100,12 @@ function ProfileModal() {
   useEffect(() => {
     const onOpen = () => {
       setOpen(true);
-      const token = localStorage.getItem("auth_token");
-      if (!token) return;
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-        .then((r) => r.json())
+      apiFetch<User>("/users/me")
         .then((u) => {
           setName(u.name || "");
           setPhone(u.phone || "");
-        });
+        })
+        .catch(() => {});
     };
     window.addEventListener("open-profile-modal", onOpen as EventListener);
     return () =>
@@ -119,19 +113,12 @@ function ProfileModal() {
   }, []);
 
   const save = async () => {
-    const token = localStorage.getItem("auth_token");
-    if (!token) return;
     setSaving(true);
     try {
-      const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
+      await apiFetch("/users/me", {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
         body: JSON.stringify({ name, phone }),
       });
-      if (!r.ok) throw new Error();
       setOpen(false);
     } catch {
       alert("Erro ao salvar perfil.");
@@ -193,19 +180,12 @@ function PasswordModal() {
   }, []);
 
   const save = async () => {
-    const token = localStorage.getItem("auth_token");
-    if (!token) return;
     setSaving(true);
     try {
-      const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
+      await apiFetch("/users/me", {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
         body: JSON.stringify({ password: newPassword }),
       });
-      if (!r.ok) throw new Error();
       setOpen(false);
       setNewPassword("");
     } catch {
@@ -246,4 +226,5 @@ function PasswordModal() {
     </div>
   );
 }
+
 

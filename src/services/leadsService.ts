@@ -1,4 +1,6 @@
 // frontend/src/services/leadsService.ts
+import { apiFetch } from "@/lib/api";
+
 export interface Lead {
   id: number;
   display_name: string;
@@ -10,18 +12,7 @@ export interface Lead {
 }
 
 export async function fetchLeads(): Promise<Lead[]> {
-  const token = localStorage.getItem("auth_token");
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leads`, {
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token ?? ""}`,
-    },
-  });
-
-  if (!res.ok) {
-    throw new Error("Erro ao buscar leads");
-  }
-
-  return res.json();
+  // apiFetch já injeta o Authorization do localStorage, quando existir
+  return apiFetch<Lead[]>("/leads");
 }
 

@@ -17,25 +17,17 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const router = useRouter();
 
-  // 🔑 Valida token antes de abrir a tela de cadastro
+  // 🔑 Se já tem token válido, redireciona
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
-    if (token) {
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-        .then((res) => {
-          if (res.ok) router.replace("/");
-          else {
-            localStorage.removeItem("auth_token");
-            localStorage.removeItem("user_id");
-          }
-        })
-        .catch(() => {
-          localStorage.removeItem("auth_token");
-          localStorage.removeItem("user_id");
-        });
-    }
+    if (!token) return;
+
+    apiFetch<{ id: number; username: string; role: string }>("/auth/me")
+      .then(() => router.replace("/"))
+      .catch(() => {
+        localStorage.removeItem("auth_token");
+        localStorage.removeItem("user_id");
+      });
   }, [router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,6 +85,7 @@ export default function RegisterPage() {
     </div>
   );
 }
+
 
 
 
