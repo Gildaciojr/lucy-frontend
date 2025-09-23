@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { FaSpinner, FaUserPlus } from "react-icons/fa";
 import { apiFetch } from "@/lib/api";
 
 export default function RegisterPage() {
@@ -9,12 +10,33 @@ export default function RegisterPage() {
     name: "",
     username: "",
     email: "",
-    phone: "",
     password: "",
+    phone: "",
   });
-  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const router = useRouter();
+
+  // 🔑 Valida token antes de abrir a tela de cadastro
+  useEffect(() => {
+    const token = localStorage.getItem("auth_token");
+    if (token) {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => {
+          if (res.ok) router.replace("/");
+          else {
+            localStorage.removeItem("auth_token");
+            localStorage.removeItem("user_id");
+          }
+        })
+        .catch(() => {
+          localStorage.removeItem("auth_token");
+          localStorage.removeItem("user_id");
+        });
+    }
+  }, [router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -23,63 +45,55 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setMessage("");
+    setError("");
 
     try {
-      const data = await apiFetch<{ access_token: string; user: { id: number; username: string } }>(
-        "/auth/register",
-        {
-          method: "POST",
-          body: JSON.stringify(form),
-        }
-      );
+      await apiFetch("/auth/register", {
+        method: "POST",
+        body: JSON.stringify(form),
+      });
 
-      // login automático
-      localStorage.setItem("auth_token", data.access_token);
-      localStorage.setItem("user_id", String(data.user.id));
-
-      setMessage("✅ Conta criada com sucesso! Redirecionando...");
-      setTimeout(() => {
-        router.push("/");
-      }, 2000);
+      router.push("/login");
     } catch (err: unknown) {
-      if (err instanceof Error) setMessage(err.message);
-      else setMessage("Erro ao criar conta.");
+      if (err instanceof Error) setError(err.message);
+      else setError("Erro desconhecido no cadastro.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600 p-4">
-      <div className="bg-white shadow-lg rounded-xl w-full max-w-md p-8">
-        <h1 className="text-3xl font-bold text-center text-purple-700 mb-6">Lucy</h1>
-        <p className="text-center text-gray-500 mb-6">Crie sua conta</p>
-
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-400 to-purple-600 p-4">
+      <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
+        <h1 className="text-3xl font-bold text-center text-purple-700 mb-6">
+          Criar Conta
+        </h1>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <input name="name" placeholder="Nome completo" value={form.name} onChange={handleChange} required className="w-full p-3 border rounded-lg" />
-          <input name="username" placeholder="Nome de usuário" value={form.username} onChange={handleChange} required className="w-full p-3 border rounded-lg" />
+          <input name="name" placeholder="Nome" value={form.name} onChange={handleChange} required className="w-full p-3 border rounded-lg" />
+          <input name="username" placeholder="Usuário" value={form.username} onChange={handleChange} required className="w-full p-3 border rounded-lg" />
           <input type="email" name="email" placeholder="E-mail" value={form.email} onChange={handleChange} required className="w-full p-3 border rounded-lg" />
-          <input name="phone" placeholder="Telefone" value={form.phone} onChange={handleChange} className="w-full p-3 border rounded-lg" />
           <input type="password" name="password" placeholder="Senha" value={form.password} onChange={handleChange} required className="w-full p-3 border rounded-lg" />
+          <input name="phone" placeholder="Telefone" value={form.phone} onChange={handleChange} className="w-full p-3 border rounded-lg" />
 
-          <button type="submit" disabled={loading} className="w-full py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg">
-            {loading ? "Criando conta..." : "Cadastrar"}
+          <button type="submit" disabled={loading} className="w-full py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg flex items-center justify-center space-x-2">
+            {loading ? <FaSpinner className="animate-spin" /> : <FaUserPlus />}
+            <span>{loading ? "Criando..." : "Criar Conta"}</span>
           </button>
         </form>
 
-        {message && <p className="text-center text-sm mt-4 text-gray-700">{message}</p>}
+        {error && <p className="text-center text-red-500 mt-4">{error}</p>}
 
         <p className="mt-6 text-center text-sm">
           Já tem conta?{" "}
           <a href="/login" className="text-purple-600 hover:underline">
-            Entrar
+            Entre aqui
           </a>
         </p>
       </div>
     </div>
   );
 }
+
 
 
 

@@ -12,13 +12,26 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const router = useRouter();
 
-  // 🔑 Se já tem token salvo, redireciona direto para o dashboard
+  // 🔑 Se já tem token salvo, valida com /auth/me
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
-    const userId = localStorage.getItem("user_id");
-    if (token && userId) {
-      router.replace("/"); // não volta mais pro login
-    }
+    if (!token) return;
+
+    const checkSession = async () => {
+      try {
+        const res = await apiFetch<{ user: { id: number; username: string } }>("/auth/me");
+        if (res.user) {
+          localStorage.setItem("user_id", String(res.user.id));
+          router.replace("/"); // vai direto pro dashboard
+        }
+      } catch {
+        // token inválido → limpa e deixa na tela de login
+        localStorage.removeItem("auth_token");
+        localStorage.removeItem("user_id");
+      }
+    };
+
+    checkSession();
   }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -95,6 +108,8 @@ export default function LoginPage() {
     </div>
   );
 }
+
+
 
 
 
