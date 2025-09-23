@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { FaSignInAlt, FaSpinner } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { API_BASE } from "@/lib/api";
+import { apiFetch } from "../../lib/api";
 
 export default function SignupPage() {
   const [formState, setFormState] = useState({
@@ -39,9 +39,8 @@ export default function SignupPage() {
     }
 
     try {
-      const response = await fetch(`${API_BASE}/auth/register`, {
+      await apiFetch("/auth/register", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: formState.name,
           email: formState.email,
@@ -51,11 +50,6 @@ export default function SignupPage() {
           address: formState.address,
         }),
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || "Erro ao cadastrar usuário.");
-      }
 
       setSuccess("Cadastro realizado com sucesso! Você será redirecionado em 3 segundos.");
       setTimeout(() => {
@@ -103,6 +97,7 @@ export default function SignupPage() {
     </div>
   );
 }
+
 
 
 

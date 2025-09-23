@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Header from "../components/Header";
 import Navigation from "../components/Navigation";
 import MonthSummary from "../components/MonthSummary";
-import { FaSpinner } from "react-icons/fa";
+import { FaSpinner, FaWhatsapp } from "react-icons/fa";
 import {
   ResponsiveContainer,
   LineChart,
@@ -15,6 +15,7 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
+import { apiFetch } from "../lib/api";
 
 interface Financa {
   id: number;
@@ -62,13 +63,6 @@ interface SummaryData {
   chartData: ChartItem[];
 }
 
-// garante /api
-const API_BASE = (() => {
-  const raw = (process.env.NEXT_PUBLIC_API_URL || "").trim().replace(/\/+$/, "");
-  const withoutApi = raw.replace(/\/api$/i, "");
-  return `${withoutApi}/api`;
-})();
-
 export default function HomePage() {
   const [data, setData] = useState<SummaryData>({
     totalReceitas: 0,
@@ -85,39 +79,12 @@ export default function HomePage() {
     const fetchSummary = async () => {
       try {
         const userId = localStorage.getItem("user_id");
-        const token = localStorage.getItem("auth_token");
+        if (!userId) throw new Error("Usuário não autenticado.");
 
-        if (!userId || !token) {
-          throw new Error("Usuário não autenticado.");
-        }
-
-        const headers = { Authorization: `Bearer ${token}` };
-
-        const [
-          financasResponse,
-          compromissosResponse,
-          conteudoResponse,
-          gamificacaoResponse,
-        ] = await Promise.all([
-          fetch(`${API_BASE}/financas?userId=${userId}`, { headers, cache: "no-store" }),
-          fetch(`${API_BASE}/compromissos?userId=${userId}`, { headers, cache: "no-store" }),
-          fetch(`${API_BASE}/conteudo?userId=${userId}`, { headers, cache: "no-store" }),
-          fetch(`${API_BASE}/gamificacao?userId=${userId}`, { headers, cache: "no-store" }),
-        ]);
-
-        if (
-          !financasResponse.ok ||
-          !compromissosResponse.ok ||
-          !conteudoResponse.ok ||
-          !gamificacaoResponse.ok
-        ) {
-          throw new Error("Erro ao buscar dados do resumo.");
-        }
-
-        const financasData: Financa[] = await financasResponse.json();
-        const compromissosData: Compromisso[] = await compromissosResponse.json();
-        const conteudoData: Conteudo[] = await conteudoResponse.json();
-        const gamificacaoData: Gamificacao[] = await gamificacaoResponse.json();
+        const financasData = await apiFetch<Financa[]>(`/financas?userId=${userId}`);
+        const compromissosData = await apiFetch<Compromisso[]>(`/compromissos?userId=${userId}`);
+        const conteudoData = await apiFetch<Conteudo[]>(`/conteudo?userId=${userId}`);
+        const gamificacaoData = await apiFetch<Gamificacao[]>(`/gamificacao?userId=${userId}`);
 
         let totalReceitas = 0;
         let totalDespesas = 0;
@@ -143,7 +110,10 @@ export default function HomePage() {
           conteudoData.length > 0
             ? conteudoData
                 .slice()
-                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0].ideia
+                .sort(
+                  (a, b) =>
+                    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+                )[0].ideia
             : "Nenhuma ideia";
 
         const chartData: ChartItem[] = [
@@ -163,7 +133,7 @@ export default function HomePage() {
         });
       } catch (err: unknown) {
         setError(
-          err instanceof Error ? err.message : "Erro desconhecido ao buscar resumo."
+          err instanceof Error ? err.message : "Erro desconhecido ao buscar resumo.",
         );
       } finally {
         setLoading(false);
@@ -180,8 +150,7 @@ export default function HomePage() {
       </div>
     );
 
-  if (error)
-    return <div className="text-center p-4 text-red-500">Erro: {error}</div>;
+  if (error) return <div className="text-center p-4 text-red-500">Erro: {error}</div>;
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
@@ -191,6 +160,7 @@ export default function HomePage() {
         <div className="w-full max-w-6xl space-y-8">
           <MonthSummary data={data} />
 
+          {/* Gráfico */}
           <div className="flex gap-4 overflow-x-auto snap-x sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:overflow-visible">
             <div className="bg-white rounded-xl shadow-md p-4 min-w-[280px] sm:min-w-0 snap-center">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">
@@ -204,11 +174,29 @@ export default function HomePage() {
                     <YAxis />
                     <Tooltip />
                     <Legend />
-                    <Line type="monotone" dataKey="uso" stroke="#ae43c6" activeDot={{ r: 8 }} />
+                    <Line
+                      type="monotone"
+                      dataKey="uso"
+                      stroke="#ae43c6"
+                      activeDot={{ r: 8 }}
+                    />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
             </div>
+          </div>
+
+          {/* Botão do WhatsApp */}
+          <div className="flex justify-center mt-8">
+            <a
+              href="https://wa.me/message/JQ6SLHBNNAAHG1"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl shadow-lg transition-colors"
+            >
+              <FaWhatsapp size={24} />
+              <span>Falar no WhatsApp</span>
+            </a>
           </div>
         </div>
       </main>
@@ -217,6 +205,11 @@ export default function HomePage() {
     </div>
   );
 }
+
+
+
+
+
 
 
 

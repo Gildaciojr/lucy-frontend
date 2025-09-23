@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FaSpinner, FaSignInAlt } from "react-icons/fa";
-import { API_BASE } from "@/lib/api";
+import { apiFetch } from "../../lib/api";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -18,19 +18,13 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const response = await fetch(`${API_BASE}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || "Usuário ou senha incorretos.");
-      }
-
-      const data: { access_token: string; user: { id: number; username: string } } =
-        await response.json();
+      const data = await apiFetch<{ access_token: string; user: { id: number; username: string } }>(
+        "/auth/login",
+        {
+          method: "POST",
+          body: JSON.stringify({ username, password }),
+        }
+      );
 
       localStorage.setItem("auth_token", data.access_token);
       localStorage.setItem("user_id", String(data.user.id));
@@ -92,6 +86,7 @@ export default function LoginPage() {
     </div>
   );
 }
+
 
 
 

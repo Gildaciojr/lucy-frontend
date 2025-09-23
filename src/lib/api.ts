@@ -1,7 +1,24 @@
 // frontend/src/lib/api.ts
-
-// Garante que a variável do .env é usada corretamente
 const raw = (process.env.NEXT_PUBLIC_API_URL || "").trim().replace(/\/+$/, "");
+export const API_BASE = `${raw}/api`;
 
-// Se já terminar com /api, mantém. Se não, adiciona /api no final.
-export const API_BASE = raw.endsWith("/api") ? raw : `${raw}/api`;
+export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+  });
+  if (!res.ok) {
+    let msg = "Erro na API";
+    try {
+      const data = await res.json();
+      msg = data.message || msg;
+    } catch {
+      /* ignore */
+    }
+    throw new Error(msg);
+  }
+  return res.json();
+}

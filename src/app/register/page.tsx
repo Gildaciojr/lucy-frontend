@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { API_BASE } from "@/lib/api";
+import { apiFetch } from "../../lib/api";
 
 export default function RegisterPage() {
   const [form, setForm] = useState({
@@ -24,21 +24,16 @@ export default function RegisterPage() {
     setMessage("");
 
     try {
-      const res = await fetch(`${API_BASE}/auth/register`, {
+      await apiFetch("/auth/register", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
 
-      if (res.ok) {
-        setMessage("✅ Conta ativada com sucesso! Agora você já pode fazer login.");
-        setForm({ name: "", username: "", email: "", phone: "", password: "" });
-      } else {
-        const data: { message?: string } = await res.json();
-        setMessage(data?.message || "Erro ao criar conta.");
-      }
-    } catch {
-      setMessage("Erro de conexão com o servidor.");
+      setMessage("✅ Conta ativada com sucesso! Agora você já pode fazer login.");
+      setForm({ name: "", username: "", email: "", phone: "", password: "" });
+    } catch (err: unknown) {
+      if (err instanceof Error) setMessage(err.message);
+      else setMessage("Erro desconhecido ao criar conta.");
     } finally {
       setLoading(false);
     }
@@ -74,6 +69,7 @@ export default function RegisterPage() {
     </div>
   );
 }
+
 
 
 
