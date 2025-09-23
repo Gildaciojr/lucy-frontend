@@ -18,13 +18,20 @@ export default function ClientLayoutWrapper({
 
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
+
+    // 🔒 Se não tem token → só permite /login e /signup
     if (!token && pathname !== "/login" && pathname !== "/signup") {
       router.push("/login");
-    } else if (token && (pathname === "/login" || pathname === "/signup")) {
-      router.push("/");
-    } else {
-      setIsAuthenticated(true);
+      return;
     }
+
+    // 🔑 Se já tem token → não deixa voltar para login/cadastro
+    if (token && (pathname === "/login" || pathname === "/signup")) {
+      router.push("/");
+      return;
+    }
+
+    setIsAuthenticated(true);
   }, [pathname, router]);
 
   const handleLogout = () => {
@@ -33,6 +40,7 @@ export default function ClientLayoutWrapper({
     router.push("/login");
   };
 
+  // Enquanto não autenticado, mostra loading (exceto em login/signup)
   if (!isAuthenticated && pathname !== "/login" && pathname !== "/signup") {
     return (
       <html lang="pt-BR">
@@ -47,22 +55,23 @@ export default function ClientLayoutWrapper({
     );
   }
 
+  // Telas públicas → renderizam sem layout
   if (pathname === "/login" || pathname === "/signup") {
     return <>{children}</>;
   }
 
+  // Telas protegidas → renderizam com layout e navigation
   return (
-    <>
-      <div className="flex flex-col min-h-screen">
-        <main className="flex-1 pb-20">{children}</main>
-        <Navigation />
-        <button
-          onClick={handleLogout}
-          className="fixed top-4 right-4 p-2 bg-red-500 text-white font-bold rounded-full shadow-md hover:bg-red-600 transition-colors z-50"
-        >
-          Sair
-        </button>
-      </div>
-    </>
+    <div className="flex flex-col min-h-screen">
+      <main className="flex-1 pb-20">{children}</main>
+      <Navigation />
+      <button
+        onClick={handleLogout}
+        className="fixed top-4 right-4 p-2 bg-red-500 text-white font-bold rounded-full shadow-md hover:bg-red-600 transition-colors z-50"
+      >
+        Sair
+      </button>
+    </div>
   );
 }
+

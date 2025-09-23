@@ -87,7 +87,7 @@ export default function LoginPage() {
             Esqueceu sua senha?
           </a>
           <a
-            href="/register"
+            href="/signup"
             className="text-purple-600 hover:underline font-medium"
           >
             Cadastre-se
@@ -97,6 +97,7 @@ export default function LoginPage() {
     </div>
   );
 }
+
 
 
 
