@@ -79,7 +79,7 @@ export default function LoginPage() {
 
         <p className="mt-6 text-center text-sm">
           Não tem conta?{" "}
-          <Link href="/register" className="text-purple-600 hover:underline">
+          <Link href="/register" className="text-purple-600 font-bold hover:underline">
             Cadastre-se
           </Link>
         </p>
@@ -87,6 +87,7 @@ export default function LoginPage() {
     </div>
   );
 }
+
 
 
 
