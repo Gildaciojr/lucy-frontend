@@ -4,13 +4,7 @@ import React, { useState } from "react";
 import { FaSignInAlt, FaSpinner } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-
-// 🔹 garante sempre o prefixo /api
-const API_BASE = (() => {
-  const raw = (process.env.NEXT_PUBLIC_API_URL || "").trim().replace(/\/+$/, "");
-  const withoutApi = raw.replace(/\/api$/i, "");
-  return `${withoutApi}/api`;
-})();
+import { API_BASE } from "@/lib/api";
 
 export default function SignupPage() {
   const [formState, setFormState] = useState({
@@ -109,6 +103,7 @@ export default function SignupPage() {
     </div>
   );
 }
+
 
 
 

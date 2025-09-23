@@ -1,12 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-
-const API_BASE = (() => {
-  const raw = (process.env.NEXT_PUBLIC_API_URL || "").trim().replace(/\/+$/, "");
-  const withoutApi = raw.replace(/\/api$/i, "");
-  return `${withoutApi}/api`;
-})();
+import { API_BASE } from "@/lib/api";
 
 export default function RegisterPage() {
   const [form, setForm] = useState({
@@ -79,6 +74,7 @@ export default function RegisterPage() {
     </div>
   );
 }
+
 
 
 

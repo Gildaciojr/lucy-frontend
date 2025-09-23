@@ -3,13 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FaSpinner, FaSignInAlt } from "react-icons/fa";
-
-// 🔹 garante sempre o prefixo /api
-const API_BASE = (() => {
-  const raw = (process.env.NEXT_PUBLIC_API_URL || "").trim().replace(/\/+$/, "");
-  const withoutApi = raw.replace(/\/api$/i, "");
-  return `${withoutApi}/api`;
-})();
+import { API_BASE } from "@/lib/api";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -38,11 +32,9 @@ export default function LoginPage() {
       const data: { access_token: string; user: { id: number; username: string } } =
         await response.json();
 
-      // 🔐 salva token e user_id no localStorage
       localStorage.setItem("auth_token", data.access_token);
       localStorage.setItem("user_id", String(data.user.id));
 
-      // ✅ redireciona para o dashboard
       router.push("/");
     } catch (err: unknown) {
       if (err instanceof Error) setError(err.message);
@@ -100,6 +92,7 @@ export default function LoginPage() {
     </div>
   );
 }
+
 
 
 
