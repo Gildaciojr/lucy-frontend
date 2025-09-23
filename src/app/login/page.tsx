@@ -1,3 +1,4 @@
+// frontend/src/app/login/page.tsx
 "use client";
 
 import React, { useState } from "react";
@@ -87,7 +88,7 @@ export default function LoginPage() {
             Esqueceu sua senha?
           </a>
           <a
-            href="/signup"
+            href="/signup" // ✅ corrigido
             className="text-purple-600 hover:underline font-medium"
           >
             Cadastre-se
@@ -97,6 +98,7 @@ export default function LoginPage() {
     </div>
   );
 }
+
 
 
 
