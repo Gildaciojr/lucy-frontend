@@ -84,31 +84,18 @@ export default function HomePage() {
           throw new Error("Usuário não autenticado.");
         }
 
-        const headers: HeadersInit = { Authorization: `Bearer ${token}` };
+        const headers = { Authorization: `Bearer ${token}` };
 
-        // ⚠️ Adicionado prefixo /api nas quatro chamadas
         const [
           financasResponse,
           compromissosResponse,
           conteudoResponse,
           gamificacaoResponse,
         ] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/financas?userId=${userId}`, {
-            headers,
-            cache: "no-store",
-          }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/compromissos?userId=${userId}`, {
-            headers,
-            cache: "no-store",
-          }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/conteudo?userId=${userId}`, {
-            headers,
-            cache: "no-store",
-          }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/gamificacao?userId=${userId}`, {
-            headers,
-            cache: "no-store",
-          }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/financas?userId=${userId}`, { headers }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/compromissos?userId=${userId}`, { headers }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/conteudo?userId=${userId}`, { headers }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/gamificacao?userId=${userId}`, { headers }),
         ]);
 
         if (
@@ -125,7 +112,6 @@ export default function HomePage() {
         const conteudoData: Conteudo[] = await conteudoResponse.json();
         const gamificacaoData: Gamificacao[] = await gamificacaoResponse.json();
 
-        // 🔹 Cálculo de receitas, despesas e saldo
         let totalReceitas = 0;
         let totalDespesas = 0;
 
@@ -137,30 +123,21 @@ export default function HomePage() {
 
         const saldo = totalReceitas - totalDespesas;
 
-        // 🔹 Próximo compromisso
         const proximoCompromisso =
           compromissosData.length > 0
-            ? compromissosData
-                .slice()
-                .sort(
-                  (a, b) =>
-                    new Date(a.data).getTime() - new Date(b.data).getTime()
-                )[0].titulo
+            ? compromissosData.sort(
+                (a, b) => new Date(a.data).getTime() - new Date(b.data).getTime()
+              )[0].titulo
             : "Nenhum agendado";
 
-        // 🔹 Última ideia cadastrada
         const ultimaIdeia =
           conteudoData.length > 0
-            ? conteudoData
-                .slice()
-                .sort(
-                  (a, b) =>
-                    new Date(b.createdAt).getTime() -
-                    new Date(a.createdAt).getTime()
-                )[0].ideia
+            ? conteudoData.sort(
+                (a, b) =>
+                  new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+              )[0].ideia
             : "Nenhuma ideia";
 
-        // 🔹 Dados do gráfico
         const chartData: ChartItem[] = [
           { name: "Finanças", uso: financasData.length },
           { name: "Agenda", uso: compromissosData.length },
@@ -198,7 +175,11 @@ export default function HomePage() {
     );
 
   if (error)
-    return <div className="text-center p-4 text-red-500">Erro: {error}</div>;
+    return (
+      <div className="text-center p-4 text-red-500">
+        Erro: {error}
+      </div>
+    );
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
@@ -206,7 +187,6 @@ export default function HomePage() {
 
       <main className="flex-1 p-6 flex flex-col items-center mb-20">
         <div className="w-full max-w-6xl space-y-8">
-          {/* ✅ Agora MonthSummary recebe o objeto correto */}
           <MonthSummary data={data} />
 
           <div className="flex gap-4 overflow-x-auto snap-x sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:overflow-visible">
@@ -240,6 +220,7 @@ export default function HomePage() {
     </div>
   );
 }
+
 
 
 

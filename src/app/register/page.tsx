@@ -28,14 +28,11 @@ export default function RegisterPage() {
     setMessage("");
 
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/register`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(form),
-        }
-      );
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
 
       if (res.ok) {
         setMessage("✅ Conta ativada com sucesso! Agora você já pode fazer login.");
@@ -54,9 +51,7 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600 p-4">
       <div className="bg-white shadow-lg rounded-xl w-full max-w-md p-8">
-        <h1 className="text-3xl font-bold text-center text-purple-700 mb-6">
-          Lucy
-        </h1>
+        <h1 className="text-3xl font-bold text-center text-purple-700 mb-6">Lucy</h1>
         <p className="text-center text-gray-500 mb-6">Ative sua conta</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -71,9 +66,7 @@ export default function RegisterPage() {
           </button>
         </form>
 
-        {message && (
-          <p className="text-center text-sm mt-4 text-gray-700">{message}</p>
-        )}
+        {message && <p className="text-center text-sm mt-4 text-gray-700">{message}</p>}
 
         <p className="mt-6 text-center text-sm">
           Já tem conta?{" "}
