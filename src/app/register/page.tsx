@@ -2,10 +2,11 @@
 
 import React, { useState } from "react";
 
-interface RegisterResponse {
-  ok?: boolean;
-  message?: string;
-}
+const API_BASE = (() => {
+  const raw = (process.env.NEXT_PUBLIC_API_URL || "").trim().replace(/\/+$/, "");
+  const withoutApi = raw.replace(/\/api$/i, "");
+  return `${withoutApi}/api`;
+})();
 
 export default function RegisterPage() {
   const [form, setForm] = useState({
@@ -28,7 +29,7 @@ export default function RegisterPage() {
     setMessage("");
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`, {
+      const res = await fetch(`${API_BASE}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -38,8 +39,8 @@ export default function RegisterPage() {
         setMessage("✅ Conta ativada com sucesso! Agora você já pode fazer login.");
         setForm({ name: "", username: "", email: "", phone: "", password: "" });
       } else {
-        const data: RegisterResponse = await res.json();
-        setMessage(data.message || "Erro ao criar conta.");
+        const data: { message?: string } = await res.json();
+        setMessage(data?.message || "Erro ao criar conta.");
       }
     } catch {
       setMessage("Erro de conexão com o servidor.");
@@ -78,6 +79,7 @@ export default function RegisterPage() {
     </div>
   );
 }
+
 
 
 

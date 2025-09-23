@@ -62,6 +62,13 @@ interface SummaryData {
   chartData: ChartItem[];
 }
 
+// garante /api
+const API_BASE = (() => {
+  const raw = (process.env.NEXT_PUBLIC_API_URL || "").trim().replace(/\/+$/, "");
+  const withoutApi = raw.replace(/\/api$/i, "");
+  return `${withoutApi}/api`;
+})();
+
 export default function HomePage() {
   const [data, setData] = useState<SummaryData>({
     totalReceitas: 0,
@@ -92,10 +99,10 @@ export default function HomePage() {
           conteudoResponse,
           gamificacaoResponse,
         ] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/financas?userId=${userId}`, { headers }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/compromissos?userId=${userId}`, { headers }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/conteudo?userId=${userId}`, { headers }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/gamificacao?userId=${userId}`, { headers }),
+          fetch(`${API_BASE}/financas?userId=${userId}`, { headers, cache: "no-store" }),
+          fetch(`${API_BASE}/compromissos?userId=${userId}`, { headers, cache: "no-store" }),
+          fetch(`${API_BASE}/conteudo?userId=${userId}`, { headers, cache: "no-store" }),
+          fetch(`${API_BASE}/gamificacao?userId=${userId}`, { headers, cache: "no-store" }),
         ]);
 
         if (
@@ -117,25 +124,26 @@ export default function HomePage() {
 
         financasData.forEach((f) => {
           const valor = parseFloat(f.valor);
-          if (valor >= 0) totalReceitas += valor;
-          else totalDespesas += Math.abs(valor);
+          if (!Number.isNaN(valor)) {
+            if (valor >= 0) totalReceitas += valor;
+            else totalDespesas += Math.abs(valor);
+          }
         });
 
         const saldo = totalReceitas - totalDespesas;
 
         const proximoCompromisso =
           compromissosData.length > 0
-            ? compromissosData.sort(
-                (a, b) => new Date(a.data).getTime() - new Date(b.data).getTime()
-              )[0].titulo
+            ? compromissosData
+                .slice()
+                .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())[0].titulo
             : "Nenhum agendado";
 
         const ultimaIdeia =
           conteudoData.length > 0
-            ? conteudoData.sort(
-                (a, b) =>
-                  new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-              )[0].ideia
+            ? conteudoData
+                .slice()
+                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0].ideia
             : "Nenhuma ideia";
 
         const chartData: ChartItem[] = [
@@ -155,9 +163,7 @@ export default function HomePage() {
         });
       } catch (err: unknown) {
         setError(
-          err instanceof Error
-            ? err.message
-            : "Erro desconhecido ao buscar resumo."
+          err instanceof Error ? err.message : "Erro desconhecido ao buscar resumo."
         );
       } finally {
         setLoading(false);
@@ -175,11 +181,7 @@ export default function HomePage() {
     );
 
   if (error)
-    return (
-      <div className="text-center p-4 text-red-500">
-        Erro: {error}
-      </div>
-    );
+    return <div className="text-center p-4 text-red-500">Erro: {error}</div>;
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
@@ -202,12 +204,7 @@ export default function HomePage() {
                     <YAxis />
                     <Tooltip />
                     <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="uso"
-                      stroke="#ae43c6"
-                      activeDot={{ r: 8 }}
-                    />
+                    <Line type="monotone" dataKey="uso" stroke="#ae43c6" activeDot={{ r: 8 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -220,6 +217,7 @@ export default function HomePage() {
     </div>
   );
 }
+
 
 
 

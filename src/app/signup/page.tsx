@@ -5,6 +5,13 @@ import { FaSignInAlt, FaSpinner } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+// 🔹 garante sempre o prefixo /api
+const API_BASE = (() => {
+  const raw = (process.env.NEXT_PUBLIC_API_URL || "").trim().replace(/\/+$/, "");
+  const withoutApi = raw.replace(/\/api$/i, "");
+  return `${withoutApi}/api`;
+})();
+
 export default function SignupPage() {
   const [formState, setFormState] = useState({
     name: "",
@@ -38,7 +45,7 @@ export default function SignupPage() {
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
+      const response = await fetch(`${API_BASE}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -102,5 +109,6 @@ export default function SignupPage() {
     </div>
   );
 }
+
 
 

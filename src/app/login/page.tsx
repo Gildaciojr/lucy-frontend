@@ -1,103 +1,106 @@
-// frontend/src/app/login/page.tsx
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { FaSpinner, FaSignInAlt } from "react-icons/fa";
+
+// 🔹 garante sempre o prefixo /api
+const API_BASE = (() => {
+  const raw = (process.env.NEXT_PUBLIC_API_URL || "").trim().replace(/\/+$/, "");
+  const withoutApi = raw.replace(/\/api$/i, "");
+  return `${withoutApi}/api`;
+})();
 
 export default function LoginPage() {
-  const [form, setForm] = useState({ username: "", password: "" });
-  const [error, setError] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const [error, setError] = useState("");
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
+    setError("");
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
+      const response = await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ username, password }),
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Falha no login");
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || "Usuário ou senha incorretos.");
+      }
 
+      const data: { access_token: string; user: { id: number; username: string } } =
+        await response.json();
+
+      // 🔐 salva token e user_id no localStorage
       localStorage.setItem("auth_token", data.access_token);
-      localStorage.setItem("user_id", data.user.id);
+      localStorage.setItem("user_id", String(data.user.id));
 
-      window.location.href = "/";
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Erro ao tentar fazer login."
-      );
+      // ✅ redireciona para o dashboard
+      router.push("/");
+    } catch (err: unknown) {
+      if (err instanceof Error) setError(err.message);
+      else setError("Erro desconhecido no login.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600 p-4">
-      <div className="bg-white shadow-xl rounded-2xl w-full max-w-md p-8">
-        <h1 className="text-4xl font-extrabold text-center text-purple-700 mb-6">
-          lucy
-        </h1>
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-400 to-purple-600 p-4">
+      <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
+        <h1 className="text-3xl font-bold text-center text-purple-700 mb-6">Lucy</h1>
+        <p className="text-center text-gray-500 mb-6">Entre na sua conta</p>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="text"
-            name="username"
-            placeholder="Usuário ou e-mail"
-            value={form.username}
-            onChange={handleChange}
+            placeholder="Usuário ou E-mail"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             required
-            className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400"
+            className="w-full p-3 border rounded-lg"
+            disabled={loading}
           />
           <input
             type="password"
-            name="password"
             placeholder="Senha"
-            value={form.password}
-            onChange={handleChange}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             required
-            className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400"
+            className="w-full p-3 border rounded-lg"
+            disabled={loading}
           />
-
-          {error && (
-            <p className="text-sm text-center text-red-500">{error}</p>
-          )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg transition disabled:opacity-50"
+            className="w-full py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg flex items-center justify-center space-x-2"
           >
-            {loading ? "Entrando..." : "Entrar"}
+            {loading ? <FaSpinner className="animate-spin" /> : <FaSignInAlt />}
+            <span>{loading ? "Entrando..." : "Entrar"}</span>
           </button>
         </form>
 
-        <div className="flex flex-col items-center mt-6 space-y-2 text-sm">
-          <a
-            href="/reset-password"
-            className="text-gray-600 hover:underline"
-          >
-            Esqueceu sua senha?
-          </a>
-          <a
-            href="/signup" // ✅ corrigido
-            className="text-purple-600 hover:underline font-medium"
-          >
+        {error && <p className="text-center text-red-500 mt-4">{error}</p>}
+
+        <p className="mt-6 text-center text-sm">
+          Não tem conta?{" "}
+          <a href="/register" className="text-purple-600 hover:underline">
             Cadastre-se
           </a>
-        </div>
+        </p>
       </div>
     </div>
   );
 }
+
 
 
 
