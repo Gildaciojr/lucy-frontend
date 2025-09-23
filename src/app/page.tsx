@@ -84,18 +84,31 @@ export default function HomePage() {
           throw new Error("Usuário não autenticado.");
         }
 
-        const headers = { Authorization: `Bearer ${token}` };
+        const headers: HeadersInit = { Authorization: `Bearer ${token}` };
 
+        // ⚠️ Adicionado prefixo /api nas quatro chamadas
         const [
           financasResponse,
           compromissosResponse,
           conteudoResponse,
           gamificacaoResponse,
         ] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/financas?userId=${userId}`, { headers }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/compromissos?userId=${userId}`, { headers }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/conteudo?userId=${userId}`, { headers }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/gamificacao?userId=${userId}`, { headers }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/financas?userId=${userId}`, {
+            headers,
+            cache: "no-store",
+          }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/compromissos?userId=${userId}`, {
+            headers,
+            cache: "no-store",
+          }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/conteudo?userId=${userId}`, {
+            headers,
+            cache: "no-store",
+          }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/gamificacao?userId=${userId}`, {
+            headers,
+            cache: "no-store",
+          }),
         ]);
 
         if (
@@ -127,18 +140,24 @@ export default function HomePage() {
         // 🔹 Próximo compromisso
         const proximoCompromisso =
           compromissosData.length > 0
-            ? compromissosData.sort(
-                (a, b) => new Date(a.data).getTime() - new Date(b.data).getTime()
-              )[0].titulo
+            ? compromissosData
+                .slice()
+                .sort(
+                  (a, b) =>
+                    new Date(a.data).getTime() - new Date(b.data).getTime()
+                )[0].titulo
             : "Nenhum agendado";
 
         // 🔹 Última ideia cadastrada
         const ultimaIdeia =
           conteudoData.length > 0
-            ? conteudoData.sort(
-                (a, b) =>
-                  new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-              )[0].ideia
+            ? conteudoData
+                .slice()
+                .sort(
+                  (a, b) =>
+                    new Date(b.createdAt).getTime() -
+                    new Date(a.createdAt).getTime()
+                )[0].ideia
             : "Nenhuma ideia";
 
         // 🔹 Dados do gráfico
@@ -179,11 +198,7 @@ export default function HomePage() {
     );
 
   if (error)
-    return (
-      <div className="text-center p-4 text-red-500">
-        Erro: {error}
-      </div>
-    );
+    return <div className="text-center p-4 text-red-500">Erro: {error}</div>;
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
@@ -225,6 +240,7 @@ export default function HomePage() {
     </div>
   );
 }
+
 
 
 
