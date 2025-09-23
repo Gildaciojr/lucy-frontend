@@ -9,7 +9,7 @@ interface RuntimeEnvWindow extends Window {
 }
 
 const envUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
-const DEFAULT_API = 'https://api.mylucy.app/api';
+const DEFAULT_API = 'https://api.mylucy.app';
 
 function getRuntimeApiUrl(): string | undefined {
   if (typeof window === 'undefined') return undefined;
@@ -76,6 +76,7 @@ export async function getProfile() {
   const { data } = await api.get('/users/me');
   return data;
 }
+
 
 
 

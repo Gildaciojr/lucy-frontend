@@ -1,3 +1,4 @@
+// frontend/src/services/leadsService.ts
 export interface Lead {
   id: number;
   display_name: string;
@@ -10,7 +11,7 @@ export interface Lead {
 
 export async function fetchLeads(): Promise<Lead[]> {
   const token = localStorage.getItem("auth_token");
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/leads`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/leads`, {
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token ?? ""}`,
@@ -23,3 +24,4 @@ export async function fetchLeads(): Promise<Lead[]> {
 
   return res.json();
 }
+

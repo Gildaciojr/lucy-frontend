@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FaSpinner, FaSignInAlt } from "react-icons/fa";
 import { apiFetch } from "@/lib/api";
+import Link from "next/link";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -78,14 +79,15 @@ export default function LoginPage() {
 
         <p className="mt-6 text-center text-sm">
           Não tem conta?{" "}
-          <a href="/register" className="text-purple-600 hover:underline">
+          <Link href="/register" className="text-purple-600 hover:underline">
             Cadastre-se
-          </a>
+          </Link>
         </p>
       </div>
     </div>
   );
 }
+
 
 
 

@@ -1,5 +1,5 @@
 // frontend/src/lib/api.ts
-export const API_BASE = `${process.env.NEXT_PUBLIC_API_URL}/api`;
+export const API_BASE = `${process.env.NEXT_PUBLIC_API_URL}`;
 
 export async function apiFetch<T>(
   path: string,
@@ -20,4 +20,5 @@ export async function apiFetch<T>(
 
   return res.json();
 }
+
 
