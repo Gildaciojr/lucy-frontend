@@ -1,24 +1,23 @@
 // frontend/src/lib/api.ts
-const raw = (process.env.NEXT_PUBLIC_API_URL || "").trim().replace(/\/+$/, "");
-export const API_BASE = `${raw}/api`;
+export const API_BASE = `${process.env.NEXT_PUBLIC_API_URL}/api`;
 
-export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
+export async function apiFetch<T>(
+  path: string,
+  options?: RequestInit
+): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
-      ...(options.headers || {}),
+      ...(options?.headers || {}),
     },
   });
+
   if (!res.ok) {
-    let msg = "Erro na API";
-    try {
-      const data = await res.json();
-      msg = data.message || msg;
-    } catch {
-      /* ignore */
-    }
-    throw new Error(msg);
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.message || `Erro ${res.status}`);
   }
+
   return res.json();
 }
+

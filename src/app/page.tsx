@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Header from "../components/Header";
 import Navigation from "../components/Navigation";
 import MonthSummary from "../components/MonthSummary";
-import { FaSpinner, FaWhatsapp } from "react-icons/fa";
+import { FaSpinner } from "react-icons/fa";
 import {
   ResponsiveContainer,
   LineChart,
@@ -15,7 +15,8 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
-import { apiFetch } from "../lib/api";
+import { apiFetch } from "@/lib/api";
+import { FaWhatsapp } from "react-icons/fa";
 
 interface Financa {
   id: number;
@@ -79,12 +80,33 @@ export default function HomePage() {
     const fetchSummary = async () => {
       try {
         const userId = localStorage.getItem("user_id");
-        if (!userId) throw new Error("Usuário não autenticado.");
+        const token = localStorage.getItem("auth_token");
 
-        const financasData = await apiFetch<Financa[]>(`/financas?userId=${userId}`);
-        const compromissosData = await apiFetch<Compromisso[]>(`/compromissos?userId=${userId}`);
-        const conteudoData = await apiFetch<Conteudo[]>(`/conteudo?userId=${userId}`);
-        const gamificacaoData = await apiFetch<Gamificacao[]>(`/gamificacao?userId=${userId}`);
+        if (!userId || !token) {
+          throw new Error("Usuário não autenticado.");
+        }
+
+        const headers = { Authorization: `Bearer ${token}` };
+
+        const financasData = (await apiFetch<Financa[]>(
+          `/financas?userId=${userId}`,
+          { headers }
+        )) as Financa[];
+
+        const compromissosData = (await apiFetch<Compromisso[]>(
+          `/compromissos?userId=${userId}`,
+          { headers }
+        )) as Compromisso[];
+
+        const conteudoData = (await apiFetch<Conteudo[]>(
+          `/conteudo?userId=${userId}`,
+          { headers }
+        )) as Conteudo[];
+
+        const gamificacaoData = (await apiFetch<Gamificacao[]>(
+          `/gamificacao?userId=${userId}`,
+          { headers }
+        )) as Gamificacao[];
 
         let totalReceitas = 0;
         let totalDespesas = 0;
@@ -103,7 +125,10 @@ export default function HomePage() {
           compromissosData.length > 0
             ? compromissosData
                 .slice()
-                .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())[0].titulo
+                .sort(
+                  (a, b) =>
+                    new Date(a.data).getTime() - new Date(b.data).getTime()
+                )[0].titulo
             : "Nenhum agendado";
 
         const ultimaIdeia =
@@ -112,7 +137,8 @@ export default function HomePage() {
                 .slice()
                 .sort(
                   (a, b) =>
-                    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+                    new Date(b.createdAt).getTime() -
+                    new Date(a.createdAt).getTime()
                 )[0].ideia
             : "Nenhuma ideia";
 
@@ -133,7 +159,9 @@ export default function HomePage() {
         });
       } catch (err: unknown) {
         setError(
-          err instanceof Error ? err.message : "Erro desconhecido ao buscar resumo.",
+          err instanceof Error
+            ? err.message
+            : "Erro desconhecido ao buscar resumo."
         );
       } finally {
         setLoading(false);
@@ -150,17 +178,17 @@ export default function HomePage() {
       </div>
     );
 
-  if (error) return <div className="text-center p-4 text-red-500">Erro: {error}</div>;
+  if (error)
+    return <div className="text-center p-4 text-red-500">Erro: {error}</div>;
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-100">
+    <div className="flex flex-col min-h-screen bg-gray-100 relative">
       <Header />
 
       <main className="flex-1 p-6 flex flex-col items-center mb-20">
         <div className="w-full max-w-6xl space-y-8">
           <MonthSummary data={data} />
 
-          {/* Gráfico */}
           <div className="flex gap-4 overflow-x-auto snap-x sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:overflow-visible">
             <div className="bg-white rounded-xl shadow-md p-4 min-w-[280px] sm:min-w-0 snap-center">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">
@@ -185,26 +213,24 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-
-          {/* Botão do WhatsApp */}
-          <div className="flex justify-center mt-8">
-            <a
-              href="https://wa.me/message/JQ6SLHBNNAAHG1"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl shadow-lg transition-colors"
-            >
-              <FaWhatsapp size={24} />
-              <span>Falar no WhatsApp</span>
-            </a>
-          </div>
         </div>
       </main>
 
       <Navigation />
+
+      {/* 🔗 Botão flutuante do WhatsApp */}
+      <a
+        href="https://wa.me/message/JQ6SLHBNNAAHG1"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-6 right-6 bg-green-500 hover:bg-green-600 text-white rounded-full p-4 shadow-lg transition-colors"
+      >
+        <FaWhatsapp className="w-7 h-7" />
+      </a>
     </div>
   );
 }
+
 
 
 

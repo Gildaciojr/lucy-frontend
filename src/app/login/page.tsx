@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FaSpinner, FaSignInAlt } from "react-icons/fa";
-import { apiFetch } from "../../lib/api";
+import { apiFetch } from "@/lib/api";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -86,6 +86,7 @@ export default function LoginPage() {
     </div>
   );
 }
+
 
 
 

@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { FaSignInAlt, FaSpinner } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { apiFetch } from "../../lib/api";
+import { apiFetch } from "@/lib/api";
 
 export default function SignupPage() {
   const [formState, setFormState] = useState({
@@ -73,16 +73,18 @@ export default function SignupPage() {
           </div>
         </div>
         <form onSubmit={handleSignup} className="space-y-4">
-          <input type="text" placeholder="Nome completo" name="name" value={formState.name} onChange={handleInputChange} className="w-full p-4 rounded-xl bg-gray-100 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-lucy-purple" disabled={loading} required />
-          <input type="email" placeholder="E-mail" name="email" value={formState.email} onChange={handleInputChange} className="w-full p-4 rounded-xl bg-gray-100 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-lucy-purple" disabled={loading} required />
-          <input type="text" placeholder="Nome de usuário" name="username" value={formState.username} onChange={handleInputChange} className="w-full p-4 rounded-xl bg-gray-100 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-lucy-purple" disabled={loading} required />
-          <input type="password" placeholder="Senha" name="password" value={formState.password} onChange={handleInputChange} className="w-full p-4 rounded-xl bg-gray-100 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-lucy-purple" disabled={loading} required />
-          <input type="password" placeholder="Confirmar Senha" name="confirmPassword" value={formState.confirmPassword} onChange={handleInputChange} className="w-full p-4 rounded-xl bg-gray-100 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-lucy-purple" disabled={loading} required />
-          <input type="text" placeholder="Telefone" name="phone" value={formState.phone} onChange={handleInputChange} className="w-full p-4 rounded-xl bg-gray-100 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-lucy-purple" disabled={loading} />
-          <input type="text" placeholder="Endereço Completo" name="address" value={formState.address} onChange={handleInputChange} className="w-full p-4 rounded-xl bg-gray-100 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-lucy-purple" disabled={loading} />
+          <input type="text" placeholder="Nome completo" name="name" value={formState.name} onChange={handleInputChange} required className="w-full p-4 rounded-xl bg-gray-100 border" disabled={loading} />
+          <input type="email" placeholder="E-mail" name="email" value={formState.email} onChange={handleInputChange} required className="w-full p-4 rounded-xl bg-gray-100 border" disabled={loading} />
+          <input type="text" placeholder="Nome de usuário" name="username" value={formState.username} onChange={handleInputChange} required className="w-full p-4 rounded-xl bg-gray-100 border" disabled={loading} />
+          <input type="password" placeholder="Senha" name="password" value={formState.password} onChange={handleInputChange} required className="w-full p-4 rounded-xl bg-gray-100 border" disabled={loading} />
+          <input type="password" placeholder="Confirmar Senha" name="confirmPassword" value={formState.confirmPassword} onChange={handleInputChange} required className="w-full p-4 rounded-xl bg-gray-100 border" disabled={loading} />
+          <input type="text" placeholder="Telefone" name="phone" value={formState.phone} onChange={handleInputChange} className="w-full p-4 rounded-xl bg-gray-100 border" disabled={loading} />
+          <input type="text" placeholder="Endereço Completo" name="address" value={formState.address} onChange={handleInputChange} className="w-full p-4 rounded-xl bg-gray-100 border" disabled={loading} />
+
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
           {success && <p className="text-green-500 text-sm text-center">{success}</p>}
-          <button type="submit" className="w-full p-4 bg-green-400 text-white font-bold rounded-xl shadow-md hover:bg-lucy-purple-dark transition-colors flex items-center justify-center space-x-2" disabled={loading}>
+
+          <button type="submit" className="w-full p-4 bg-green-400 text-white font-bold rounded-xl shadow-md flex items-center justify-center space-x-2" disabled={loading}>
             {loading ? <FaSpinner className="animate-spin text-white" /> : <FaSignInAlt />}
             <span>Cadastrar</span>
           </button>
@@ -97,6 +99,7 @@ export default function SignupPage() {
     </div>
   );
 }
+
 
 
 

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { apiFetch } from "../../lib/api";
+import { apiFetch } from "@/lib/api";
 
 export default function RegisterPage() {
   const [form, setForm] = useState({
@@ -33,7 +33,7 @@ export default function RegisterPage() {
       setForm({ name: "", username: "", email: "", phone: "", password: "" });
     } catch (err: unknown) {
       if (err instanceof Error) setMessage(err.message);
-      else setMessage("Erro desconhecido ao criar conta.");
+      else setMessage("Erro ao criar conta.");
     } finally {
       setLoading(false);
     }
@@ -69,6 +69,7 @@ export default function RegisterPage() {
     </div>
   );
 }
+
 
 
 
