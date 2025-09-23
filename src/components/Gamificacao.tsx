@@ -27,7 +27,9 @@ const Card: React.FC<CardProps> = ({
 }) => {
   return (
     <div
-      className={`flex items-center space-x-4 p-4 bg-white rounded-xl shadow-md cursor-pointer transition-transform transform hover:scale-105 ${isActive ? "ring-2 ring-blue-500" : ""}`}
+      className={`flex items-center space-x-4 p-4 bg-white rounded-xl shadow-md cursor-pointer transition-transform transform hover:scale-105 ${
+        isActive ? "ring-2 ring-blue-500" : ""
+      }`}
       onClick={onClick}
     >
       <div className="p-3 rounded-full bg-purple-500 text-white text-xl">
@@ -47,58 +49,40 @@ export default function Gamificacao() {
   const [error, setError] = useState<string | null>(null);
   const [viewDetails, setViewDetails] = useState<null | "all">(null);
 
-  useEffect(() => {
-    const fetchGamificacoes = async () => {
-      try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/gamificacao`,
-        );
-        if (!response.ok) {
-          throw new Error("Erro ao buscar dados de gamificação.");
-        }
-        const data: Gamificacao[] = await response.json();
-        setGamificacoes(data);
-      } catch (err: unknown) {
-        if (err instanceof Error) setError(err.message);
-        else setError("Erro desconhecido ao buscar gamificação.");
-      } finally {
-        setLoading(false);
+  const fetchGamificacoes = async () => {
+    try {
+      const token = localStorage.getItem("auth_token");
+      const userId = localStorage.getItem("user_id");
+      if (!token || !userId) {
+        window.location.href = "/login";
+        return;
       }
-    };
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/gamificacao?userId=${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Erro ao buscar dados de gamificação.");
+      }
+      const data: Gamificacao[] = await response.json();
+      setGamificacoes(data);
+    } catch (err: unknown) {
+      if (err instanceof Error) setError(err.message);
+      else setError("Erro desconhecido ao buscar gamificação.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchGamificacoes();
   }, []);
-
-  const renderDetails = () => {
-    return (
-      <div className="p-6 bg-white rounded-lg shadow-md">
-        <button
-          onClick={() => setViewDetails(null)}
-          className="flex items-center space-x-2 text-blue-500 hover:text-blue-700 font-bold mb-4"
-        >
-          <FaChevronLeft />
-          <span>Voltar</span>
-        </button>
-        <h3 className="text-xl font-bold text-gray-800 mb-4">
-          Badges Conquistados
-        </h3>
-        <ul className="space-y-4">
-          {gamificacoes.length > 0 ? (
-            gamificacoes.map((badge) => (
-              <li key={badge.id} className="p-4 bg-gray-100 rounded-lg">
-                <p className="font-semibold text-gray-700">{badge.badge}</p>
-                <p className="text-sm text-gray-500">
-                  Data:{" "}
-                  {new Date(badge.dataConquista).toLocaleDateString("pt-BR")}
-                </p>
-              </li>
-            ))
-          ) : (
-            <p className="text-gray-500">Nenhum badge conquistado ainda.</p>
-          )}
-        </ul>
-      </div>
-    );
-  };
 
   if (loading) {
     return (
@@ -112,6 +96,35 @@ export default function Gamificacao() {
   if (error) {
     return <div className="text-center p-6 text-red-500">Erro: {error}</div>;
   }
+
+  const renderDetails = () => (
+    <div className="p-6 bg-white rounded-lg shadow-md">
+      <button
+        onClick={() => setViewDetails(null)}
+        className="flex items-center space-x-2 text-blue-500 hover:text-blue-700 font-bold mb-4"
+      >
+        <FaChevronLeft />
+        <span>Voltar</span>
+      </button>
+      <h3 className="text-xl font-bold text-gray-800 mb-4">
+        Badges Conquistados
+      </h3>
+      <ul className="space-y-4">
+        {gamificacoes.length > 0 ? (
+          gamificacoes.map((badge) => (
+            <li key={badge.id} className="p-4 bg-gray-100 rounded-lg">
+              <p className="font-semibold text-gray-700">{badge.badge}</p>
+              <p className="text-sm text-gray-500">
+                Data: {new Date(badge.dataConquista).toLocaleDateString("pt-BR")}
+              </p>
+            </li>
+          ))
+        ) : (
+          <p className="text-gray-500">Nenhum badge conquistado ainda.</p>
+        )}
+      </ul>
+    </div>
+  );
 
   if (viewDetails) {
     return renderDetails();
@@ -161,3 +174,4 @@ export default function Gamificacao() {
     </div>
   );
 }
+

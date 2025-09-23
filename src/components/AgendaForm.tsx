@@ -8,13 +8,12 @@ export default function AgendaForm({ onSave }: { onSave: () => void }) {
     titulo: "",
     data: "",
     concluido: false,
-    userId: 1,
   });
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<"success" | "error" | null>(null);
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     setFormState((prev) => ({ ...prev, [name]: value }));
@@ -25,20 +24,31 @@ export default function AgendaForm({ onSave }: { onSave: () => void }) {
     setLoading(true);
     setStatus(null);
     try {
+      const token = localStorage.getItem("auth_token");
+      const userId = localStorage.getItem("user_id");
+
+      if (!token || !userId) {
+        window.location.href = "/login";
+        return;
+      }
+
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/compromissos`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formState),
-        },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ ...formState, userId: parseInt(userId, 10) }),
+        }
       );
 
       if (!response.ok) {
         throw new Error("Erro ao adicionar compromisso.");
       }
       setStatus("success");
-      setFormState({ titulo: "", data: "", concluido: false, userId: 1 });
+      setFormState({ titulo: "", data: "", concluido: false });
       onSave();
     } catch {
       setStatus("error");
@@ -90,4 +100,5 @@ export default function AgendaForm({ onSave }: { onSave: () => void }) {
     </div>
   );
 }
+
 

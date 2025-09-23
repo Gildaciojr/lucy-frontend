@@ -42,35 +42,48 @@ export default function Settings() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchUserPlan = async () => {
-      try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/users/1`,
-        );
-        if (!response.ok) {
-          throw new Error("Erro ao buscar dados do usuário.");
-        }
-        const user: User = await response.json();
-
-        setPlanStatus({
-          plan: user.plan || "Free",
-          expiresIn:
-            user.plan === "Pro" || user.plan === "Premium" ? "30 dias" : "N/A",
-        });
-      } catch (err: unknown) {
-        if (err instanceof Error) setError(err.message);
-        else setError("Erro desconhecido ao buscar usuário.");
-      } finally {
-        setLoading(false);
+  const fetchUserPlan = async () => {
+    try {
+      const token = localStorage.getItem("auth_token");
+      const userId = localStorage.getItem("user_id");
+      if (!token || !userId) {
+        window.location.href = "/login";
+        return;
       }
-    };
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/users/${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Erro ao buscar dados do usuário.");
+      }
+      const user: User = await response.json();
+
+      setPlanStatus({
+        plan: user.plan || "Free",
+        expiresIn:
+          user.plan === "Pro" || user.plan === "Premium" ? "30 dias" : "N/A",
+      });
+    } catch (err: unknown) {
+      if (err instanceof Error) setError(err.message);
+      else setError("Erro desconhecido ao buscar usuário.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchUserPlan();
   }, []);
 
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedLanguage(e.target.value);
-    // Aqui você adicionaria a lógica para mudar o idioma da aplicação.
   };
 
   const handleFeedbackSubmit = async (e: React.FormEvent) => {
@@ -82,26 +95,34 @@ export default function Settings() {
     }
 
     try {
+      const token = localStorage.getItem("auth_token");
+      const userId = localStorage.getItem("user_id");
+      if (!token || !userId) {
+        window.location.href = "/login";
+        return;
+      }
+
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/feedback`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             rating: feedbackRating,
             comment: feedback,
-            userId: 1,
+            userId: parseInt(userId, 10),
           }),
-        },
+        }
       );
 
       if (!response.ok) {
         throw new Error("Erro ao enviar feedback.");
       }
       setFeedbackStatus(
-        "Feedback enviado com sucesso! Obrigado pela sua contribuição.",
+        "Feedback enviado com sucesso! Obrigado pela sua contribuição."
       );
       setFeedback("");
       setFeedbackRating(null);
@@ -110,7 +131,7 @@ export default function Settings() {
         setFeedbackStatus(err.message);
       } else {
         setFeedbackStatus(
-          "Erro ao enviar feedback. Tente novamente mais tarde.",
+          "Erro ao enviar feedback. Tente novamente mais tarde."
         );
       }
     } finally {
@@ -215,3 +236,4 @@ export default function Settings() {
     </div>
   );
 }
+

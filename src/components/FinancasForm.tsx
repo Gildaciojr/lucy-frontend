@@ -7,7 +7,6 @@ export default function FinancasForm({ onSave }: { onSave: () => void }) {
   const [formState, setFormState] = useState({
     categoria: "",
     valor: "",
-    userId: 1,
   });
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<"success" | "error" | null>(null);
@@ -36,7 +35,7 @@ export default function FinancasForm({ onSave }: { onSave: () => void }) {
   ];
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     setFormState((prev) => ({ ...prev, [name]: value }));
@@ -47,23 +46,32 @@ export default function FinancasForm({ onSave }: { onSave: () => void }) {
     setLoading(true);
     setStatus(null);
     try {
+      const token = localStorage.getItem("auth_token");
       const userId = localStorage.getItem("user_id");
-      if (!userId) {
-        throw new Error("Usuário não logado.");
+      if (!token || !userId) {
+        window.location.href = "/login";
+        return;
       }
+
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/financas`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...formState, userId: parseInt(userId, 10) }),
-        },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            ...formState,
+            userId: parseInt(userId, 10),
+          }),
+        }
       );
       if (!response.ok) {
         throw new Error("Erro ao adicionar transação financeira.");
       }
       setStatus("success");
-      setFormState({ categoria: "", valor: "", userId: 1 });
+      setFormState({ categoria: "", valor: "" });
       onSave();
     } catch {
       setStatus("error");
@@ -121,4 +129,5 @@ export default function FinancasForm({ onSave }: { onSave: () => void }) {
     </div>
   );
 }
+
 

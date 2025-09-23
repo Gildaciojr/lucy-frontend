@@ -60,8 +60,20 @@ export default function Conteudo() {
   const fetchConteudos = async () => {
     setLoading(true);
     try {
+      const token = localStorage.getItem("auth_token");
+      const userId = localStorage.getItem("user_id");
+      if (!token || !userId) {
+        window.location.href = "/login";
+        return;
+      }
+
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/conteudo`,
+        `${process.env.NEXT_PUBLIC_API_URL}/conteudo?userId=${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
 
       if (!response.ok) {
@@ -140,7 +152,7 @@ export default function Conteudo() {
   const ideiasRecentes = [...conteudos]
     .sort(
       (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     )
     .slice(0, 3);
 

@@ -6,9 +6,9 @@ import Logo from "./Logo";
 interface User {
   id: number;
   name: string;
-  phone?: string;
-  email?: string;
   username?: string;
+  email?: string;
+  phone?: string;
 }
 
 export default function Header() {
@@ -17,15 +17,15 @@ export default function Header() {
   const [form, setForm] = useState({ name: "", phone: "", password: "" });
   const [message, setMessage] = useState("");
 
-  // ✅ Busca o usuário logado ao montar
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
-    if (!token) return;
+    if (!token) {
+      window.location.href = "/login";
+      return;
+    }
 
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => {
         if (!res.ok) throw new Error("Erro ao buscar usuário");
@@ -33,18 +33,13 @@ export default function Header() {
       })
       .then((data: User) => {
         setUser(data);
-        setForm({
-          name: data.name || "",
-          phone: data.phone || "",
-          password: "",
-        });
+        setForm({ name: data.name || "", phone: data.phone || "", password: "" });
       })
       .catch(() => {
         setUser(null);
       });
   }, []);
 
-  // ✅ Atualiza dados do próprio usuário logado
   const handleUpdate = async (field: "name" | "phone" | "password") => {
     const token = localStorage.getItem("auth_token");
     if (!token) return;
@@ -74,6 +69,7 @@ export default function Header() {
   const handleLogout = () => {
     localStorage.removeItem("auth_token");
     localStorage.removeItem("user_id");
+    localStorage.removeItem("username");
     window.location.href = "/login";
   };
 
@@ -88,6 +84,7 @@ export default function Header() {
           >
             {user.name || user.username || "Usuário"}
           </button>
+
           {open && (
             <div className="absolute right-0 mt-2 w-64 bg-white shadow-lg rounded-lg border p-4 space-y-3 z-50">
               <div>
@@ -105,6 +102,7 @@ export default function Header() {
                   Atualizar Nome
                 </button>
               </div>
+
               <div>
                 <label className="block text-xs text-gray-500">Telefone</label>
                 <input
@@ -120,14 +118,13 @@ export default function Header() {
                   Atualizar Telefone
                 </button>
               </div>
+
               <div>
                 <label className="block text-xs text-gray-500">Nova Senha</label>
                 <input
                   type="password"
                   value={form.password}
-                  onChange={(e) =>
-                    setForm({ ...form, password: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
                   className="w-full p-2 border rounded"
                 />
                 <button
@@ -137,12 +134,14 @@ export default function Header() {
                   Alterar Senha
                 </button>
               </div>
+
               <button
                 onClick={handleLogout}
                 className="w-full py-2 mt-2 bg-red-500 text-white rounded hover:bg-red-600"
               >
                 Sair
               </button>
+
               {message && <p className="text-xs text-green-600">{message}</p>}
             </div>
           )}
@@ -151,6 +150,7 @@ export default function Header() {
     </header>
   );
 }
+
 
 
 

@@ -26,13 +26,14 @@ export default function ReportsPage() {
     const fetchData = async () => {
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/financas?userId=${userId}`
+          `${process.env.NEXT_PUBLIC_API_URL}/financas?userId=${userId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
         );
         const data = await res.json();
         setFinancas(data);
 
         const userRes = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/users/me`,
+          `${process.env.NEXT_PUBLIC_API_URL}/users/${userId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -149,6 +150,7 @@ export default function ReportsPage() {
     </div>
   );
 }
+
 
 
 

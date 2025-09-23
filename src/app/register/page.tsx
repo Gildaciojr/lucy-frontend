@@ -23,14 +23,14 @@ export default function RegisterPage() {
     setMessage("");
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
 
       if (res.ok) {
-        setMessage("✅ Conta criada com sucesso! Você já pode fazer login.");
+        setMessage("✅ Conta ativada com sucesso! Agora você já pode fazer login.");
         setForm({ name: "", username: "", email: "", phone: "", password: "" });
       } else {
         const data = await res.json();
@@ -47,10 +47,9 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-400 to-purple-600 p-4">
       <div className="bg-white shadow-lg rounded-xl w-full max-w-md p-8">
         <h1 className="text-3xl font-bold text-center text-purple-700 mb-6">Lucy</h1>
-        <p className="text-center text-gray-500 mb-6">Crie sua conta</p>
+        <p className="text-center text-gray-500 mb-6">Ative sua conta</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Campos */}
           <input name="name" placeholder="Nome completo" value={form.name} onChange={handleChange} required className="w-full p-3 border rounded-lg" />
           <input name="username" placeholder="Nome de usuário" value={form.username} onChange={handleChange} required className="w-full p-3 border rounded-lg" />
           <input type="email" name="email" placeholder="E-mail" value={form.email} onChange={handleChange} required className="w-full p-3 border rounded-lg" />
@@ -74,6 +73,8 @@ export default function RegisterPage() {
     </div>
   );
 }
+
+
 
 
 

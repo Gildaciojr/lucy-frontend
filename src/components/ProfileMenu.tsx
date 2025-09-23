@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -6,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 interface User {
   id: number;
   name: string;
-  email: string;
+  email?: string;
   phone?: string;
 }
 
@@ -24,13 +23,25 @@ export default function ProfileMenu() {
   }, []);
 
   useEffect(() => {
-    const userId = localStorage.getItem("user_id");
-    if (!userId) return;
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${userId}`)
-      .then(r => r.ok ? r.json() : Promise.reject())
+    const token = localStorage.getItem("auth_token");
+    if (!token) {
+      window.location.href = "/login";
+      return;
+    }
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((u: User) => setUser(u))
       .catch(() => {});
   }, []);
+
+  const logout = () => {
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("user_id");
+    localStorage.removeItem("username");
+    window.location.href = "/login";
+  };
 
   return (
     <div className="relative" ref={ref}>
@@ -68,11 +79,7 @@ export default function ProfileMenu() {
           </button>
           <button
             className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 text-red-600"
-            onClick={() => {
-              localStorage.removeItem("auth_token");
-              localStorage.removeItem("user_id");
-              window.location.href = "/login";
-            }}
+            onClick={logout}
           >
             Sair
           </button>
@@ -95,27 +102,33 @@ function ProfileModal() {
   useEffect(() => {
     const onOpen = () => {
       setOpen(true);
-      const userId = localStorage.getItem("user_id");
-      if (!userId) return;
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${userId}`)
-        .then(r => r.json())
-        .then(u => {
+      const token = localStorage.getItem("auth_token");
+      if (!token) return;
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((r) => r.json())
+        .then((u) => {
           setName(u.name || "");
           setPhone(u.phone || "");
         });
     };
     window.addEventListener("open-profile-modal", onOpen as EventListener);
-    return () => window.removeEventListener("open-profile-modal", onOpen as EventListener);
+    return () =>
+      window.removeEventListener("open-profile-modal", onOpen as EventListener);
   }, []);
 
   const save = async () => {
-    const userId = localStorage.getItem("user_id");
-    if (!userId) return;
+    const token = localStorage.getItem("auth_token");
+    if (!token) return;
     setSaving(true);
     try {
-      const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${userId}`, {
+      const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ name, phone }),
       });
       if (!r.ok) throw new Error();
@@ -137,17 +150,22 @@ function ProfileModal() {
             className="w-full rounded-lg border p-3"
             placeholder="Nome completo"
             value={name}
-            onChange={e => setName(e.target.value)}
+            onChange={(e) => setName(e.target.value)}
           />
           <input
             className="w-full rounded-lg border p-3"
             placeholder="Telefone"
             value={phone}
-            onChange={e => setPhone(e.target.value)}
+            onChange={(e) => setPhone(e.target.value)}
           />
         </div>
         <div className="mt-6 flex justify-end gap-2">
-          <button className="px-4 py-2 rounded-lg bg-gray-100" onClick={() => setOpen(false)}>Cancelar</button>
+          <button
+            className="px-4 py-2 rounded-lg bg-gray-100"
+            onClick={() => setOpen(false)}
+          >
+            Cancelar
+          </button>
           <button
             className="px-4 py-2 rounded-lg bg-purple-600 text-white disabled:opacity-50"
             onClick={save}
@@ -165,29 +183,30 @@ function ProfileModal() {
 function PasswordModal() {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
 
   useEffect(() => {
     const onOpen = () => setOpen(true);
     window.addEventListener("open-password-modal", onOpen as EventListener);
-    return () => window.removeEventListener("open-password-modal", onOpen as EventListener);
+    return () =>
+      window.removeEventListener("open-password-modal", onOpen as EventListener);
   }, []);
 
   const save = async () => {
-    const userId = localStorage.getItem("user_id");
-    if (!userId) return;
+    const token = localStorage.getItem("auth_token");
+    if (!token) return;
     setSaving(true);
     try {
-      // ajuste conforme o backend (abaixo proponho PATCH /users/:id/password)
-      const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${userId}/password`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ currentPassword, newPassword }),
+      const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ password: newPassword }),
       });
       if (!r.ok) throw new Error();
       setOpen(false);
-      setCurrentPassword("");
       setNewPassword("");
     } catch {
       alert("Erro ao alterar a senha.");
@@ -201,24 +220,20 @@ function PasswordModal() {
     <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-xl p-6">
         <h3 className="text-xl font-bold mb-4">Alterar senha</h3>
-        <div className="space-y-3">
-          <input
-            className="w-full rounded-lg border p-3"
-            placeholder="Senha atual"
-            type="password"
-            value={currentPassword}
-            onChange={e => setCurrentPassword(e.target.value)}
-          />
-          <input
-            className="w-full rounded-lg border p-3"
-            placeholder="Nova senha"
-            type="password"
-            value={newPassword}
-            onChange={e => setNewPassword(e.target.value)}
-          />
-        </div>
+        <input
+          className="w-full rounded-lg border p-3"
+          placeholder="Nova senha"
+          type="password"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+        />
         <div className="mt-6 flex justify-end gap-2">
-          <button className="px-4 py-2 rounded-lg bg-gray-100" onClick={() => setOpen(false)}>Cancelar</button>
+          <button
+            className="px-4 py-2 rounded-lg bg-gray-100"
+            onClick={() => setOpen(false)}
+          >
+            Cancelar
+          </button>
           <button
             className="px-4 py-2 rounded-lg bg-purple-600 text-white disabled:opacity-50"
             onClick={save}
@@ -231,3 +246,4 @@ function PasswordModal() {
     </div>
   );
 }
+

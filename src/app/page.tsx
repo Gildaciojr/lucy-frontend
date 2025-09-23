@@ -74,16 +74,24 @@ export default function HomePage() {
     const fetchSummary = async () => {
       try {
         const userId = localStorage.getItem("user_id");
+        const token = localStorage.getItem("auth_token");
+
+        if (!userId || !token) {
+          throw new Error("Usuário não autenticado.");
+        }
+
+        const headers = { Authorization: `Bearer ${token}` };
+
         const [
           financasResponse,
           compromissosResponse,
           conteudoResponse,
           gamificacaoResponse,
         ] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/financas?userId=${userId}`),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/compromissos?userId=${userId}`),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/conteudo?userId=${userId}`),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/gamificacao?userId=${userId}`),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/financas?userId=${userId}`, { headers }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/compromissos?userId=${userId}`, { headers }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/conteudo?userId=${userId}`, { headers }),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/gamificacao?userId=${userId}`, { headers }),
         ]);
 
         if (
@@ -148,7 +156,7 @@ export default function HomePage() {
 
   if (loading)
     return (
-      <div className="text-center p-4 sm:p-6 flex items-center justify-center space-x-2 text-sm sm:text-base">
+      <div className="text-center p-4 flex items-center justify-center space-x-2">
         <FaSpinner className="animate-spin" />
         <span>Carregando resumo...</span>
       </div>
@@ -156,22 +164,22 @@ export default function HomePage() {
 
   if (error)
     return (
-      <div className="text-center p-4 sm:p-6 text-red-500 text-sm sm:text-base">
+      <div className="text-center p-4 text-red-500">
         Erro: {error}
       </div>
     );
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-100 text-sm sm:text-base">
+    <div className="flex flex-col min-h-screen bg-gray-100">
       <Header />
 
-      <main className="flex-1 p-2 sm:p-6 flex flex-col items-center mb-20">
-        <div className="w-full max-w-6xl space-y-6 sm:space-y-8">
+      <main className="flex-1 p-6 flex flex-col items-center mb-20">
+        <div className="w-full max-w-6xl space-y-8">
           <MonthSummary data={data} />
 
           <div className="flex gap-4 overflow-x-auto snap-x sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:overflow-visible">
             <div className="bg-white rounded-xl shadow-md p-4 min-w-[280px] sm:min-w-0 snap-center">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">
                 Seu resumo de atividades
               </h3>
               <div className="w-full overflow-x-auto">
@@ -200,6 +208,7 @@ export default function HomePage() {
     </div>
   );
 }
+
 
 
 

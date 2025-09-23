@@ -73,10 +73,22 @@ export default function Financas() {
   const fetchFinancas = async () => {
     setLoading(true);
     try {
+      const token = localStorage.getItem("auth_token");
       const userId = localStorage.getItem("user_id");
+      if (!token || !userId) {
+        window.location.href = "/login";
+        return;
+      }
+
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/financas?userId=${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
+
       if (!response.ok) {
         throw new Error("Erro ao buscar dados de finanças.");
       }
@@ -126,7 +138,7 @@ export default function Financas() {
       }
       return acc;
     },
-    [] as { name: string; value: number }[],
+    [] as { name: string; value: number }[]
   );
 
   const COLORS = [
@@ -138,7 +150,6 @@ export default function Financas() {
     "#FF5733",
   ];
 
-  // Lógica para o comparativo mensal
   const monthlyData = financas.reduce(
     (acc, item) => {
       const month = new Date(item.data).toLocaleString("pt-BR", {
@@ -151,7 +162,7 @@ export default function Financas() {
       acc[month] += parseFloat(item.valor);
       return acc;
     },
-    {} as Record<string, number>,
+    {} as Record<string, number>
   );
 
   const monthlyChartData = Object.keys(monthlyData).map((key) => ({
@@ -159,9 +170,8 @@ export default function Financas() {
     gastos: monthlyData[key],
   }));
 
-  // Lógica para os alertas interpretativos
   const sortedMonths = Object.keys(monthlyData).sort(
-    (a, b) => new Date(a).getTime() - new Date(b).getTime(),
+    (a, b) => new Date(a).getTime() - new Date(b).getTime()
   );
   const currentMonth = sortedMonths[sortedMonths.length - 1];
   const previousMonth = sortedMonths[sortedMonths.length - 2];
@@ -327,3 +337,4 @@ export default function Financas() {
     </div>
   );
 }
+

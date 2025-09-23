@@ -59,8 +59,20 @@ export default function Agenda() {
   const fetchCompromissos = async () => {
     setLoading(true);
     try {
+      const token = localStorage.getItem("auth_token");
+      const userId = localStorage.getItem("user_id");
+      if (!token || !userId) {
+        window.location.href = "/login";
+        return;
+      }
+
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/compromissos`,
+        `${process.env.NEXT_PUBLIC_API_URL}/compromissos?userId=${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       if (!response.ok) {
         throw new Error("Erro ao buscar dados de compromissos.");
@@ -206,3 +218,4 @@ export default function Agenda() {
     </div>
   );
 }
+

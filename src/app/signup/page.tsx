@@ -14,9 +14,6 @@ export default function SignupPage() {
     confirmPassword: "",
     phone: "",
     address: "",
-    cep: "",
-    state: "",
-    country: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -41,11 +38,9 @@ export default function SignupPage() {
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: formState.name,
           email: formState.email,
@@ -53,23 +48,15 @@ export default function SignupPage() {
           password: formState.password,
           phone: formState.phone,
           address: formState.address,
-          cep: formState.cep,
-          state: formState.state,
-          country: formState.country,
-          plan: "Lucy Free",
         }),
       });
 
       if (!response.ok) {
-        throw new Error(
-          "Erro ao cadastrar usuário. Tente novamente com outro e-mail.",
-        );
+        const data = await response.json();
+        throw new Error(data.message || "Erro ao cadastrar usuário.");
       }
 
-      setSuccess(
-        "Cadastro realizado com sucesso! Você será redirecionado em 3 segundos.",
-      );
-
+      setSuccess("Cadastro realizado com sucesso! Você será redirecionado em 3 segundos.");
       setTimeout(() => {
         router.push("/login");
       }, 3000);
@@ -91,126 +78,23 @@ export default function SignupPage() {
           </div>
         </div>
         <form onSubmit={handleSignup} className="space-y-4">
-          <input
-            type="text"
-            placeholder="Nome completo"
-            name="name"
-            value={formState.name}
-            onChange={handleInputChange}
-            className="w-full p-4 rounded-xl bg-gray-100 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-lucy-purple"
-            disabled={loading}
-            required
-          />
-          <input
-            type="email"
-            placeholder="E-mail"
-            name="email"
-            value={formState.email}
-            onChange={handleInputChange}
-            className="w-full p-4 rounded-xl bg-gray-100 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-lucy-purple"
-            disabled={loading}
-            required
-          />
-          <input
-            type="text"
-            placeholder="Nome de usuário"
-            name="username"
-            value={formState.username}
-            onChange={handleInputChange}
-            className="w-full p-4 rounded-xl bg-gray-100 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-lucy-purple"
-            disabled={loading}
-            required
-          />
-          <input
-            type="password"
-            placeholder="Senha"
-            name="password"
-            value={formState.password}
-            onChange={handleInputChange}
-            className="w-full p-4 rounded-xl bg-gray-100 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-lucy-purple"
-            disabled={loading}
-            required
-          />
-          <input
-            type="password"
-            placeholder="Confirmar Senha"
-            name="confirmPassword"
-            value={formState.confirmPassword}
-            onChange={handleInputChange}
-            className="w-full p-4 rounded-xl bg-gray-100 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-lucy-purple"
-            disabled={loading}
-            required
-          />
-          <input
-            type="text"
-            placeholder="Telefone"
-            name="phone"
-            value={formState.phone}
-            onChange={handleInputChange}
-            className="w-full p-4 rounded-xl bg-gray-100 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-lucy-purple"
-            disabled={loading}
-          />
-          <input
-            type="text"
-            placeholder="Endereço Completo"
-            name="address"
-            value={formState.address}
-            onChange={handleInputChange}
-            className="w-full p-4 rounded-xl bg-gray-100 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-lucy-purple"
-            disabled={loading}
-          />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <input
-              type="text"
-              placeholder="CEP"
-              name="cep"
-              value={formState.cep}
-              onChange={handleInputChange}
-              className="w-full p-4 rounded-xl bg-gray-100 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-lucy-purple"
-              disabled={loading}
-            />
-            <input
-              type="text"
-              placeholder="Estado"
-              name="state"
-              value={formState.state}
-              onChange={handleInputChange}
-              className="w-full p-4 rounded-xl bg-gray-100 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-lucy-purple"
-              disabled={loading}
-            />
-            <input
-              type="text"
-              placeholder="País"
-              name="country"
-              value={formState.country}
-              onChange={handleInputChange}
-              className="w-full p-4 rounded-xl bg-gray-100 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-lucy-purple"
-              disabled={loading}
-            />
-          </div>
+          <input type="text" placeholder="Nome completo" name="name" value={formState.name} onChange={handleInputChange} className="w-full p-4 rounded-xl bg-gray-100 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-lucy-purple" disabled={loading} required />
+          <input type="email" placeholder="E-mail" name="email" value={formState.email} onChange={handleInputChange} className="w-full p-4 rounded-xl bg-gray-100 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-lucy-purple" disabled={loading} required />
+          <input type="text" placeholder="Nome de usuário" name="username" value={formState.username} onChange={handleInputChange} className="w-full p-4 rounded-xl bg-gray-100 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-lucy-purple" disabled={loading} required />
+          <input type="password" placeholder="Senha" name="password" value={formState.password} onChange={handleInputChange} className="w-full p-4 rounded-xl bg-gray-100 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-lucy-purple" disabled={loading} required />
+          <input type="password" placeholder="Confirmar Senha" name="confirmPassword" value={formState.confirmPassword} onChange={handleInputChange} className="w-full p-4 rounded-xl bg-gray-100 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-lucy-purple" disabled={loading} required />
+          <input type="text" placeholder="Telefone" name="phone" value={formState.phone} onChange={handleInputChange} className="w-full p-4 rounded-xl bg-gray-100 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-lucy-purple" disabled={loading} />
+          <input type="text" placeholder="Endereço Completo" name="address" value={formState.address} onChange={handleInputChange} className="w-full p-4 rounded-xl bg-gray-100 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-lucy-purple" disabled={loading} />
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-          {success && (
-            <p className="text-green-500 text-sm text-center">{success}</p>
-          )}
-          <button
-            type="submit"
-            className="w-full p-4 bg-green-400 text-white font-bold rounded-xl shadow-md hover:bg-lucy-purple-dark transition-colors flex items-center justify-center space-x-2"
-            disabled={loading}
-          >
-            {loading ? (
-              <FaSpinner className="animate-spin text-white" />
-            ) : (
-              <FaSignInAlt />
-            )}
+          {success && <p className="text-green-500 text-sm text-center">{success}</p>}
+          <button type="submit" className="w-full p-4 bg-green-400 text-white font-bold rounded-xl shadow-md hover:bg-lucy-purple-dark transition-colors flex items-center justify-center space-x-2" disabled={loading}>
+            {loading ? <FaSpinner className="animate-spin text-white" /> : <FaSignInAlt />}
             <span>Cadastrar</span>
           </button>
         </form>
         <p className="text-center text-sm text-gray-600 mt-4">
           Já tem uma conta?{" "}
-          <Link
-            href="/login"
-            className="text-lucy-purple font-bold hover:underline"
-          >
+          <Link href="/login" className="text-lucy-purple font-bold hover:underline">
             Entrar
           </Link>
         </p>
@@ -218,3 +102,4 @@ export default function SignupPage() {
     </div>
   );
 }
+
