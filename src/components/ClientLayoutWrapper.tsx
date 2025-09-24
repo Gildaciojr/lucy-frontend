@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Navigation from "./Navigation";
 import { Inter } from "next/font/google";
+import { apiFetch } from "@/lib/api";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,19 +20,36 @@ export default function ClientLayoutWrapper({
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
 
-    // 🔒 Se não tem token → só permite /login e /signup
-    if (!token && pathname !== "/login" && pathname !== "/signup") {
-      router.push("/login");
+    if (!token) {
+      // sem token → libera login/signup, força login p/ outras páginas
+      if (pathname !== "/login" && pathname !== "/signup") {
+        router.push("/login");
+      } else {
+        setIsAuthenticated(true);
+      }
       return;
     }
 
-    // 🔑 Se já tem token → não deixa voltar para login/cadastro
-    if (token && (pathname === "/login" || pathname === "/signup")) {
-      router.push("/");
-      return;
-    }
+    // 🔑 Se tem token, valida com backend
+    apiFetch("/auth/me")
+      .then(() => {
+        if (pathname === "/login" || pathname === "/signup") {
+          router.push("/");
+        } else {
+          setIsAuthenticated(true);
+        }
+      })
+      .catch(() => {
+        // token inválido → limpa e libera login/signup
+        localStorage.removeItem("auth_token");
+        localStorage.removeItem("user_id");
 
-    setIsAuthenticated(true);
+        if (pathname !== "/login" && pathname !== "/signup") {
+          router.push("/login");
+        } else {
+          setIsAuthenticated(true);
+        }
+      });
   }, [pathname, router]);
 
   const handleLogout = () => {
@@ -40,7 +58,6 @@ export default function ClientLayoutWrapper({
     router.push("/login");
   };
 
-  // Enquanto não autenticado, mostra loading (exceto em login/signup)
   if (!isAuthenticated && pathname !== "/login" && pathname !== "/signup") {
     return (
       <html lang="pt-BR">
@@ -55,12 +72,12 @@ export default function ClientLayoutWrapper({
     );
   }
 
-  // Telas públicas → renderizam sem layout
+  // Telas públicas
   if (pathname === "/login" || pathname === "/signup") {
     return <>{children}</>;
   }
 
-  // Telas protegidas → renderizam com layout e navigation
+  // Telas protegidas
   return (
     <div className="flex flex-col min-h-screen">
       <main className="flex-1 pb-20">{children}</main>
@@ -74,5 +91,6 @@ export default function ClientLayoutWrapper({
     </div>
   );
 }
+
 
 
