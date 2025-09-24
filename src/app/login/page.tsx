@@ -15,17 +15,26 @@ export default function LoginPage() {
   // 🔑 Se já tem token salvo, valida com /auth/me
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
-    if (!token) return;
+    if (!token) return; // não chama API se não tiver token
 
     const checkSession = async () => {
       try {
-        const me = await apiFetch<{ id: number; username: string }>("/auth/me");
-        if (me?.id) {
-          localStorage.setItem("user_id", String(me.id));
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 3000);
+
+        const res = await apiFetch<{ user: { id: number; username: string } }>(
+          "/auth/me",
+          { signal: controller.signal }
+        );
+
+        clearTimeout(timeout);
+
+        if (res.user) {
+          localStorage.setItem("user_id", String(res.user.id));
           router.replace("/"); // vai direto pro dashboard
         }
       } catch {
-        // token inválido → limpa e deixa na tela de login
+        // token inválido ou timeout → limpa e deixa na tela de login
         localStorage.removeItem("auth_token");
         localStorage.removeItem("user_id");
       }
@@ -100,7 +109,7 @@ export default function LoginPage() {
 
         <p className="mt-6 text-center text-sm">
           Não tem conta?{" "}
-          <a href="/register" className="text-purple-600 hover:underline">
+          <a href="/signup" className="text-purple-600 hover:underline">
             Cadastre-se
           </a>
         </p>
@@ -108,6 +117,7 @@ export default function LoginPage() {
     </div>
   );
 }
+
 
 
 
