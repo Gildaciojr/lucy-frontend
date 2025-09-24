@@ -11,6 +11,7 @@ export default function SignupPage() {
     username: "",
     email: "",
     password: "",
+    phone: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -60,12 +61,53 @@ export default function SignupPage() {
           Criar Conta
         </h1>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <input name="name" placeholder="Nome" value={form.name} onChange={handleChange} required className="w-full p-3 border rounded-lg" />
-          <input name="username" placeholder="Usuário" value={form.username} onChange={handleChange} required className="w-full p-3 border rounded-lg" />
-          <input type="email" name="email" placeholder="E-mail" value={form.email} onChange={handleChange} required className="w-full p-3 border rounded-lg" />
-          <input type="password" name="password" placeholder="Senha" value={form.password} onChange={handleChange} required className="w-full p-3 border rounded-lg" />
+          <input
+            name="name"
+            placeholder="Nome completo"
+            value={form.name}
+            onChange={handleChange}
+            required
+            className="w-full p-3 border rounded-lg"
+          />
+          <input
+            name="username"
+            placeholder="Usuário"
+            value={form.username}
+            onChange={handleChange}
+            required
+            className="w-full p-3 border rounded-lg"
+          />
+          <input
+            type="email"
+            name="email"
+            placeholder="E-mail"
+            value={form.email}
+            onChange={handleChange}
+            required
+            className="w-full p-3 border rounded-lg"
+          />
+          <input
+            type="password"
+            name="password"
+            placeholder="Senha"
+            value={form.password}
+            onChange={handleChange}
+            required
+            className="w-full p-3 border rounded-lg"
+          />
+          <input
+            name="phone"
+            placeholder="Telefone (opcional)"
+            value={form.phone}
+            onChange={handleChange}
+            className="w-full p-3 border rounded-lg"
+          />
 
-          <button type="submit" disabled={loading} className="w-full py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg flex items-center justify-center space-x-2">
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg flex items-center justify-center space-x-2"
+          >
             {loading ? <FaSpinner className="animate-spin" /> : <FaUserPlus />}
             <span>{loading ? "Criando..." : "Criar Conta"}</span>
           </button>
@@ -83,6 +125,7 @@ export default function SignupPage() {
     </div>
   );
 }
+
 
 
 

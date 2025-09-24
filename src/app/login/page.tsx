@@ -6,42 +6,33 @@ import { FaSpinner, FaSignInAlt } from "react-icons/fa";
 import { apiFetch } from "@/lib/api";
 
 export default function LoginPage() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [form, setForm] = useState({ username: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
 
-  // 🔑 Se já tem token salvo, valida com /auth/me
+  // 🔑 Se já tem token válido, redireciona (com timeout de 3s)
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
-    if (!token) return; // não chama API se não tiver token
+    if (!token) return;
 
-    const checkSession = async () => {
-      try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 3000);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
 
-        const res = await apiFetch<{ user: { id: number; username: string } }>(
-          "/auth/me",
-          { signal: controller.signal }
-        );
-
-        clearTimeout(timeout);
-
-        if (res.user) {
-          localStorage.setItem("user_id", String(res.user.id));
-          router.replace("/"); // vai direto pro dashboard
-        }
-      } catch {
-        // token inválido ou timeout → limpa e deixa na tela de login
+    apiFetch<{ id: number; username: string; role: string }>("/auth/me", {
+      signal: controller.signal,
+    })
+      .then(() => router.replace("/"))
+      .catch(() => {
         localStorage.removeItem("auth_token");
         localStorage.removeItem("user_id");
-      }
-    };
-
-    checkSession();
+      })
+      .finally(() => clearTimeout(timeout));
   }, [router]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,17 +40,16 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const data = await apiFetch<{ access_token: string; user: { id: number; username: string } }>(
-        "/auth/login",
-        {
-          method: "POST",
-          body: JSON.stringify({ username, password }),
-        }
-      );
+      const res = await apiFetch<{
+        access_token: string;
+        user: { id: number; username: string };
+      }>("/auth/login", {
+        method: "POST",
+        body: JSON.stringify(form),
+      });
 
-      localStorage.setItem("auth_token", data.access_token);
-      localStorage.setItem("user_id", String(data.user.id));
-
+      localStorage.setItem("auth_token", res.access_token);
+      localStorage.setItem("user_id", res.user.id.toString());
       router.push("/");
     } catch (err: unknown) {
       if (err instanceof Error) setError(err.message);
@@ -72,27 +62,26 @@ export default function LoginPage() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-400 to-purple-600 p-4">
       <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
-        <h1 className="text-3xl font-bold text-center text-purple-700 mb-6">Lucy</h1>
-        <p className="text-center text-gray-500 mb-6">Entre na sua conta</p>
-
+        <h1 className="text-3xl font-bold text-center text-purple-700 mb-6">
+          Entrar
+        </h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
-            type="text"
-            placeholder="Usuário ou E-mail"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            name="username"
+            placeholder="Usuário ou e-mail"
+            value={form.username}
+            onChange={handleChange}
             required
             className="w-full p-3 border rounded-lg"
-            disabled={loading}
           />
           <input
             type="password"
+            name="password"
             placeholder="Senha"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            value={form.password}
+            onChange={handleChange}
             required
             className="w-full p-3 border rounded-lg"
-            disabled={loading}
           />
 
           <button
@@ -117,6 +106,7 @@ export default function LoginPage() {
     </div>
   );
 }
+
 
 
 
