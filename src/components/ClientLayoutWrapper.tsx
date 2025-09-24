@@ -15,40 +15,33 @@ export default function ClientLayoutWrapper({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [isReady, setIsReady] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem("auth_token");
-
-    if (!token) {
-      // sem token → libera login/signup, força login p/ outras páginas
-      if (pathname !== "/login" && pathname !== "/signup") {
-        router.push("/login");
-      } else {
-        setIsAuthenticated(true);
-      }
+    // 🔓 Rotas públicas → liberar imediatamente
+    if (pathname === "/login" || pathname === "/signup") {
+      setIsReady(true);
       return;
     }
 
-    // 🔑 Se tem token, valida com backend
+    // 🔒 Rotas protegidas → verificar token
+    const token = localStorage.getItem("auth_token");
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
+    // valida com backend
     apiFetch("/auth/me")
       .then(() => {
-        if (pathname === "/login" || pathname === "/signup") {
-          router.push("/");
-        } else {
-          setIsAuthenticated(true);
-        }
+        setIsAuthenticated(true);
+        setIsReady(true);
       })
       .catch(() => {
-        // token inválido → limpa e libera login/signup
         localStorage.removeItem("auth_token");
         localStorage.removeItem("user_id");
-
-        if (pathname !== "/login" && pathname !== "/signup") {
-          router.push("/login");
-        } else {
-          setIsAuthenticated(true);
-        }
+        router.push("/login");
       });
   }, [pathname, router]);
 
@@ -58,7 +51,8 @@ export default function ClientLayoutWrapper({
     router.push("/login");
   };
 
-  if (!isAuthenticated && pathname !== "/login" && pathname !== "/signup") {
+  // enquanto decide → loading
+  if (!isReady) {
     return (
       <html lang="pt-BR">
         <body className={inter.className}>
@@ -91,6 +85,7 @@ export default function ClientLayoutWrapper({
     </div>
   );
 }
+
 
 
 
