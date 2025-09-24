@@ -25,13 +25,20 @@ export default function ProfileMenu() {
 
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
-    if (!token) {
+    const pathname = window.location.pathname;
+    const isPublic = pathname === "/login" || pathname === "/signup";
+
+    // 🔒 só redireciona se não tiver token e não estiver em rota pública
+    if (!token && !isPublic) {
       window.location.href = "/login";
       return;
     }
-    apiFetch<User>("/users/me")
-      .then((u) => setUser(u))
-      .catch(() => {});
+
+    if (token) {
+      apiFetch<User>("/users/me")
+        .then((u) => setUser(u))
+        .catch(() => {});
+    }
   }, []);
 
   const logout = () => {
@@ -226,5 +233,6 @@ function PasswordModal() {
     </div>
   );
 }
+
 
 

@@ -1,8 +1,11 @@
+"use client";
+
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import ClientLayoutWrapper from "../components/ClientLayoutWrapper";
 import ProfileMenu from "../components/ProfileMenu";
+import { usePathname } from "next/navigation";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -13,21 +16,26 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
+  const pathname = usePathname();
+  const isPublic = pathname === "/login" || pathname === "/signup";
+
   return (
     <html lang="pt-BR">
       <body className={inter.className}>
-        {/* 🟣 Barra superior com o menu do usuário logado */}
-        <header className="flex justify-end px-6 py-4 bg-purple-600 shadow">
-          <ProfileMenu />
-        </header>
+        {/* Só mostra o menu se NÃO estiver em rotas públicas */}
+        {!isPublic && (
+          <header className="flex justify-end px-6 py-4 bg-purple-600 shadow">
+            <ProfileMenu />
+          </header>
+        )}
 
-        {/* Conteúdo principal */}
         <ClientLayoutWrapper>{children}</ClientLayoutWrapper>
       </body>
     </html>
   );
 }
+
 
