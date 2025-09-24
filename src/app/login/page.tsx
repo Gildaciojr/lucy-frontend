@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FaSpinner, FaSignInAlt } from "react-icons/fa";
 import { apiFetch } from "@/lib/api";
@@ -11,36 +11,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
-
-  // 🔑 Se já tem token salvo, valida com /auth/me (máx 3s)
-  useEffect(() => {
-    const token = localStorage.getItem("auth_token");
-    if (!token) return;
-
-    const checkSession = async () => {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 3000);
-
-      try {
-        const res = await apiFetch<{ user: { id: number; username: string } }>(
-          "/auth/me",
-          { signal: controller.signal }
-        );
-        if (res.user) {
-          localStorage.setItem("user_id", String(res.user.id));
-          router.replace("/"); // vai direto pro dashboard
-        }
-      } catch {
-        // token inválido → limpa
-        localStorage.removeItem("auth_token");
-        localStorage.removeItem("user_id");
-      } finally {
-        clearTimeout(timeout);
-      }
-    };
-
-    checkSession();
-  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,6 +86,7 @@ export default function LoginPage() {
     </div>
   );
 }
+
 
 
 

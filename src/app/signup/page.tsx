@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FaSpinner, FaUserPlus } from "react-icons/fa";
 import { apiFetch } from "@/lib/api";
@@ -16,19 +16,6 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
-
-  // 🔑 Se já tem token → vai pro dashboard
-  useEffect(() => {
-    const token = localStorage.getItem("auth_token");
-    if (!token) return;
-
-    apiFetch<{ id: number; username: string; role: string }>("/auth/me")
-      .then(() => router.replace("/"))
-      .catch(() => {
-        localStorage.removeItem("auth_token");
-        localStorage.removeItem("user_id");
-      });
-  }, [router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -85,6 +72,7 @@ export default function SignupPage() {
     </div>
   );
 }
+
 
 
 
