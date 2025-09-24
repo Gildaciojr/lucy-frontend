@@ -1,5 +1,8 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FaSpinner, FaUserPlus } from "react-icons/fa";
@@ -17,7 +20,7 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const router = useRouter();
 
-  // 🔑 Se já tem token válido, redireciona
+  // 🔑 Se já tem token → vai pro dashboard
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
     if (!token) return;
@@ -61,53 +64,13 @@ export default function SignupPage() {
           Criar Conta
         </h1>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            name="name"
-            placeholder="Nome completo"
-            value={form.name}
-            onChange={handleChange}
-            required
-            className="w-full p-3 border rounded-lg"
-          />
-          <input
-            name="username"
-            placeholder="Usuário"
-            value={form.username}
-            onChange={handleChange}
-            required
-            className="w-full p-3 border rounded-lg"
-          />
-          <input
-            type="email"
-            name="email"
-            placeholder="E-mail"
-            value={form.email}
-            onChange={handleChange}
-            required
-            className="w-full p-3 border rounded-lg"
-          />
-          <input
-            type="password"
-            name="password"
-            placeholder="Senha"
-            value={form.password}
-            onChange={handleChange}
-            required
-            className="w-full p-3 border rounded-lg"
-          />
-          <input
-            name="phone"
-            placeholder="Telefone (opcional)"
-            value={form.phone}
-            onChange={handleChange}
-            className="w-full p-3 border rounded-lg"
-          />
+          <input name="name" placeholder="Nome" value={form.name} onChange={handleChange} required className="w-full p-3 border rounded-lg" />
+          <input name="username" placeholder="Usuário" value={form.username} onChange={handleChange} required className="w-full p-3 border rounded-lg" />
+          <input type="email" name="email" placeholder="E-mail" value={form.email} onChange={handleChange} required className="w-full p-3 border rounded-lg" />
+          <input type="password" name="password" placeholder="Senha" value={form.password} onChange={handleChange} required className="w-full p-3 border rounded-lg" />
+          <input name="phone" placeholder="Telefone" value={form.phone} onChange={handleChange} className="w-full p-3 border rounded-lg" />
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg flex items-center justify-center space-x-2"
-          >
+          <button type="submit" disabled={loading} className="w-full py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg flex items-center justify-center space-x-2">
             {loading ? <FaSpinner className="animate-spin" /> : <FaUserPlus />}
             <span>{loading ? "Criando..." : "Criar Conta"}</span>
           </button>
@@ -125,6 +88,7 @@ export default function SignupPage() {
     </div>
   );
 }
+
 
 
 
