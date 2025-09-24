@@ -19,9 +19,9 @@ export default function LoginPage() {
 
     const checkSession = async () => {
       try {
-        const res = await apiFetch<{ user: { id: number; username: string } }>("/auth/me");
-        if (res.user) {
-          localStorage.setItem("user_id", String(res.user.id));
+        const me = await apiFetch<{ id: number; username: string }>("/auth/me");
+        if (me?.id) {
+          localStorage.setItem("user_id", String(me.id));
           router.replace("/"); // vai direto pro dashboard
         }
       } catch {
@@ -108,6 +108,7 @@ export default function LoginPage() {
     </div>
   );
 }
+
 
 
 

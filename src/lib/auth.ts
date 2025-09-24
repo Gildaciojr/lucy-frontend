@@ -11,10 +11,11 @@ export interface UserProfile {
 
 export async function getCurrentUser(): Promise<UserProfile | null> {
   try {
-    const data = await apiFetch<{ access_token: string; user: UserProfile }>("/auth/me");
-    return data.user;
+    const me = await apiFetch<UserProfile>("/auth/me");
+    return me;
   } catch (err) {
     console.error("Erro ao buscar perfil:", err);
     return null;
   }
 }
+

@@ -26,9 +26,9 @@ function getErrorMessage(payload: unknown, res: Response): string {
   return `Erro ${res.status}`;
 }
 
-// Lê NEXT_PUBLIC_API_URL (deve vir com /api no final)
+// Lê NEXT_PUBLIC_API_URL e NÃO adiciona /api
 const RAW_BASE = process.env.NEXT_PUBLIC_API_URL || "";
-export const API_BASE = normalize(RAW_BASE || "https://api.mylucy.app/api");
+export const API_BASE = normalize(RAW_BASE || "https://api.mylucy.app");
 
 export async function apiFetch<T>(
   path: string,
@@ -70,6 +70,7 @@ export async function apiFetch<T>(
 
   return payload as T;
 }
+
 
 
 
