@@ -52,7 +52,7 @@ interface Gamificacao {
   userId: number;
 }
 
-// ✅ corrigido: adicionamos index signature
+// ✅ index signature para compatibilidade com Recharts
 interface ChartItem {
   name: string;
   uso: number;
@@ -192,8 +192,9 @@ export default function HomePage() {
     <div className="flex flex-col min-h-screen bg-gray-100 relative">
       <Header />
 
-      <main className="flex-1 p-6 flex flex-col items-center mb-20">
-        <div className="w-full max-w-6xl space-y-8">
+      {/* ✅ desktop cheio (sem recuo) e responsivo no mobile */}
+      <main className="flex-1 p-6 flex flex-col mb-20">
+        <div className="w-full space-y-8">
           <MonthSummary data={data} />
 
           {/* 📌 Cards de resumo */}
@@ -348,7 +349,6 @@ export default function HomePage() {
     </div>
   );
 }
-
 
 
 
