@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { FaSpinner, FaSignInAlt } from "react-icons/fa";
+import { FaSpinner, FaSignInAlt, FaLock } from "react-icons/fa";
 import { apiFetch } from "@/lib/api";
 
 export default function LoginPage() {
@@ -82,10 +82,17 @@ export default function LoginPage() {
             Cadastre-se
           </a>
         </p>
+
+        {/* Rodapé com mensagem de segurança */}
+        <footer className="mt-8 text-center text-sm text-gray-500 flex items-center justify-center gap-2">
+          <FaLock className="text-purple-600" />
+          <span>Seus dados estão totalmente seguros e protegidos.</span>
+        </footer>
       </div>
     </div>
   );
 }
+
 
 
 

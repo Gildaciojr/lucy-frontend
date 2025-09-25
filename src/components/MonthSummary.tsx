@@ -2,48 +2,67 @@
 
 import React from "react";
 
-interface SummaryData {
-  totalReceitas: number;
-  totalDespesas: number;
-  saldo: number;
-}
-
 interface MonthSummaryProps {
-  data: SummaryData;
+  data: {
+    totalReceitas: number;
+    totalDespesas: number;
+    saldo: number;
+    proximoCompromisso: string;
+    ultimaIdeia: string;
+  };
 }
 
 export default function MonthSummary({ data }: MonthSummaryProps) {
-  if (!data) {
-    return (
-      <div className="text-center py-6 text-gray-500">
-        Nenhum dado disponível para este mês.
-      </div>
-    );
-  }
-
   return (
-    <div className="p-6 bg-white rounded-xl shadow-md space-y-4">
-      <h2 className="text-xl font-bold text-gray-800">Resumo do Mês</h2>
-      <div className="flex justify-between">
-        <p className="text-green-600 font-semibold">
-          Receitas: R$ {data.totalReceitas.toFixed(2)}
-        </p>
-        <p className="text-red-600 font-semibold">
-          Despesas: R$ {data.totalDespesas.toFixed(2)}
-        </p>
-      </div>
-      <div>
-        <p
-          className={`text-lg font-bold ${
-            data.saldo >= 0 ? "text-green-700" : "text-red-700"
-          }`}
-        >
-          Saldo: R$ {data.saldo.toFixed(2)}
-        </p>
+    <div className="bg-white rounded-xl shadow-md p-6">
+      <h2 className="text-xl font-bold text-purple-700 mb-6">
+        Resumo do Mês
+      </h2>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="p-4 bg-green-50 rounded-lg shadow-sm text-center">
+          <p className="text-sm text-gray-600">Receitas</p>
+          <p className="text-2xl font-bold text-green-600">
+            R$ {data.totalReceitas.toFixed(2)}
+          </p>
+        </div>
+
+        <div className="p-4 bg-red-50 rounded-lg shadow-sm text-center">
+          <p className="text-sm text-gray-600">Despesas</p>
+          <p className="text-2xl font-bold text-red-600">
+            R$ {data.totalDespesas.toFixed(2)}
+          </p>
+        </div>
+
+        <div className="p-4 bg-purple-50 rounded-lg shadow-sm text-center">
+          <p className="text-sm text-gray-600">Saldo</p>
+          <p
+            className={`text-2xl font-bold ${
+              data.saldo >= 0 ? "text-green-600" : "text-red-600"
+            }`}
+          >
+            R$ {data.saldo.toFixed(2)}
+          </p>
+        </div>
+
+        <div className="p-4 bg-yellow-50 rounded-lg shadow-sm text-center">
+          <p className="text-sm text-gray-600">Próximo Compromisso</p>
+          <p className="text-base font-semibold text-gray-800">
+            {data.proximoCompromisso}
+          </p>
+        </div>
+
+        <div className="p-4 bg-blue-50 rounded-lg shadow-sm text-center">
+          <p className="text-sm text-gray-600">Última Ideia</p>
+          <p className="text-base font-semibold text-gray-800">
+            {data.ultimaIdeia}
+          </p>
+        </div>
       </div>
     </div>
   );
 }
+
 
 
 

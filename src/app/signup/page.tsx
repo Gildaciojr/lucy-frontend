@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { FaSpinner, FaUserPlus } from "react-icons/fa";
+import { FaSpinner, FaUserPlus, FaLock } from "react-icons/fa";
 import { apiFetch } from "@/lib/api";
 
 export default function SignupPage() {
@@ -47,15 +47,62 @@ export default function SignupPage() {
         <h1 className="text-3xl font-bold text-center text-purple-700 mb-6">
           Criar Conta
         </h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input name="name" placeholder="Nome" value={form.name} onChange={handleChange} required className="w-full p-3 border rounded-lg" />
-          <input name="username" placeholder="Usuário" value={form.username} onChange={handleChange} required className="w-full p-3 border rounded-lg" />
-          <input type="email" name="email" placeholder="E-mail" value={form.email} onChange={handleChange} required className="w-full p-3 border rounded-lg" />
-          <input type="password" name="password" placeholder="Senha" value={form.password} onChange={handleChange} required className="w-full p-3 border rounded-lg" />
-          <input name="phone" placeholder="Telefone" value={form.phone} onChange={handleChange} className="w-full p-3 border rounded-lg" />
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-4"
+        >
+          <input
+            name="name"
+            placeholder="Nome"
+            value={form.name}
+            onChange={handleChange}
+            required
+            className="w-full p-3 border rounded-lg"
+          />
+          <input
+            name="username"
+            placeholder="Usuário"
+            value={form.username}
+            onChange={handleChange}
+            required
+            className="w-full p-3 border rounded-lg"
+          />
+          <input
+            type="email"
+            name="email"
+            placeholder="E-mail"
+            value={form.email}
+            onChange={handleChange}
+            required
+            className="w-full p-3 border rounded-lg"
+          />
+          <input
+            type="password"
+            name="password"
+            placeholder="Senha"
+            value={form.password}
+            onChange={handleChange}
+            required
+            className="w-full p-3 border rounded-lg"
+          />
+          <input
+            name="phone"
+            placeholder="Telefone"
+            value={form.phone}
+            onChange={handleChange}
+            className="w-full p-3 border rounded-lg"
+          />
 
-          <button type="submit" disabled={loading} className="w-full py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg flex items-center justify-center space-x-2">
-            {loading ? <FaSpinner className="animate-spin" /> : <FaUserPlus />}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg flex items-center justify-center space-x-2"
+          >
+            {loading ? (
+              <FaSpinner className="animate-spin" />
+            ) : (
+              <FaUserPlus />
+            )}
             <span>{loading ? "Criando..." : "Criar Conta"}</span>
           </button>
         </form>
@@ -64,14 +111,24 @@ export default function SignupPage() {
 
         <p className="mt-6 text-center text-sm">
           Já tem conta?{" "}
-          <a href="/login" className="text-purple-600 hover:underline">
+          <a
+            href="/login"
+            className="text-purple-600 hover:underline"
+          >
             Entre aqui
           </a>
         </p>
+
+        {/* Rodapé com mensagem de segurança */}
+        <footer className="mt-8 text-center text-sm text-gray-500 flex items-center justify-center gap-2">
+          <FaLock className="text-purple-600" />
+          <span>Seus dados estão totalmente seguros e protegidos.</span>
+        </footer>
       </div>
     </div>
   );
 }
+
 
 
 

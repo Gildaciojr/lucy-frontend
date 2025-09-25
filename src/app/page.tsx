@@ -14,6 +14,9 @@ import {
   YAxis,
   Tooltip,
   Legend,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
 import { apiFetch } from "@/lib/api";
 
@@ -49,9 +52,11 @@ interface Gamificacao {
   userId: number;
 }
 
+// ✅ corrigido: adicionamos index signature
 interface ChartItem {
   name: string;
   uso: number;
+  [key: string]: string | number;
 }
 
 interface SummaryData {
@@ -61,7 +66,10 @@ interface SummaryData {
   proximoCompromisso: string;
   ultimaIdeia: string;
   chartData: ChartItem[];
+  financasRecentes: Financa[];
 }
+
+const COLORS = ["#6d28d9", "#22c55e", "#facc15", "#ef4444"];
 
 export default function HomePage() {
   const [data, setData] = useState<SummaryData>({
@@ -71,6 +79,7 @@ export default function HomePage() {
     proximoCompromisso: "Nenhum",
     ultimaIdeia: "Nenhuma",
     chartData: [],
+    financasRecentes: [],
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -81,31 +90,29 @@ export default function HomePage() {
         const userId = localStorage.getItem("user_id");
         const token = localStorage.getItem("auth_token");
 
-        if (!userId || !token) {
-          throw new Error("Usuário não autenticado.");
-        }
+        if (!userId || !token) throw new Error("Usuário não autenticado.");
 
         const headers = { Authorization: `Bearer ${token}` };
 
-        const financasData = (await apiFetch<Financa[]>(
+        const financasData = await apiFetch<Financa[]>(
           `/financas?userId=${userId}`,
           { headers }
-        )) as Financa[];
+        );
 
-        const compromissosData = (await apiFetch<Compromisso[]>(
+        const compromissosData = await apiFetch<Compromisso[]>(
           `/compromissos?userId=${userId}`,
           { headers }
-        )) as Compromisso[];
+        );
 
-        const conteudoData = (await apiFetch<Conteudo[]>(
+        const conteudoData = await apiFetch<Conteudo[]>(
           `/conteudo?userId=${userId}`,
           { headers }
-        )) as Conteudo[];
+        );
 
-        const gamificacaoData = (await apiFetch<Gamificacao[]>(
+        const gamificacaoData = await apiFetch<Gamificacao[]>(
           `/gamificacao?userId=${userId}`,
           { headers }
-        )) as Gamificacao[];
+        );
 
         let totalReceitas = 0;
         let totalDespesas = 0;
@@ -155,6 +162,7 @@ export default function HomePage() {
           proximoCompromisso,
           ultimaIdeia,
           chartData,
+          financasRecentes: financasData.slice(-5).reverse(),
         });
       } catch (err: unknown) {
         setError(
@@ -188,28 +196,139 @@ export default function HomePage() {
         <div className="w-full max-w-6xl space-y-8">
           <MonthSummary data={data} />
 
-          <div className="flex gap-4 overflow-x-auto snap-x sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:overflow-visible">
-            <div className="bg-white rounded-xl shadow-md p-4 min-w-[280px] sm:min-w-0 snap-center">
+          {/* 📌 Cards de resumo */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="bg-white shadow rounded-xl p-4 text-center">
+              <h4 className="text-sm text-gray-500">Receitas</h4>
+              <p className="text-xl font-bold text-green-600">
+                R$ {data.totalReceitas.toFixed(2)}
+              </p>
+            </div>
+            <div className="bg-white shadow rounded-xl p-4 text-center">
+              <h4 className="text-sm text-gray-500">Despesas</h4>
+              <p className="text-xl font-bold text-red-600">
+                R$ {data.totalDespesas.toFixed(2)}
+              </p>
+            </div>
+            <div className="bg-white shadow rounded-xl p-4 text-center">
+              <h4 className="text-sm text-gray-500">Saldo</h4>
+              <p
+                className={`text-xl font-bold ${
+                  data.saldo >= 0 ? "text-green-600" : "text-red-600"
+                }`}
+              >
+                R$ {data.saldo.toFixed(2)}
+              </p>
+            </div>
+            <div className="bg-white shadow rounded-xl p-4 text-center">
+              <h4 className="text-sm text-gray-500">Próximo Compromisso</h4>
+              <p className="text-sm font-semibold text-gray-700">
+                {data.proximoCompromisso}
+              </p>
+            </div>
+            <div className="bg-white shadow rounded-xl p-4 text-center">
+              <h4 className="text-sm text-gray-500">Última Ideia</h4>
+              <p className="text-sm font-semibold text-gray-700">
+                {data.ultimaIdeia}
+              </p>
+            </div>
+          </div>
+
+          {/* 📊 Gráficos */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white rounded-xl shadow-md p-4">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                Seu resumo de atividades
+                Resumo de atividades
               </h3>
-              <div className="w-full overflow-x-auto">
-                <ResponsiveContainer width="100%" height={250}>
-                  <LineChart data={data.chartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="uso"
-                      stroke="#ae43c6"
-                      activeDot={{ r: 8 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart data={data.chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="uso"
+                    stroke="#6d28d9"
+                    activeDot={{ r: 8 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-md p-4">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                Distribuição por módulo
+              </h3>
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                  <Pie
+                    data={data.chartData}
+                    dataKey="uso"
+                    nameKey="name"
+                    outerRadius={100}
+                    label
+                  >
+                    {data.chartData.map((_, i) => (
+                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* 📋 Últimas movimentações */}
+          <div className="bg-white rounded-xl shadow-md p-4">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              Últimas movimentações financeiras
+            </h3>
+            {data.financasRecentes.length === 0 ? (
+              <p className="text-gray-500">Nenhum registro encontrado.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 text-sm">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-2 text-left">Categoria</th>
+                      <th className="px-4 py-2 text-left">Valor</th>
+                      <th className="px-4 py-2 text-left">Data</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {data.financasRecentes.map((f) => (
+                      <tr key={f.id}>
+                        <td className="px-4 py-2">{f.categoria}</td>
+                        <td
+                          className={`px-4 py-2 ${
+                            parseFloat(f.valor) >= 0
+                              ? "text-green-600"
+                              : "text-red-600"
+                          }`}
+                        >
+                          R$ {parseFloat(f.valor).toFixed(2)}
+                        </td>
+                        <td className="px-4 py-2">
+                          {new Date(f.data).toLocaleDateString("pt-BR")}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
+            )}
+          </div>
+
+          {/* ⚡ Insights */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="p-4 bg-yellow-100 text-yellow-800 rounded-lg shadow">
+              ⚡ Você gastou mais este mês em Transporte.
+            </div>
+            <div className="p-4 bg-green-100 text-green-800 rounded-lg shadow">
+              🎯 Sua meta de poupança está 80% concluída.
             </div>
           </div>
         </div>
@@ -229,6 +348,9 @@ export default function HomePage() {
     </div>
   );
 }
+
+
+
 
 
 

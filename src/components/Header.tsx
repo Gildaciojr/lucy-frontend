@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Logo from "./Logo";
+import { FaUserCircle, FaSignOutAlt } from "react-icons/fa";
 
 interface User {
   id: number;
@@ -33,11 +34,13 @@ export default function Header() {
       })
       .then((data: User) => {
         setUser(data);
-        setForm({ name: data.name || "", phone: data.phone || "", password: "" });
+        setForm({
+          name: data.name || "",
+          phone: data.phone || "",
+          password: "",
+        });
       })
-      .catch(() => {
-        setUser(null);
-      });
+      .catch(() => setUser(null));
   }, []);
 
   const handleUpdate = async (field: "name" | "phone" | "password") => {
@@ -59,11 +62,11 @@ export default function Header() {
     if (res.ok) {
       const updated = await res.json();
       setUser(updated);
-      setMessage("Dados atualizados com sucesso!");
-      setTimeout(() => setMessage(""), 3000);
+      setMessage("✅ Dados atualizados com sucesso!");
     } else {
-      setMessage("Erro ao atualizar. Tente novamente.");
+      setMessage("❌ Erro ao atualizar. Tente novamente.");
     }
+    setTimeout(() => setMessage(""), 3000);
   };
 
   const handleLogout = () => {
@@ -75,74 +78,99 @@ export default function Header() {
 
   return (
     <header className="w-full flex items-center justify-between px-6 py-4 bg-white shadow-md relative">
+      {/* Logo */}
       <Logo />
+
       {user && (
         <div className="relative">
+          {/* Botão principal */}
           <button
             onClick={() => setOpen(!open)}
-            className="px-4 py-2 bg-purple-500 text-white rounded-lg shadow hover:bg-purple-600 transition"
+            className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-lg shadow hover:bg-purple-600 transition"
           >
-            {user.name || user.username || "Usuário"}
+            <FaUserCircle className="text-lg" />
+            <span className="hidden sm:inline">
+              {user.name || user.username || "Usuário"}
+            </span>
           </button>
 
+          {/* Dropdown */}
           {open && (
-            <div className="absolute right-0 mt-2 w-64 bg-white shadow-lg rounded-lg border p-4 space-y-3 z-50">
+            <div className="absolute right-0 mt-2 w-72 bg-white shadow-xl rounded-xl border p-4 space-y-4 z-50">
+              {/* Nome */}
               <div>
                 <label className="block text-xs text-gray-500">Nome</label>
                 <input
                   type="text"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full p-2 border rounded"
+                  className="w-full p-2 border rounded-lg"
                 />
                 <button
                   onClick={() => handleUpdate("name")}
-                  className="mt-1 text-xs text-blue-600 hover:underline"
+                  className="mt-1 text-xs text-purple-600 hover:underline"
                 >
                   Atualizar Nome
                 </button>
               </div>
 
+              {/* Telefone */}
               <div>
                 <label className="block text-xs text-gray-500">Telefone</label>
                 <input
                   type="text"
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  className="w-full p-2 border rounded"
+                  className="w-full p-2 border rounded-lg"
                 />
                 <button
                   onClick={() => handleUpdate("phone")}
-                  className="mt-1 text-xs text-blue-600 hover:underline"
+                  className="mt-1 text-xs text-purple-600 hover:underline"
                 >
                   Atualizar Telefone
                 </button>
               </div>
 
+              {/* Senha */}
               <div>
                 <label className="block text-xs text-gray-500">Nova Senha</label>
                 <input
                   type="password"
                   value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  className="w-full p-2 border rounded"
+                  onChange={(e) =>
+                    setForm({ ...form, password: e.target.value })
+                  }
+                  className="w-full p-2 border rounded-lg"
                 />
                 <button
                   onClick={() => handleUpdate("password")}
-                  className="mt-1 text-xs text-blue-600 hover:underline"
+                  className="mt-1 text-xs text-purple-600 hover:underline"
                 >
                   Alterar Senha
                 </button>
               </div>
 
+              {/* Logout */}
               <button
                 onClick={handleLogout}
-                className="w-full py-2 mt-2 bg-red-500 text-white rounded hover:bg-red-600"
+                className="w-full flex items-center justify-center gap-2 py-2 mt-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
               >
-                Sair
+                <FaSignOutAlt />
+                <span>Sair</span>
               </button>
 
-              {message && <p className="text-xs text-green-600">{message}</p>}
+              {/* Mensagens */}
+              {message && (
+                <p
+                  className={`text-xs font-medium ${
+                    message.startsWith("✅")
+                      ? "text-green-600"
+                      : "text-red-600"
+                  }`}
+                >
+                  {message}
+                </p>
+              )}
             </div>
           )}
         </div>
@@ -150,6 +178,7 @@ export default function Header() {
     </header>
   );
 }
+
 
 
 
