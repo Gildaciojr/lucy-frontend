@@ -209,9 +209,9 @@ export default function Settings() {
           <h4 className="text-lg font-semibold text-gray-700">Plano Atual</h4>
           <p className="text-xl font-bold text-green-500">{planStatus.plan}</p>
         </div>
-        <div className="flex flex-col space-y-2">
+        <div className="flex flex-col space-y-2 mt-2">
           <a
-            href="https://wa.we/message/RFEVE5SHYGAFG1"
+            href="https://wa.me/5511999892575?text=Olá!%20Gostaria%20de%20atualizar%20meu%20plano."
             target="_blank"
             rel="noopener noreferrer"
             className="p-3 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition-colors text-center"
@@ -223,6 +223,7 @@ export default function Settings() {
     </div>
   );
 }
+
 
 
 
