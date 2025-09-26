@@ -1,21 +1,17 @@
-import createNextIntlPlugin from "next-intl/plugin";
+// frontend/next.config.js
+import createNextIntlPlugin from "next-intl/plugin.js";
 
+// Configura o next-intl para usar o request.ts
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
+/** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
-  i18n: {
-    locales: ["pt", "es"],
-    defaultLocale: "pt",
-    domains: [
-      { domain: "dashboard.mylucy.app", defaultLocale: "pt" },
-      { domain: "www.dashboard.mylucy.app", defaultLocale: "pt" },
-      { domain: "es.dashboard.mylucy.app", defaultLocale: "es" }
-    ]
-  }
+  reactStrictMode: true
+
 };
 
 export default withNextIntl(nextConfig);
+
 
 
 
