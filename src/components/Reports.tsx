@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { FaChartLine, FaSpinner } from "react-icons/fa";
+import { useTranslations } from "next-intl";
 
 interface ReportCardProps {
   icon: React.ReactNode;
@@ -31,19 +32,19 @@ const ReportCard: React.FC<ReportCardProps> = ({
 };
 
 export default function Reports() {
+  const t = useTranslations("reports");
+
   const [reports] = useState([
     {
       id: 1,
-      title: "Relatório Mensal",
-      description:
-        "Gere um relatório detalhado de suas atividades financeiras, agenda e conteúdo do último mês.",
+      title: t("monthly.title"),
+      description: t("monthly.description"),
       type: "monthly",
     },
     {
       id: 2,
-      title: "Relatório Semanal",
-      description:
-        "Visualize um resumo rápido de sua produtividade e gastos da última semana.",
+      title: t("weekly.title"),
+      description: t("weekly.description"),
       type: "weekly",
     },
   ]);
@@ -53,14 +54,16 @@ export default function Reports() {
   const handleExportReport = (reportType: string) => {
     setLoading(true);
     setTimeout(() => {
-      alert(`Relatório ${reportType} gerado e exportado com sucesso!`);
+      alert(t("success", { type: reportType }));
       setLoading(false);
     }, 1500);
   };
 
   return (
     <div className="p-6 bg-gray-50 rounded-lg shadow-inner flex flex-col space-y-6">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Relatórios</h2>
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">
+        {t("title")}
+      </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {reports.map((report) => (
           <ReportCard
@@ -76,11 +79,10 @@ export default function Reports() {
       {loading && (
         <div className="flex items-center justify-center space-x-2 mt-4">
           <FaSpinner className="animate-spin text-blue-500 text-2xl" />
-          <span className="text-gray-700">
-            Gerando e exportando relatório...
-          </span>
+          <span className="text-gray-700">{t("loading")}</span>
         </div>
       )}
     </div>
   );
 }
+

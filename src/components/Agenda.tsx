@@ -8,6 +8,7 @@ import {
   FaChevronLeft,
 } from "react-icons/fa";
 import AgendaForm from "./AgendaForm";
+import { useTranslations } from "next-intl";
 
 interface Compromisso {
   id: number;
@@ -34,7 +35,9 @@ const Card: React.FC<CardProps> = ({
 }) => {
   return (
     <div
-      className={`flex items-center space-x-4 p-4 bg-white rounded-xl shadow-md cursor-pointer transition-transform transform hover:scale-105 ${isActive ? "ring-2 ring-blue-500" : ""}`}
+      className={`flex items-center space-x-4 p-4 bg-white rounded-xl shadow-md cursor-pointer transition-transform transform hover:scale-105 ${
+        isActive ? "ring-2 ring-blue-500" : ""
+      }`}
       onClick={onClick}
     >
       <div className="p-3 rounded-full bg-blue-500 text-white text-xl">
@@ -49,6 +52,8 @@ const Card: React.FC<CardProps> = ({
 };
 
 export default function Agenda() {
+  const t = useTranslations("agenda");
+
   const [compromissos, setCompromissos] = useState<Compromisso[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -75,13 +80,13 @@ export default function Agenda() {
         }
       );
       if (!response.ok) {
-        throw new Error("Erro ao buscar dados de compromissos.");
+        throw new Error(t("error.fetch"));
       }
       const data: Compromisso[] = await response.json();
       setCompromissos(data);
     } catch (err: unknown) {
       if (err instanceof Error) setError(err.message);
-      else setError("Erro desconhecido ao buscar compromissos.");
+      else setError(t("error.unknown"));
     } finally {
       setLoading(false);
     }
@@ -95,13 +100,13 @@ export default function Agenda() {
     return (
       <div className="text-center p-6 flex items-center justify-center space-x-2">
         <FaSpinner className="animate-spin" />
-        <span>Carregando agenda...</span>
+        <span>{t("loading")}</span>
       </div>
     );
   }
 
   if (error) {
-    return <div className="text-center p-6 text-red-500">Erro: {error}</div>;
+    return <div className="text-center p-6 text-red-500">{t("error.label")}: {error}</div>;
   }
 
   const compromissosConcluidos = compromissos.filter((c) => c.concluido).length;
@@ -117,10 +122,10 @@ export default function Agenda() {
     let list: Compromisso[] = [];
 
     if (viewDetails === "concluidos") {
-      title = "Compromissos Concluídos";
+      title = t("completedTasks");
       list = compromissos.filter((c) => c.concluido);
     } else if (viewDetails === "pendentes") {
-      title = "Compromissos Pendentes";
+      title = t("pendingTasks");
       list = compromissos.filter((c) => !c.concluido);
     }
 
@@ -131,7 +136,7 @@ export default function Agenda() {
           className="flex items-center space-x-2 text-blue-500 hover:text-blue-700 font-bold mb-4"
         >
           <FaChevronLeft />
-          <span>Voltar</span>
+          <span>{t("back")}</span>
         </button>
         <h3 className="text-xl font-bold text-gray-800 mb-4">{title}</h3>
         <ul className="space-y-4">
@@ -139,7 +144,7 @@ export default function Agenda() {
             <li key={item.id} className="p-4 bg-gray-100 rounded-lg">
               <p className="font-semibold text-gray-700">{item.titulo}</p>
               <p className="text-sm text-gray-500">
-                Data: {new Date(item.data).toLocaleString("pt-BR")}
+                {t("date")}: {new Date(item.data).toLocaleString("pt-BR")}
               </p>
             </li>
           ))}
@@ -155,27 +160,27 @@ export default function Agenda() {
   return (
     <div className="p-6 bg-gray-50 rounded-lg shadow-inner">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">
-        Agenda e Tarefas
+        {t("title")}
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <Card
           icon={<FaCheckCircle />}
-          title="Concluídos"
+          title={t("completed")}
           value={compromissosConcluidos.toString()}
           onClick={() => setViewDetails("concluidos")}
           isActive={viewDetails === "concluidos"}
         />
         <Card
           icon={<FaClipboardList />}
-          title="Pendentes"
+          title={t("pending")}
           value={compromissosPendentes.toString()}
           onClick={() => setViewDetails("pendentes")}
           isActive={viewDetails === "pendentes"}
         />
         <Card
           icon={<FaClipboardList />}
-          title="Taxa de Conclusão"
+          title={t("completionRate")}
           value={`${taxaConclusaoSemanal}%`}
           onClick={() => {}}
           isActive={false}
@@ -188,7 +193,7 @@ export default function Agenda() {
 
       <div className="bg-white rounded-xl shadow-md p-6 mt-8">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
-          Próximos Compromissos
+          {t("next")}
         </h3>
         {compromissos.length > 0 ? (
           <ul className="space-y-2">
@@ -204,18 +209,23 @@ export default function Agenda() {
                   </p>
                 </div>
                 <span
-                  className={`px-2 py-1 rounded-full text-xs font-bold ${compromisso.concluido ? "bg-green-500 text-white" : "bg-red-500 text-white"}`}
+                  className={`px-2 py-1 rounded-full text-xs font-bold ${
+                    compromisso.concluido
+                      ? "bg-green-500 text-white"
+                      : "bg-red-500 text-white"
+                  }`}
                 >
-                  {compromisso.concluido ? "Concluído" : "Pendente"}
+                  {compromisso.concluido ? t("completed") : t("pending")}
                 </span>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="text-gray-500">Nenhum compromisso futuro agendado.</p>
+          <p className="text-gray-500">{t("none")}</p>
         )}
       </div>
     </div>
   );
 }
+
 

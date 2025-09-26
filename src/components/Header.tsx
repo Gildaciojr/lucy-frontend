@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Logo from "./Logo";
 import { FaUserCircle, FaSignOutAlt } from "react-icons/fa";
+import { useTranslations } from "next-intl";
 
 interface User {
   id: number;
@@ -13,6 +14,8 @@ interface User {
 }
 
 export default function Header() {
+  const t = useTranslations("header");
+
   const [user, setUser] = useState<User | null>(null);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: "", phone: "", password: "" });
@@ -29,7 +32,7 @@ export default function Header() {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => {
-        if (!res.ok) throw new Error("Erro ao buscar usuário");
+        if (!res.ok) throw new Error(t("error.fetchUser"));
         return res.json();
       })
       .then((data: User) => {
@@ -41,7 +44,7 @@ export default function Header() {
         });
       })
       .catch(() => setUser(null));
-  }, []);
+  }, [t]);
 
   const handleUpdate = async (field: "name" | "phone" | "password") => {
     const token = localStorage.getItem("auth_token");
@@ -62,9 +65,9 @@ export default function Header() {
     if (res.ok) {
       const updated = await res.json();
       setUser(updated);
-      setMessage("✅ Dados atualizados com sucesso!");
+      setMessage(t("success.update"));
     } else {
-      setMessage("❌ Erro ao atualizar. Tente novamente.");
+      setMessage(t("error.update"));
     }
     setTimeout(() => setMessage(""), 3000);
   };
@@ -78,28 +81,26 @@ export default function Header() {
 
   return (
     <header className="w-full flex items-center justify-between px-6 py-4 bg-white shadow-md relative">
-      {/* Logo */}
       <Logo />
 
       {user && (
         <div className="relative">
-          {/* Botão principal */}
           <button
             onClick={() => setOpen(!open)}
             className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-lg shadow hover:bg-purple-600 transition"
           >
             <FaUserCircle className="text-lg" />
             <span className="hidden sm:inline">
-              {user.name || user.username || "Usuário"}
+              {user.name || user.username || t("user")}
             </span>
           </button>
 
-          {/* Dropdown */}
           {open && (
             <div className="absolute right-0 mt-2 w-72 bg-white shadow-xl rounded-xl border p-4 space-y-4 z-50">
-              {/* Nome */}
               <div>
-                <label className="block text-xs text-gray-500">Nome</label>
+                <label className="block text-xs text-gray-500">
+                  {t("fields.name")}
+                </label>
                 <input
                   type="text"
                   value={form.name}
@@ -110,13 +111,14 @@ export default function Header() {
                   onClick={() => handleUpdate("name")}
                   className="mt-1 text-xs text-purple-600 hover:underline"
                 >
-                  Atualizar Nome
+                  {t("actions.updateName")}
                 </button>
               </div>
 
-              {/* Telefone */}
               <div>
-                <label className="block text-xs text-gray-500">Telefone</label>
+                <label className="block text-xs text-gray-500">
+                  {t("fields.phone")}
+                </label>
                 <input
                   type="text"
                   value={form.phone}
@@ -127,13 +129,14 @@ export default function Header() {
                   onClick={() => handleUpdate("phone")}
                   className="mt-1 text-xs text-purple-600 hover:underline"
                 >
-                  Atualizar Telefone
+                  {t("actions.updatePhone")}
                 </button>
               </div>
 
-              {/* Senha */}
               <div>
-                <label className="block text-xs text-gray-500">Nova Senha</label>
+                <label className="block text-xs text-gray-500">
+                  {t("fields.password")}
+                </label>
                 <input
                   type="password"
                   value={form.password}
@@ -146,20 +149,18 @@ export default function Header() {
                   onClick={() => handleUpdate("password")}
                   className="mt-1 text-xs text-purple-600 hover:underline"
                 >
-                  Alterar Senha
+                  {t("actions.updatePassword")}
                 </button>
               </div>
 
-              {/* Logout */}
               <button
                 onClick={handleLogout}
                 className="w-full flex items-center justify-center gap-2 py-2 mt-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
               >
                 <FaSignOutAlt />
-                <span>Sair</span>
+                <span>{t("actions.logout")}</span>
               </button>
 
-              {/* Mensagens */}
               {message && (
                 <p
                   className={`text-xs font-medium ${
@@ -178,6 +179,7 @@ export default function Header() {
     </header>
   );
 }
+
 
 
 

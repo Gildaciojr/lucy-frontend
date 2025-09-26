@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { FaStar, FaTrophy, FaSpinner, FaChevronLeft } from "react-icons/fa";
+import { useTranslations } from "next-intl";
 
 interface Gamificacao {
   id: number;
@@ -44,6 +45,7 @@ const Card: React.FC<CardProps> = ({
 };
 
 export default function Gamificacao() {
+  const t = useTranslations("gamificacao");
   const [gamificacoes, setGamificacoes] = useState<Gamificacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -68,13 +70,13 @@ export default function Gamificacao() {
       );
 
       if (!response.ok) {
-        throw new Error("Erro ao buscar dados de gamificação.");
+        throw new Error(t("error.fetch"));
       }
       const data: Gamificacao[] = await response.json();
       setGamificacoes(data);
     } catch (err: unknown) {
       if (err instanceof Error) setError(err.message);
-      else setError("Erro desconhecido ao buscar gamificação.");
+      else setError(t("error.unknown"));
     } finally {
       setLoading(false);
     }
@@ -88,13 +90,13 @@ export default function Gamificacao() {
     return (
       <div className="text-center p-6 flex items-center justify-center space-x-2">
         <FaSpinner className="animate-spin" />
-        <span>Carregando gamificação...</span>
+        <span>{t("loading")}</span>
       </div>
     );
   }
 
   if (error) {
-    return <div className="text-center p-6 text-red-500">Erro: {error}</div>;
+    return <div className="text-center p-6 text-red-500">{t("error.general")}: {error}</div>;
   }
 
   const renderDetails = () => (
@@ -104,10 +106,10 @@ export default function Gamificacao() {
         className="flex items-center space-x-2 text-blue-500 hover:text-blue-700 font-bold mb-4"
       >
         <FaChevronLeft />
-        <span>Voltar</span>
+        <span>{t("back")}</span>
       </button>
       <h3 className="text-xl font-bold text-gray-800 mb-4">
-        Badges Conquistados
+        {t("detailsTitle")}
       </h3>
       <ul className="space-y-4">
         {gamificacoes.length > 0 ? (
@@ -115,12 +117,13 @@ export default function Gamificacao() {
             <li key={badge.id} className="p-4 bg-gray-100 rounded-lg">
               <p className="font-semibold text-gray-700">{badge.badge}</p>
               <p className="text-sm text-gray-500">
-                Data: {new Date(badge.dataConquista).toLocaleDateString("pt-BR")}
+                {t("date")}:{" "}
+                {new Date(badge.dataConquista).toLocaleDateString("pt-BR")}
               </p>
             </li>
           ))
         ) : (
-          <p className="text-gray-500">Nenhum badge conquistado ainda.</p>
+          <p className="text-gray-500">{t("noBadges")}</p>
         )}
       </ul>
     </div>
@@ -134,19 +137,19 @@ export default function Gamificacao() {
 
   return (
     <div className="p-6 bg-gray-50 rounded-lg shadow-inner">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Gamificação</h2>
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">{t("title")}</h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
         <Card
           icon={<FaTrophy />}
-          title="Score de Organização"
+          title={t("score")}
           value={scoreAtual.toString()}
           onClick={() => {}}
           isActive={false}
         />
         <Card
           icon={<FaStar />}
-          title="Badges Conquistados"
+          title={t("badges")}
           value={gamificacoes.length.toString()}
           onClick={() => setViewDetails("all")}
           isActive={viewDetails === "all"}
@@ -154,7 +157,7 @@ export default function Gamificacao() {
       </div>
 
       <div className="bg-white rounded-xl shadow-md p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Badges</h3>
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">{t("badgesList")}</h3>
         {gamificacoes.length > 0 ? (
           <ul className="space-y-2">
             {gamificacoes.map((badge) => (
@@ -168,10 +171,11 @@ export default function Gamificacao() {
             ))}
           </ul>
         ) : (
-          <p className="text-gray-500">Nenhum badge conquistado ainda.</p>
+          <p className="text-gray-500">{t("noBadges")}</p>
         )}
       </div>
     </div>
   );
 }
+
 

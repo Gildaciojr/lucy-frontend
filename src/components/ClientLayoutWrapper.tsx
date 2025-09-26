@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import Navigation from "./Navigation";
+import { useTranslations } from "next-intl";
 
 export default function ClientLayoutWrapper({
   children,
@@ -10,8 +11,8 @@ export default function ClientLayoutWrapper({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const t = useTranslations("layout");
 
-  // Rotas públicas: não mostram Navigation nem botão "Sair"
   const isPublic = pathname === "/login" || pathname === "/signup";
 
   const handleLogout = () => {
@@ -33,12 +34,13 @@ export default function ClientLayoutWrapper({
           onClick={handleLogout}
           className="fixed top-4 right-4 p-2 bg-red-500 text-white font-bold rounded-full shadow-md hover:bg-red-600 transition-colors z-50"
         >
-          Sair
+          {t("logout")}
         </button>
       )}
     </div>
   );
 }
+
 
 
 

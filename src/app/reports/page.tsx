@@ -3,13 +3,8 @@
 import React, { useEffect, useState } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import {
-  FaSpinner,
-  FaDownload,
-  FaWhatsapp,
-  FaEnvelope,
-  FaMoneyBillWave,
-} from "react-icons/fa";
+import { FaSpinner, FaDownload, FaWhatsapp, FaEnvelope, FaMoneyBillWave } from "react-icons/fa";
+import { useTranslations } from "next-intl";
 
 interface Financa {
   id: number;
@@ -19,9 +14,10 @@ interface Financa {
 }
 
 export default function ReportsPage() {
+  const t = useTranslations("reports");
   const [financas, setFinancas] = useState<Financa[]>([]);
   const [loading, setLoading] = useState(true);
-  const [userName, setUserName] = useState<string>("Usuário");
+  const [userName, setUserName] = useState<string>(t("defaultUser"));
 
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
@@ -45,22 +41,22 @@ export default function ReportsPage() {
           }
         );
         const userData = await userRes.json();
-        setUserName(userData.name || "Usuário");
+        setUserName(userData.name || t("defaultUser"));
       } catch (err) {
-        console.error("Erro ao buscar dados do relatório", err);
+        console.error(t("error.fetch"), err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, []);
+  }, [t]);
 
   const gerarPDF = () => {
     const doc = new jsPDF();
     doc.setFontSize(18);
-    doc.setTextColor(108, 43, 217); // Roxo
-    doc.text(`Relatório Financeiro - ${userName}`, 14, 20);
+    doc.setTextColor(108, 43, 217);
+    doc.text(`${t("pdfTitle")} - ${userName}`, 14, 20);
 
     const body = financas.map((f) => [
       f.categoria,
@@ -69,22 +65,12 @@ export default function ReportsPage() {
     ]);
 
     autoTable(doc, {
-      head: [["Categoria", "Valor", "Data"]],
+      head: [[t("table.category"), t("table.value"), t("table.date")]],
       body,
       startY: 30,
-      styles: {
-        fontSize: 10,
-        halign: "center",
-        valign: "middle",
-      },
-      headStyles: {
-        fillColor: [108, 43, 217],
-        textColor: 255,
-        halign: "center",
-      },
-      alternateRowStyles: {
-        fillColor: [245, 240, 255],
-      },
+      styles: { fontSize: 10, halign: "center", valign: "middle" },
+      headStyles: { fillColor: [108, 43, 217], textColor: 255, halign: "center" },
+      alternateRowStyles: { fillColor: [245, 240, 255] },
     });
 
     return doc;
@@ -96,17 +82,13 @@ export default function ReportsPage() {
   };
 
   const handleSendEmail = () => {
-    const assunto = encodeURIComponent("Relatório Financeiro");
-    const corpo = encodeURIComponent(
-      `Olá, segue em anexo meu relatório financeiro - ${userName}.`
-    );
+    const assunto = encodeURIComponent(t("email.subject"));
+    const corpo = encodeURIComponent(t("email.body", { user: userName }));
     window.location.href = `mailto:?subject=${assunto}&body=${corpo}`;
   };
 
   const handleSendWhatsApp = () => {
-    const texto = encodeURIComponent(
-      `Segue meu relatório financeiro - ${userName}`
-    );
+    const texto = encodeURIComponent(t("whatsapp.body", { user: userName }));
     window.open(`https://wa.me/?text=${texto}`, "_blank");
   };
 
@@ -114,15 +96,13 @@ export default function ReportsPage() {
     return (
       <div className="p-6 text-center flex items-center justify-center space-x-2">
         <FaSpinner className="animate-spin" />
-        <span>Gerando relatório...</span>
+        <span>{t("loading")}</span>
       </div>
     );
 
   if (!financas.length)
     return (
-      <div className="p-6 text-center text-gray-500">
-        Nenhuma movimentação financeira encontrada.
-      </div>
+      <div className="p-6 text-center text-gray-500">{t("noData")}</div>
     );
 
   return (
@@ -130,45 +110,34 @@ export default function ReportsPage() {
       <div className="text-center">
         <h1 className="text-3xl font-bold text-purple-700 flex items-center justify-center gap-3">
           <FaMoneyBillWave className="text-green-600" />
-          Relatório de Finanças
+          {t("title")}
         </h1>
-        <p className="text-gray-500 mt-2">
-          Exporte e compartilhe suas informações financeiras com segurança.
-        </p>
+        <p className="text-gray-500 mt-2">{t("subtitle")}</p>
       </div>
 
-      {/* Ações em formato de cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <button
-          onClick={handleDownload}
-          className="flex flex-col items-center justify-center gap-3 p-6 bg-purple-600 text-white rounded-xl shadow-lg hover:bg-purple-700 transition"
-        >
+        <button onClick={handleDownload} className="flex flex-col items-center justify-center gap-3 p-6 bg-purple-600 text-white rounded-xl shadow-lg hover:bg-purple-700 transition">
           <FaDownload className="text-4xl" />
-          <span className="text-lg font-semibold">Baixar PDF</span>
-          <p className="text-sm text-purple-200">Salve no seu dispositivo</p>
+          <span className="text-lg font-semibold">{t("actions.download")}</span>
+          <p className="text-sm text-purple-200">{t("actions.save")}</p>
         </button>
 
-        <button
-          onClick={handleSendEmail}
-          className="flex flex-col items-center justify-center gap-3 p-6 bg-blue-600 text-white rounded-xl shadow-lg hover:bg-blue-700 transition"
-        >
+        <button onClick={handleSendEmail} className="flex flex-col items-center justify-center gap-3 p-6 bg-blue-600 text-white rounded-xl shadow-lg hover:bg-blue-700 transition">
           <FaEnvelope className="text-4xl" />
-          <span className="text-lg font-semibold">Enviar por E-mail</span>
-          <p className="text-sm text-blue-200">Compartilhe com um clique</p>
+          <span className="text-lg font-semibold">{t("actions.email")}</span>
+          <p className="text-sm text-blue-200">{t("actions.share")}</p>
         </button>
 
-        <button
-          onClick={handleSendWhatsApp}
-          className="flex flex-col items-center justify-center gap-3 p-6 bg-green-600 text-white rounded-xl shadow-lg hover:bg-green-700 transition"
-        >
+        <button onClick={handleSendWhatsApp} className="flex flex-col items-center justify-center gap-3 p-6 bg-green-600 text-white rounded-xl shadow-lg hover:bg-green-700 transition">
           <FaWhatsapp className="text-4xl" />
-          <span className="text-lg font-semibold">Enviar por WhatsApp</span>
-          <p className="text-sm text-green-200">Compartilhe rapidamente</p>
+          <span className="text-lg font-semibold">{t("actions.whatsapp")}</span>
+          <p className="text-sm text-green-200">{t("actions.quickShare")}</p>
         </button>
       </div>
     </div>
   );
 }
+
 
 
 

@@ -22,6 +22,7 @@ import {
   YAxis,
 } from "recharts";
 import FinancasForm from "./FinancasForm";
+import { useTranslations } from "next-intl";
 
 interface Financa {
   id: number;
@@ -50,7 +51,9 @@ const FinanceCard: React.FC<FinanceCardProps> = ({
 }) => {
   return (
     <div
-      className={`flex items-center space-x-4 p-4 bg-white rounded-xl shadow-md cursor-pointer transition-transform transform hover:scale-105 ${isActive ? "ring-2 ring-blue-500" : ""}`}
+      className={`flex items-center space-x-4 p-4 bg-white rounded-xl shadow-md cursor-pointer transition-transform transform hover:scale-105 ${
+        isActive ? "ring-2 ring-blue-500" : ""
+      }`}
       onClick={onClick}
     >
       <div className={`p-3 rounded-full text-white ${color}`}>{icon}</div>
@@ -63,6 +66,8 @@ const FinanceCard: React.FC<FinanceCardProps> = ({
 };
 
 export default function Financas() {
+  const t = useTranslations("financas");
+
   const [financas, setFinancas] = useState<Financa[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -90,13 +95,13 @@ export default function Financas() {
       );
 
       if (!response.ok) {
-        throw new Error("Erro ao buscar dados de finanças.");
+        throw new Error(t("error.fetch"));
       }
       const data: Financa[] = await response.json();
       setFinancas(data);
     } catch (err: unknown) {
       if (err instanceof Error) setError(err.message);
-      else setError("Erro desconhecido ao buscar finanças.");
+      else setError(t("error.unknown"));
     } finally {
       setLoading(false);
     }
@@ -110,13 +115,13 @@ export default function Financas() {
     return (
       <div className="text-center p-6 flex items-center justify-center space-x-2">
         <FaSpinner className="animate-spin" />
-        <span>Carregando dados...</span>
+        <span>{t("loading")}</span>
       </div>
     );
   }
 
   if (error) {
-    return <div className="text-center p-6 text-red-500">Erro: {error}</div>;
+    return <div className="text-center p-6 text-red-500">{error}</div>;
   }
 
   const valoresNumericos = financas.map((item) => parseFloat(item.valor));
@@ -152,7 +157,7 @@ export default function Financas() {
 
   const monthlyData = financas.reduce(
     (acc, item) => {
-      const month = new Date(item.data).toLocaleString("pt-BR", {
+      const month = new Date(item.data).toLocaleString("default", {
         month: "short",
         year: "numeric",
       });
@@ -175,6 +180,7 @@ export default function Financas() {
   );
   const currentMonth = sortedMonths[sortedMonths.length - 1];
   const previousMonth = sortedMonths[sortedMonths.length - 2];
+
   const alertMessage = () => {
     if (
       previousMonth &&
@@ -184,7 +190,7 @@ export default function Financas() {
         ((monthlyData[currentMonth] - monthlyData[previousMonth]) /
           monthlyData[previousMonth]) *
         100;
-      return `Você gastou ${diff.toFixed(2)}% a mais este mês em comparação com o mês anterior.`;
+      return t("alert.more", { diff: diff.toFixed(2) });
     }
     return null;
   };
@@ -194,13 +200,13 @@ export default function Financas() {
     let list: Financa[] = [];
 
     if (viewDetails === "all") {
-      title = "Todos os Itens Lançados";
+      title = t("details.all");
       list = financas;
     } else if (viewDetails === "maior") {
-      title = "Item de Maior Gasto";
+      title = t("details.highest");
       list = financas.filter((f) => parseFloat(f.valor) === maiorGasto);
     } else if (viewDetails === "menor") {
-      title = "Item de Menor Gasto";
+      title = t("details.lowest");
       list = financas.filter((f) => parseFloat(f.valor) === menorGasto);
     }
 
@@ -211,20 +217,22 @@ export default function Financas() {
           className="flex items-center space-x-2 text-blue-500 hover:text-blue-700 font-bold mb-4"
         >
           <FaChevronLeft />
-          <span>Voltar</span>
+          <span>{t("back")}</span>
         </button>
         <h3 className="text-xl font-bold text-gray-800 mb-4">{title}</h3>
         <ul className="space-y-4">
           {list.map((item) => (
             <li key={item.id} className="p-4 bg-gray-100 rounded-lg">
               <p className="font-semibold text-gray-700">
-                Categoria: {item.categoria}
+                {t("fields.category")}: {item.categoria}
               </p>
               <p className="text-sm text-gray-500">
-                Valor: R$ {parseFloat(item.valor).toFixed(2).replace(".", ",")}
+                {t("fields.value")}: R${" "}
+                {parseFloat(item.valor).toFixed(2).replace(".", ",")}
               </p>
               <p className="text-sm text-gray-500">
-                Data: {new Date(item.data).toLocaleDateString("pt-BR")}
+                {t("fields.date")}:{" "}
+                {new Date(item.data).toLocaleDateString()}
               </p>
             </li>
           ))}
@@ -240,7 +248,7 @@ export default function Financas() {
   return (
     <div className="p-6 bg-gray-50 rounded-lg shadow-inner">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">
-        Resumo de Finanças
+        {t("title")}
       </h2>
 
       {alertMessage() && (
@@ -248,7 +256,7 @@ export default function Financas() {
           className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded-lg"
           role="alert"
         >
-          <p className="font-bold">Alerta</p>
+          <p className="font-bold">{t("alert.title")}</p>
           <p>{alertMessage()}</p>
         </div>
       )}
@@ -256,7 +264,7 @@ export default function Financas() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <FinanceCard
           icon={<FaMoneyBillWave />}
-          title="Total de Gastos"
+          title={t("cards.total")}
           value={`R$ ${totalGastos.toFixed(2).replace(".", ",")}`}
           color="bg-red-500"
           onClick={() => setViewDetails("all")}
@@ -264,7 +272,7 @@ export default function Financas() {
         />
         <FinanceCard
           icon={<FaArrowUp />}
-          title="Maior Gasto"
+          title={t("cards.highest")}
           value={`R$ ${maiorGasto.toFixed(2).replace(".", ",")}`}
           color="bg-orange-500"
           onClick={() => setViewDetails("maior")}
@@ -272,7 +280,7 @@ export default function Financas() {
         />
         <FinanceCard
           icon={<FaArrowDown />}
-          title="Menor Gasto"
+          title={t("cards.lowest")}
           value={`R$ ${menorGasto.toFixed(2).replace(".", ",")}`}
           color="bg-green-500"
           onClick={() => setViewDetails("menor")}
@@ -280,7 +288,7 @@ export default function Financas() {
         />
         <FinanceCard
           icon={<FaChartPie />}
-          title="Itens Lançados"
+          title={t("cards.items")}
           value={financas.length.toString()}
           color="bg-blue-500"
           onClick={() => setViewDetails("all")}
@@ -294,7 +302,7 @@ export default function Financas() {
 
       <div className="bg-white rounded-xl shadow-md p-6 mb-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
-          Gastos por Categoria
+          {t("charts.categories")}
         </h3>
         <ResponsiveContainer width="100%" height={300}>
           <PieChart>
@@ -322,7 +330,7 @@ export default function Financas() {
 
       <div className="bg-white rounded-xl shadow-md p-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
-          Comparativo Mensal
+          {t("charts.monthly")}
         </h3>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={monthlyChartData}>
@@ -337,4 +345,5 @@ export default function Financas() {
     </div>
   );
 }
+
 

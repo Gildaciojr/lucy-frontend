@@ -2,8 +2,11 @@
 
 import React, { useState } from "react";
 import { FaPlus, FaSpinner } from "react-icons/fa";
+import { useTranslations } from "next-intl";
 
 export default function AgendaForm({ onSave }: { onSave: () => void }) {
+  const t = useTranslations("agendaForm");
+
   const [formState, setFormState] = useState({
     titulo: "",
     data: "",
@@ -45,7 +48,7 @@ export default function AgendaForm({ onSave }: { onSave: () => void }) {
       );
 
       if (!response.ok) {
-        throw new Error("Erro ao adicionar compromisso.");
+        throw new Error(t("error.add"));
       }
       setStatus("success");
       setFormState({ titulo: "", data: "", concluido: false });
@@ -60,7 +63,7 @@ export default function AgendaForm({ onSave }: { onSave: () => void }) {
   return (
     <div className="bg-white rounded-xl shadow-md p-6">
       <h3 className="text-lg font-semibold text-gray-800 mb-4">
-        Lançar Novo Compromisso
+        {t("title")}
       </h3>
       <form onSubmit={handleAddCompromisso} className="space-y-4">
         <input
@@ -68,7 +71,7 @@ export default function AgendaForm({ onSave }: { onSave: () => void }) {
           name="titulo"
           value={formState.titulo}
           onChange={handleInputChange}
-          placeholder="Título do compromisso"
+          placeholder={t("fields.title")}
           required
           className="w-full p-2 rounded-lg border border-gray-300"
         />
@@ -86,19 +89,18 @@ export default function AgendaForm({ onSave }: { onSave: () => void }) {
           disabled={loading}
         >
           {loading ? <FaSpinner className="animate-spin" /> : <FaPlus />}
-          <span>Adicionar</span>
+          <span>{t("actions.add")}</span>
         </button>
         {status === "success" && (
-          <p className="text-green-500">Compromisso adicionado com sucesso!</p>
+          <p className="text-green-500">{t("success")}</p>
         )}
         {status === "error" && (
-          <p className="text-red-500">
-            Erro ao adicionar compromisso. Tente novamente.
-          </p>
+          <p className="text-red-500">{t("error.general")}</p>
         )}
       </form>
     </div>
   );
 }
+
 
 
