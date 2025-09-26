@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { FaLanguage, FaCommentAlt, FaCrown, FaSpinner } from "react-icons/fa";
-import { useTranslations } from "next-intl";
 
 interface User {
   id: number;
@@ -32,15 +31,12 @@ const SettingsCard: React.FC<SettingsCardProps> = ({
 };
 
 export default function Settings() {
-  const t = useTranslations("settings");
-
   const [selectedLanguage, setSelectedLanguage] = useState("pt-BR");
   const [feedback, setFeedback] = useState("");
   const [feedbackRating, setFeedbackRating] = useState<number | null>(null);
   const [feedbackStatus, setFeedbackStatus] = useState<string | null>(null);
   const [planStatus, setPlanStatus] = useState({
     plan: "N/A",
-    expiresIn: "N/A",
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -64,20 +60,16 @@ export default function Settings() {
       );
 
       if (!response.ok) {
-        throw new Error(t("error.user"));
+        throw new Error("Erro ao buscar plano do usuário.");
       }
       const user: User = await response.json();
 
       setPlanStatus({
         plan: user.plan || "Free",
-        expiresIn:
-          user.plan === "Pro" || user.plan === "Premium"
-            ? t("planExpires")
-            : "N/A",
       });
     } catch (err: unknown) {
       if (err instanceof Error) setError(err.message);
-      else setError(t("error.unknown"));
+      else setError("Erro desconhecido.");
     } finally {
       setLoading(false);
     }
@@ -94,7 +86,7 @@ export default function Settings() {
   const handleFeedbackSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (feedbackRating === null) {
-      setFeedbackStatus(t("feedback.selectBefore"));
+      setFeedbackStatus("Selecione uma nota antes de enviar.");
       setTimeout(() => setFeedbackStatus(null), 3000);
       return;
     }
@@ -124,16 +116,16 @@ export default function Settings() {
       );
 
       if (!response.ok) {
-        throw new Error(t("feedback.error"));
+        throw new Error("Erro ao enviar feedback.");
       }
-      setFeedbackStatus(t("feedback.success"));
+      setFeedbackStatus("✅ Feedback enviado com sucesso!");
       setFeedback("");
       setFeedbackRating(null);
     } catch (err: unknown) {
       if (err instanceof Error) {
         setFeedbackStatus(err.message);
       } else {
-        setFeedbackStatus(t("feedback.errorGeneric"));
+        setFeedbackStatus("Erro inesperado ao enviar feedback.");
       }
     } finally {
       setTimeout(() => setFeedbackStatus(null), 3000);
@@ -144,7 +136,7 @@ export default function Settings() {
     return (
       <div className="text-center p-6 flex items-center justify-center space-x-2">
         <FaSpinner className="animate-spin" />
-        <span>{t("loading")}</span>
+        <span>Carregando...</span>
       </div>
     );
   }
@@ -155,21 +147,21 @@ export default function Settings() {
 
   return (
     <div className="p-6 bg-gray-50 rounded-lg shadow-inner flex flex-col space-y-6">
-      <SettingsCard icon={<FaLanguage />} title={t("language.title")}>
+      <SettingsCard icon={<FaLanguage />} title="Idioma">
         <select
           value={selectedLanguage}
           onChange={handleLanguageChange}
           className="p-3 bg-gray-100 rounded-lg text-gray-700 w-full"
         >
-          <option value="pt-BR">{t("language.pt")}</option>
-          <option value="en-US">{t("language.en")}</option>
-          <option value="es-ES">{t("language.es")}</option>
+          <option value="pt-BR">Português</option>
+          <option value="en-US">Inglês</option>
+          <option value="es-ES">Espanhol</option>
         </select>
       </SettingsCard>
 
-      <SettingsCard icon={<FaCommentAlt />} title={t("feedback.title")}>
+      <SettingsCard icon={<FaCommentAlt />} title="Feedback">
         <h4 className="text-lg font-semibold text-gray-700 mb-2">
-          {t("feedback.question")}
+          Como você avalia nossa plataforma?
         </h4>
         <div className="flex justify-between space-x-2">
           {[...Array(11).keys()].map((rating) => (
@@ -194,7 +186,7 @@ export default function Settings() {
           <textarea
             value={feedback}
             onChange={(e) => setFeedback(e.target.value)}
-            placeholder={t("feedback.placeholder")}
+            placeholder="Digite seu comentário..."
             rows={4}
             className="p-3 bg-gray-100 rounded-lg text-gray-700 w-full"
           />
@@ -202,7 +194,7 @@ export default function Settings() {
             type="submit"
             className="p-3 bg-blue-500 text-white font-bold rounded-xl hover:bg-blue-600 transition-colors"
           >
-            {t("feedback.submit")}
+            Enviar Feedback
           </button>
         </form>
         {feedbackStatus && (
@@ -212,29 +204,26 @@ export default function Settings() {
         )}
       </SettingsCard>
 
-      <SettingsCard icon={<FaCrown />} title={t("plan.title")}>
+      <SettingsCard icon={<FaCrown />} title="Plano">
         <div className="flex items-center space-x-4">
-          <h4 className="text-lg font-semibold text-gray-700">
-            {t("plan.current")}
-          </h4>
+          <h4 className="text-lg font-semibold text-gray-700">Plano Atual</h4>
           <p className="text-xl font-bold text-green-500">{planStatus.plan}</p>
         </div>
-        {planStatus.plan === "Pro" || planStatus.plan === "Premium" ? (
-          <p className="text-gray-500">
-            {t("plan.expiresIn")}:{" "}
-            <span className="font-semibold">{planStatus.expiresIn}</span>
-          </p>
-        ) : (
-          <div className="flex flex-col space-y-2">
-            <p className="text-gray-500">{t("plan.free")}</p>
-            <button className="p-3 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition-colors">
-              {t("plan.upgrade")}
-            </button>
-          </div>
-        )}
+        <div className="flex flex-col space-y-2">
+          <a
+            href="https://wa.we/message/RFEVE5SHYGAFG1"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-3 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition-colors text-center"
+          >
+            Gostaria de melhorar seu plano? Fale conosco.
+          </a>
+        </div>
       </SettingsCard>
     </div>
   );
 }
+
+
 
 

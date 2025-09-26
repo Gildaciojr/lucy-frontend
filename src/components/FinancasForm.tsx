@@ -2,10 +2,8 @@
 
 import React, { useState } from "react";
 import { FaPlus, FaSpinner } from "react-icons/fa";
-import { useTranslations } from "next-intl";
 
 export default function FinancasForm({ onSave }: { onSave: () => void }) {
-  const t = useTranslations("financas.form");
   const [formState, setFormState] = useState({
     categoria: "",
     valor: "",
@@ -14,26 +12,26 @@ export default function FinancasForm({ onSave }: { onSave: () => void }) {
   const [status, setStatus] = useState<"success" | "error" | null>(null);
 
   const categorias = [
-    t("categorias.alimentacao"),
-    t("categorias.mercado"),
-    t("categorias.moradia"),
-    t("categorias.transporte"),
-    t("categorias.saude"),
-    t("categorias.educacao"),
-    t("categorias.lazer"),
-    t("categorias.viagem"),
-    t("categorias.cuidados"),
-    t("categorias.vestuario"),
-    t("categorias.pets"),
-    t("categorias.doacoes"),
-    t("categorias.presentes"),
-    t("categorias.assinaturas"),
-    t("categorias.familia"),
-    t("categorias.trabalho"),
-    t("categorias.impostos"),
-    t("categorias.investimentos"),
-    t("categorias.recebimentos"),
-    t("categorias.outros"),
+    "Alimentação",
+    "Mercado",
+    "Moradia",
+    "Transporte",
+    "Saúde",
+    "Educação",
+    "Lazer",
+    "Viagem",
+    "Cuidados Pessoais",
+    "Vestuário",
+    "Pets",
+    "Doações",
+    "Presentes",
+    "Assinaturas",
+    "Família",
+    "Trabalho",
+    "Impostos",
+    "Investimentos",
+    "Recebimentos",
+    "Outros",
   ];
 
   const handleInputChange = (
@@ -70,7 +68,7 @@ export default function FinancasForm({ onSave }: { onSave: () => void }) {
         }
       );
       if (!response.ok) {
-        throw new Error(t("error.add"));
+        throw new Error("Erro ao adicionar finança.");
       }
       setStatus("success");
       setFormState({ categoria: "", valor: "" });
@@ -85,7 +83,7 @@ export default function FinancasForm({ onSave }: { onSave: () => void }) {
   return (
     <div className="bg-white rounded-xl shadow-md p-6">
       <h3 className="text-lg font-semibold text-gray-800 mb-4">
-        {t("title")}
+        Nova Finança
       </h3>
       <form onSubmit={handleAddFinanca} className="space-y-4">
         <select
@@ -95,7 +93,7 @@ export default function FinancasForm({ onSave }: { onSave: () => void }) {
           required
           className="w-full p-2 rounded-lg border border-gray-300"
         >
-          <option value="">{t("selectCategory")}</option>
+          <option value="">Selecione uma categoria</option>
           {categorias.map((categoria, index) => (
             <option key={index} value={categoria}>
               {categoria}
@@ -107,7 +105,7 @@ export default function FinancasForm({ onSave }: { onSave: () => void }) {
           name="valor"
           value={formState.valor}
           onChange={handleInputChange}
-          placeholder={t("placeholder.valor")}
+          placeholder="Digite o valor"
           required
           className="w-full p-2 rounded-lg border border-gray-300"
         />
@@ -117,18 +115,19 @@ export default function FinancasForm({ onSave }: { onSave: () => void }) {
           disabled={loading}
         >
           {loading ? <FaSpinner className="animate-spin" /> : <FaPlus />}
-          <span>{t("add")}</span>
+          <span>Adicionar</span>
         </button>
         {status === "success" && (
-          <p className="text-green-500">{t("success")}</p>
+          <p className="text-green-500">Finança adicionada com sucesso!</p>
         )}
         {status === "error" && (
-          <p className="text-red-500">{t("error.general")}</p>
+          <p className="text-red-500">Erro ao adicionar finança.</p>
         )}
       </form>
     </div>
   );
 }
+
 
 
 

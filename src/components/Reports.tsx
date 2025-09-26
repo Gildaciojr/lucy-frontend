@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { FaChartLine, FaSpinner } from "react-icons/fa";
-import { useTranslations } from "next-intl";
 
 interface ReportCardProps {
   icon: React.ReactNode;
@@ -32,19 +31,17 @@ const ReportCard: React.FC<ReportCardProps> = ({
 };
 
 export default function Reports() {
-  const t = useTranslations("reports");
-
   const [reports] = useState([
     {
       id: 1,
-      title: t("monthly.title"),
-      description: t("monthly.description"),
+      title: "Relatório Mensal",
+      description: "Resumo das atividades do mês.",
       type: "monthly",
     },
     {
       id: 2,
-      title: t("weekly.title"),
-      description: t("weekly.description"),
+      title: "Relatório Semanal",
+      description: "Resumo das atividades da semana.",
       type: "weekly",
     },
   ]);
@@ -54,7 +51,7 @@ export default function Reports() {
   const handleExportReport = (reportType: string) => {
     setLoading(true);
     setTimeout(() => {
-      alert(t("success", { type: reportType }));
+      alert(`✅ ${reportType} exportado com sucesso!`);
       setLoading(false);
     }, 1500);
   };
@@ -62,7 +59,7 @@ export default function Reports() {
   return (
     <div className="p-6 bg-gray-50 rounded-lg shadow-inner flex flex-col space-y-6">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">
-        {t("title")}
+        Relatórios
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {reports.map((report) => (
@@ -79,10 +76,11 @@ export default function Reports() {
       {loading && (
         <div className="flex items-center justify-center space-x-2 mt-4">
           <FaSpinner className="animate-spin text-blue-500 text-2xl" />
-          <span className="text-gray-700">{t("loading")}</span>
+          <span className="text-gray-700">Gerando relatório...</span>
         </div>
       )}
     </div>
   );
 }
+
 

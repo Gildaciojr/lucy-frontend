@@ -2,7 +2,6 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import Navigation from "./Navigation";
-import { useTranslations } from "next-intl";
 
 export default function ClientLayoutWrapper({
   children,
@@ -11,7 +10,6 @@ export default function ClientLayoutWrapper({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const t = useTranslations("layout");
 
   const isPublic = pathname === "/login" || pathname === "/signup";
 
@@ -34,12 +32,13 @@ export default function ClientLayoutWrapper({
           onClick={handleLogout}
           className="fixed top-4 right-4 p-2 bg-red-500 text-white font-bold rounded-full shadow-md hover:bg-red-600 transition-colors z-50"
         >
-          {t("logout")}
+          Sair
         </button>
       )}
     </div>
   );
 }
+
 
 
 

@@ -2,10 +2,8 @@
 
 import React, { useState } from "react";
 import { FaPlus, FaSpinner } from "react-icons/fa";
-import { useTranslations } from "next-intl";
 
 export default function ConteudoForm({ onSave }: { onSave: () => void }) {
-  const t = useTranslations("conteudo.form");
   const [formState, setFormState] = useState({
     ideia: "",
     favorito: false,
@@ -53,7 +51,7 @@ export default function ConteudoForm({ onSave }: { onSave: () => void }) {
         }
       );
       if (!response.ok) {
-        throw new Error(t("error.add"));
+        throw new Error("Erro ao adicionar ideia.");
       }
       setStatus("success");
       setFormState({ ideia: "", favorito: false, agendado: false });
@@ -68,14 +66,14 @@ export default function ConteudoForm({ onSave }: { onSave: () => void }) {
   return (
     <div className="bg-white rounded-xl shadow-md p-6">
       <h3 className="text-lg font-semibold text-gray-800 mb-4">
-        {t("title")}
+        Nova Ideia
       </h3>
       <form onSubmit={handleAddConteudo} className="space-y-4">
         <textarea
           name="ideia"
           value={formState.ideia}
           onChange={handleInputChange}
-          placeholder={t("placeholder")}
+          placeholder="Digite sua ideia aqui..."
           required
           rows={3}
           className="w-full p-2 rounded-lg border border-gray-300"
@@ -89,7 +87,7 @@ export default function ConteudoForm({ onSave }: { onSave: () => void }) {
               onChange={handleCheckboxChange}
               className="form-checkbox h-5 w-5 text-yellow-500 rounded"
             />
-            <span className="text-gray-700">{t("favorite")}</span>
+            <span className="text-gray-700">Favorito</span>
           </label>
           <label className="flex items-center space-x-2">
             <input
@@ -99,7 +97,7 @@ export default function ConteudoForm({ onSave }: { onSave: () => void }) {
               onChange={handleCheckboxChange}
               className="form-checkbox h-5 w-5 text-blue-500 rounded"
             />
-            <span className="text-gray-700">{t("schedule")}</span>
+            <span className="text-gray-700">Agendado</span>
           </label>
         </div>
         <button
@@ -108,17 +106,18 @@ export default function ConteudoForm({ onSave }: { onSave: () => void }) {
           disabled={loading}
         >
           {loading ? <FaSpinner className="animate-spin" /> : <FaPlus />}
-          <span>{t("add")}</span>
+          <span>Adicionar Ideia</span>
         </button>
         {status === "success" && (
-          <p className="text-green-500">{t("success")}</p>
+          <p className="text-green-500">Ideia adicionada com sucesso!</p>
         )}
         {status === "error" && (
-          <p className="text-red-500">{t("error.add")}</p>
+          <p className="text-red-500">Erro ao adicionar ideia.</p>
         )}
       </form>
     </div>
   );
 }
+
 
 

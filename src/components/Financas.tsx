@@ -22,7 +22,6 @@ import {
   YAxis,
 } from "recharts";
 import FinancasForm from "./FinancasForm";
-import { useTranslations } from "next-intl";
 
 interface Financa {
   id: number;
@@ -66,8 +65,6 @@ const FinanceCard: React.FC<FinanceCardProps> = ({
 };
 
 export default function Financas() {
-  const t = useTranslations("financas");
-
   const [financas, setFinancas] = useState<Financa[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -95,13 +92,13 @@ export default function Financas() {
       );
 
       if (!response.ok) {
-        throw new Error(t("error.fetch"));
+        throw new Error("Erro ao buscar finanças.");
       }
       const data: Financa[] = await response.json();
       setFinancas(data);
     } catch (err: unknown) {
       if (err instanceof Error) setError(err.message);
-      else setError(t("error.unknown"));
+      else setError("Erro desconhecido.");
     } finally {
       setLoading(false);
     }
@@ -115,7 +112,7 @@ export default function Financas() {
     return (
       <div className="text-center p-6 flex items-center justify-center space-x-2">
         <FaSpinner className="animate-spin" />
-        <span>{t("loading")}</span>
+        <span>Carregando finanças...</span>
       </div>
     );
   }
@@ -190,7 +187,7 @@ export default function Financas() {
         ((monthlyData[currentMonth] - monthlyData[previousMonth]) /
           monthlyData[previousMonth]) *
         100;
-      return t("alert.more", { diff: diff.toFixed(2) });
+      return `Atenção: seus gastos aumentaram ${diff.toFixed(2)}% em relação ao mês anterior.`;
     }
     return null;
   };
@@ -200,13 +197,13 @@ export default function Financas() {
     let list: Financa[] = [];
 
     if (viewDetails === "all") {
-      title = t("details.all");
+      title = "Todos os Registros";
       list = financas;
     } else if (viewDetails === "maior") {
-      title = t("details.highest");
+      title = "Maior Gasto";
       list = financas.filter((f) => parseFloat(f.valor) === maiorGasto);
     } else if (viewDetails === "menor") {
-      title = t("details.lowest");
+      title = "Menor Gasto";
       list = financas.filter((f) => parseFloat(f.valor) === menorGasto);
     }
 
@@ -217,22 +214,20 @@ export default function Financas() {
           className="flex items-center space-x-2 text-blue-500 hover:text-blue-700 font-bold mb-4"
         >
           <FaChevronLeft />
-          <span>{t("back")}</span>
+          <span>Voltar</span>
         </button>
         <h3 className="text-xl font-bold text-gray-800 mb-4">{title}</h3>
         <ul className="space-y-4">
           {list.map((item) => (
             <li key={item.id} className="p-4 bg-gray-100 rounded-lg">
               <p className="font-semibold text-gray-700">
-                {t("fields.category")}: {item.categoria}
+                Categoria: {item.categoria}
               </p>
               <p className="text-sm text-gray-500">
-                {t("fields.value")}: R${" "}
-                {parseFloat(item.valor).toFixed(2).replace(".", ",")}
+                Valor: R$ {parseFloat(item.valor).toFixed(2).replace(".", ",")}
               </p>
               <p className="text-sm text-gray-500">
-                {t("fields.date")}:{" "}
-                {new Date(item.data).toLocaleDateString()}
+                Data: {new Date(item.data).toLocaleDateString("pt-BR")}
               </p>
             </li>
           ))}
@@ -248,7 +243,7 @@ export default function Financas() {
   return (
     <div className="p-6 bg-gray-50 rounded-lg shadow-inner">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">
-        {t("title")}
+        Controle Financeiro
       </h2>
 
       {alertMessage() && (
@@ -256,7 +251,7 @@ export default function Financas() {
           className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded-lg"
           role="alert"
         >
-          <p className="font-bold">{t("alert.title")}</p>
+          <p className="font-bold">Aviso</p>
           <p>{alertMessage()}</p>
         </div>
       )}
@@ -264,7 +259,7 @@ export default function Financas() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <FinanceCard
           icon={<FaMoneyBillWave />}
-          title={t("cards.total")}
+          title="Total"
           value={`R$ ${totalGastos.toFixed(2).replace(".", ",")}`}
           color="bg-red-500"
           onClick={() => setViewDetails("all")}
@@ -272,7 +267,7 @@ export default function Financas() {
         />
         <FinanceCard
           icon={<FaArrowUp />}
-          title={t("cards.highest")}
+          title="Maior Gasto"
           value={`R$ ${maiorGasto.toFixed(2).replace(".", ",")}`}
           color="bg-orange-500"
           onClick={() => setViewDetails("maior")}
@@ -280,7 +275,7 @@ export default function Financas() {
         />
         <FinanceCard
           icon={<FaArrowDown />}
-          title={t("cards.lowest")}
+          title="Menor Gasto"
           value={`R$ ${menorGasto.toFixed(2).replace(".", ",")}`}
           color="bg-green-500"
           onClick={() => setViewDetails("menor")}
@@ -288,7 +283,7 @@ export default function Financas() {
         />
         <FinanceCard
           icon={<FaChartPie />}
-          title={t("cards.items")}
+          title="Registros"
           value={financas.length.toString()}
           color="bg-blue-500"
           onClick={() => setViewDetails("all")}
@@ -302,7 +297,7 @@ export default function Financas() {
 
       <div className="bg-white rounded-xl shadow-md p-6 mb-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
-          {t("charts.categories")}
+          Gastos por Categoria
         </h3>
         <ResponsiveContainer width="100%" height={300}>
           <PieChart>
@@ -330,7 +325,7 @@ export default function Financas() {
 
       <div className="bg-white rounded-xl shadow-md p-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
-          {t("charts.monthly")}
+          Gastos Mensais
         </h3>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={monthlyChartData}>
@@ -345,5 +340,6 @@ export default function Financas() {
     </div>
   );
 }
+
 
 

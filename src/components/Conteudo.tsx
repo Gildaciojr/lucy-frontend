@@ -8,7 +8,6 @@ import {
   FaChevronLeft,
 } from "react-icons/fa";
 import ConteudoForm from "./ConteudoForm";
-import { useTranslations } from "next-intl";
 
 interface Conteudo {
   id: number;
@@ -53,7 +52,6 @@ const Card: React.FC<CardProps> = ({
 };
 
 export default function Conteudo() {
-  const t = useTranslations("conteudo");
   const [conteudos, setConteudos] = useState<Conteudo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -81,13 +79,13 @@ export default function Conteudo() {
       );
 
       if (!response.ok) {
-        throw new Error(t("error.fetch"));
+        throw new Error("Erro ao buscar ideias.");
       }
       const data: Conteudo[] = await response.json();
       setConteudos(data);
     } catch (err: unknown) {
       if (err instanceof Error) setError(err.message);
-      else setError(t("error.unknown"));
+      else setError("Erro desconhecido.");
     } finally {
       setLoading(false);
     }
@@ -101,13 +99,13 @@ export default function Conteudo() {
     return (
       <div className="text-center p-6 flex items-center justify-center space-x-2">
         <FaSpinner className="animate-spin" />
-        <span>{t("loading")}</span>
+        <span>Carregando ideias...</span>
       </div>
     );
   }
 
   if (error) {
-    return <div className="text-center p-6 text-red-500">{t("error.fetch")}</div>;
+    return <div className="text-center p-6 text-red-500">{error}</div>;
   }
 
   const renderDetails = () => {
@@ -115,10 +113,10 @@ export default function Conteudo() {
     let list: Conteudo[] = [];
 
     if (viewDetails === "favoritos") {
-      title = t("favorites");
+      title = "Ideias Favoritas";
       list = conteudos.filter((c) => c.favorito);
     } else if (viewDetails === "agendados") {
-      title = t("scheduled");
+      title = "Postagens Agendadas";
       list = conteudos.filter((c) => c.agendado);
     }
 
@@ -129,7 +127,7 @@ export default function Conteudo() {
           className="flex items-center space-x-2 text-blue-500 hover:text-blue-700 font-bold mb-4"
         >
           <FaChevronLeft />
-          <span>{t("back")}</span>
+          <span>Voltar</span>
         </button>
         <h3 className="text-xl font-bold text-gray-800 mb-4">{title}</h3>
         <ul className="space-y-4">
@@ -137,7 +135,7 @@ export default function Conteudo() {
             <li key={item.id} className="p-4 bg-gray-100 rounded-lg">
               <p className="font-semibold text-gray-700">{item.ideia}</p>
               <p className="text-sm text-gray-500">
-                {t("createdAt")}: {new Date(item.createdAt).toLocaleDateString()}
+                Criado em: {new Date(item.createdAt).toLocaleDateString("pt-BR")}
               </p>
             </li>
           ))}
@@ -162,20 +160,20 @@ export default function Conteudo() {
   return (
     <div className="p-6 bg-gray-50 rounded-lg shadow-inner">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">
-        {t("title")}
+        Gestão de Conteúdo
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
         <Card
           icon={<FaHeart />}
-          title={t("favorites")}
+          title="Favoritas"
           value={ideiasFavoritas.toString()}
           onClick={() => setViewDetails("favoritos")}
           isActive={viewDetails === "favoritos"}
         />
         <Card
           icon={<FaCalendarCheck />}
-          title={t("scheduled")}
+          title="Agendadas"
           value={postsAgendados.toString()}
           onClick={() => setViewDetails("agendados")}
           isActive={viewDetails === "agendados"}
@@ -188,7 +186,7 @@ export default function Conteudo() {
 
       <div className="bg-white rounded-xl shadow-md p-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
-          {t("recentIdeas")}
+          Ideias Recentes
         </h3>
         {ideiasRecentes.length > 0 ? (
           <ul className="space-y-2">
@@ -202,10 +200,11 @@ export default function Conteudo() {
             ))}
           </ul>
         ) : (
-          <p className="text-gray-500">{t("noRecentIdeas")}</p>
+          <p className="text-gray-500">Nenhuma ideia recente.</p>
         )}
       </div>
     </div>
   );
 }
+
 

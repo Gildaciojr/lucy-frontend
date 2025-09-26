@@ -10,7 +10,6 @@ import {
   FaCog,
   FaFileAlt,
 } from "react-icons/fa";
-import { useTranslations } from "next-intl";
 
 interface NavItemProps {
   href: string;
@@ -31,20 +30,19 @@ const NavItem: React.FC<NavItemProps> = ({ href, icon, text }) => {
 };
 
 export default function Navigation() {
-  const t = useTranslations("nav");
-
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-purple-200 shadow-xl z-50 rounded-t-2xl">
       <div className="mx-auto flex justify-around">
-        <NavItem href="/" icon={<FaHome />} text={t("home")} />
-        <NavItem href="/financas" icon={<FaMoneyBillWave />} text={t("financas")} />
-        <NavItem href="/agenda" icon={<FaCalendarAlt />} text={t("agenda")} />
-        <NavItem href="/conteudo" icon={<FaLightbulb />} text={t("conteudo")} />
-        <NavItem href="/gamificacao" icon={<FaTrophy />} text={t("gamificacao")} />
-        <NavItem href="/reports" icon={<FaFileAlt />} text={t("reports")} />
-        <NavItem href="/settings" icon={<FaCog />} text={t("settings")} />
+        <NavItem href="/" icon={<FaHome />} text="Início" />
+        <NavItem href="/financas" icon={<FaMoneyBillWave />} text="Finanças" />
+        <NavItem href="/agenda" icon={<FaCalendarAlt />} text="Agenda" />
+        <NavItem href="/conteudo" icon={<FaLightbulb />} text="Conteúdo" />
+        <NavItem href="/gamificacao" icon={<FaTrophy />} text="Gamificação" />
+        <NavItem href="/reports" icon={<FaFileAlt />} text="Relatórios" />
+        <NavItem href="/settings" icon={<FaCog />} text="Configurações" />
       </div>
     </nav>
   );
 }
+
 
