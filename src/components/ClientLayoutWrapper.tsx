@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Navigation from "./Navigation";
 
@@ -10,12 +11,23 @@ export default function ClientLayoutWrapper({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [ready, setReady] = useState(false);
 
-  // Definindo rotas públicas (login/cadastro)
+  // Definir rotas públicas (sem login)
   const isPublic =
-    pathname === "/login" ||
-    pathname === "/signup" ||
-    pathname === "/register";
+    pathname === "/login" || pathname === "/signup" || pathname === "/register";
+
+  useEffect(() => {
+    // só roda no cliente
+    if (!isPublic) {
+      const token = localStorage.getItem("auth_token");
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+    }
+    setReady(true);
+  }, [isPublic, router]);
 
   const handleLogout = () => {
     try {
@@ -24,6 +36,14 @@ export default function ClientLayoutWrapper({
     } catch {}
     router.push("/login");
   };
+
+  if (!ready) {
+    return (
+      <div className="flex items-center justify-center h-screen text-gray-600">
+        Carregando...
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -42,6 +62,7 @@ export default function ClientLayoutWrapper({
     </div>
   );
 }
+
 
 
 
