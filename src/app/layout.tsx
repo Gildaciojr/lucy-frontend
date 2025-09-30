@@ -3,7 +3,6 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import ClientLayoutWrapper from "../components/ClientLayoutWrapper";
 import Header from "../components/Header";
-import { usePathname } from "next/navigation";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -17,21 +16,16 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
-  const isPublic =
-    pathname.startsWith("/login") ||
-    pathname.startsWith("/signup") ||
-    pathname.startsWith("/register");
-
   return (
     <html lang="pt">
       <body className={inter.className}>
-        {!isPublic && <Header />}
+        <Header />
         <ClientLayoutWrapper>{children}</ClientLayoutWrapper>
       </body>
     </html>
   );
 }
+
 
 
 
