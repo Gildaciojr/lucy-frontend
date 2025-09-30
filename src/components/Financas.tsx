@@ -85,13 +85,14 @@ export default function Financas() {
       }
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/financas?userId=${userId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+  `${process.env.NEXT_PUBLIC_API_URL}/financas`,
+  {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+);
+
 
       if (!response.ok) {
         throw new Error("Erro ao buscar finanças.");
