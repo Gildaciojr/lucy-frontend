@@ -25,7 +25,7 @@ interface Financa {
   categoria: string;
   valor: string;
   data: string;
-  userId: number;
+  tipo?: "receita" | "despesa"; // opcional
 }
 
 interface Compromisso {
@@ -33,7 +33,6 @@ interface Compromisso {
   titulo: string;
   data: string;
   concluido: boolean;
-  userId: number;
 }
 
 interface Conteudo {
@@ -42,17 +41,14 @@ interface Conteudo {
   favorito: boolean;
   agendado: boolean;
   createdAt: string;
-  userId: number;
 }
 
 interface Gamificacao {
   id: number;
   badge: string;
   dataConquista: string;
-  userId: number;
 }
 
-// ✅ index signature para compatibilidade com Recharts
 interface ChartItem {
   name: string;
   uso: number;
@@ -87,32 +83,16 @@ export default function HomePage() {
   useEffect(() => {
     const fetchSummary = async () => {
       try {
-        const userId = localStorage.getItem("user_id");
         const token = localStorage.getItem("auth_token");
-
-        if (!userId || !token) throw new Error("Usuário não autenticado.");
+        if (!token) throw new Error("Usuário não autenticado.");
 
         const headers = { Authorization: `Bearer ${token}` };
 
-        const financasData = await apiFetch<Financa[]>(
-          `/financas?userId=${userId}`,
-          { headers }
-        );
-
-        const compromissosData = await apiFetch<Compromisso[]>(
-          `/compromissos?userId=${userId}`,
-          { headers }
-        );
-
-        const conteudoData = await apiFetch<Conteudo[]>(
-          `/conteudo?userId=${userId}`,
-          { headers }
-        );
-
-        const gamificacaoData = await apiFetch<Gamificacao[]>(
-          `/gamificacao?userId=${userId}`,
-          { headers }
-        );
+        // 🔄 Agora as rotas não recebem mais userId na query
+        const financasData = await apiFetch<Financa[]>("/financas", { headers });
+        const compromissosData = await apiFetch<Compromisso[]>("/compromissos", { headers });
+        const conteudoData = await apiFetch<Conteudo[]>("/conteudo", { headers });
+        const gamificacaoData = await apiFetch<Gamificacao[]>("/gamificacao", { headers });
 
         let totalReceitas = 0;
         let totalDespesas = 0;
@@ -120,8 +100,11 @@ export default function HomePage() {
         financasData.forEach((f) => {
           const valor = parseFloat(f.valor);
           if (!Number.isNaN(valor)) {
-            if (valor >= 0) totalReceitas += valor;
-            else totalDespesas += Math.abs(valor);
+            if (f.tipo === "despesa" || valor < 0) {
+              totalDespesas += Math.abs(valor);
+            } else {
+              totalReceitas += valor;
+            }
           }
         });
 
@@ -131,10 +114,7 @@ export default function HomePage() {
           compromissosData.length > 0
             ? compromissosData
                 .slice()
-                .sort(
-                  (a, b) =>
-                    new Date(a.data).getTime() - new Date(b.data).getTime()
-                )[0].titulo
+                .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())[0].titulo
             : "Nenhum agendado";
 
         const ultimaIdeia =
@@ -143,8 +123,7 @@ export default function HomePage() {
                 .slice()
                 .sort(
                   (a, b) =>
-                    new Date(b.createdAt).getTime() -
-                    new Date(a.createdAt).getTime()
+                    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
                 )[0].ideia
             : "Nenhuma ideia";
 
@@ -165,11 +144,7 @@ export default function HomePage() {
           financasRecentes: financasData.slice(-5).reverse(),
         });
       } catch (err: unknown) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Erro desconhecido ao buscar resumo."
-        );
+        setError(err instanceof Error ? err.message : "Erro desconhecido ao buscar resumo.");
       } finally {
         setLoading(false);
       }
@@ -185,14 +160,12 @@ export default function HomePage() {
       </div>
     );
 
-  if (error)
-    return <div className="text-center p-4 text-red-500">Erro: {error}</div>;
+  if (error) return <div className="text-center p-4 text-red-500">Erro: {error}</div>;
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100 relative">
       <Header />
 
-      {/* ✅ desktop cheio (sem recuo) e responsivo no mobile */}
       <main className="flex-1 p-6 flex flex-col mb-20">
         <div className="w-full space-y-8">
           <MonthSummary data={data} />
@@ -349,6 +322,7 @@ export default function HomePage() {
     </div>
   );
 }
+
 
 
 

@@ -19,25 +19,19 @@ export default function ReportsPage() {
 
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
-    const userId = localStorage.getItem("user_id");
-
-    if (!userId || !token) return;
+    if (!token) return;
 
     const fetchData = async () => {
       try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/financas?userId=${userId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/financas`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         const data = await res.json();
         setFinancas(data);
 
-        const userRes = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/users/${userId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const userRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         const userData = await userRes.json();
         setUserName(userData.name || "Usuário");
       } catch (err) {
@@ -67,7 +61,7 @@ export default function ReportsPage() {
       body,
       startY: 30,
       styles: { fontSize: 10, halign: "center", valign: "middle" },
-      headStyles: { fillColor: [108, 43, 217], textColor: 255, halign: "center" },
+      headStyles: { fillColor: [108, 43, 217], textColor: 255 },
       alternateRowStyles: { fillColor: [245, 240, 255] },
     });
 
@@ -133,6 +127,7 @@ export default function ReportsPage() {
     </div>
   );
 }
+
 
 
 

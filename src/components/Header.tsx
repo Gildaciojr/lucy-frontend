@@ -6,9 +6,9 @@ import { FaUserCircle, FaSignOutAlt } from "react-icons/fa";
 
 interface User {
   id: number;
-  username: string;
+  name: string;
+  username?: string;
   email?: string;
-  name?: string;
   phone?: string;
 }
 
@@ -20,12 +20,9 @@ export default function Header() {
 
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
-    if (!token) {
-      window.location.href = "/login";
-      return;
-    }
+    if (!token) return;
 
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => {
@@ -34,11 +31,7 @@ export default function Header() {
       })
       .then((data: User) => {
         setUser(data);
-        setForm({
-          name: data.name || "",
-          phone: data.phone || "",
-          password: "",
-        });
+        setForm({ name: data.name || "", phone: data.phone || "", password: "" });
       })
       .catch(() => setUser(null));
   }, []);
@@ -87,14 +80,12 @@ export default function Header() {
             className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-lg shadow hover:bg-purple-600 transition"
           >
             <FaUserCircle className="text-lg" />
-            <span className="hidden sm:inline">
-              {user.name || user.username || "Usuário"}
-            </span>
+            <span className="hidden sm:inline">{user.name || user.username || "Usuário"}</span>
           </button>
 
           {open && (
             <div className="absolute right-0 mt-2 w-72 bg-white shadow-xl rounded-xl border p-4 space-y-4 z-50">
-              {/* Atualizações */}
+              {/* Nome */}
               <div>
                 <label className="block text-xs text-gray-500">Nome</label>
                 <input
@@ -103,14 +94,12 @@ export default function Header() {
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   className="w-full p-2 border rounded-lg"
                 />
-                <button
-                  onClick={() => handleUpdate("name")}
-                  className="mt-1 text-xs text-purple-600 hover:underline"
-                >
+                <button onClick={() => handleUpdate("name")} className="mt-1 text-xs text-purple-600 hover:underline">
                   Atualizar Nome
                 </button>
               </div>
 
+              {/* Telefone */}
               <div>
                 <label className="block text-xs text-gray-500">Telefone</label>
                 <input
@@ -119,33 +108,26 @@ export default function Header() {
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
                   className="w-full p-2 border rounded-lg"
                 />
-                <button
-                  onClick={() => handleUpdate("phone")}
-                  className="mt-1 text-xs text-purple-600 hover:underline"
-                >
+                <button onClick={() => handleUpdate("phone")} className="mt-1 text-xs text-purple-600 hover:underline">
                   Atualizar Telefone
                 </button>
               </div>
 
+              {/* Senha */}
               <div>
                 <label className="block text-xs text-gray-500">Senha</label>
                 <input
                   type="password"
                   value={form.password}
-                  onChange={(e) =>
-                    setForm({ ...form, password: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
                   className="w-full p-2 border rounded-lg"
                 />
-                <button
-                  onClick={() => handleUpdate("password")}
-                  className="mt-1 text-xs text-purple-600 hover:underline"
-                >
+                <button onClick={() => handleUpdate("password")} className="mt-1 text-xs text-purple-600 hover:underline">
                   Atualizar Senha
                 </button>
               </div>
 
-              {/* Logout */}
+              {/* Sair */}
               <button
                 onClick={handleLogout}
                 className="w-full flex items-center justify-center gap-2 py-2 mt-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
@@ -170,6 +152,7 @@ export default function Header() {
     </header>
   );
 }
+
 
 
 
