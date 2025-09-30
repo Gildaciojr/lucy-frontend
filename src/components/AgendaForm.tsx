@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { FaPlus, FaSpinner } from "react-icons/fa";
+import { FaPlus, FaSpinner, FaCheckCircle } from "react-icons/fa";
 
 export default function AgendaForm({ onSave }: { onSave: () => void }) {
   const [formState, setFormState] = useState({
@@ -15,20 +15,30 @@ export default function AgendaForm({ onSave }: { onSave: () => void }) {
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    const { name, value } = e.target;
-    setFormState((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target as HTMLInputElement;
+    setFormState((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
   };
 
   const handleAddCompromisso = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setStatus(null);
+
     try {
       const token = localStorage.getItem("auth_token");
-      const userId = localStorage.getItem("user_id");
-
-      if (!token || !userId) {
+      if (!token) {
         window.location.href = "/login";
+        return;
+      }
+
+      // 🔹 validação: se a data já passou e o usuário não marcou concluído
+      const dataSelecionada = new Date(formState.data);
+      if (dataSelecionada < new Date() && !formState.concluido) {
+        alert("Compromissos com data no passado devem ser marcados como concluídos.");
+        setLoading(false);
         return;
       }
 
@@ -40,13 +50,12 @@ export default function AgendaForm({ onSave }: { onSave: () => void }) {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ ...formState, userId: parseInt(userId, 10) }),
+          body: JSON.stringify(formState),
         }
       );
 
-      if (!response.ok) {
-        throw new Error("Erro ao adicionar compromisso.");
-      }
+      if (!response.ok) throw new Error("Erro ao adicionar compromisso.");
+
       setStatus("success");
       setFormState({ titulo: "", data: "", concluido: false });
       onSave();
@@ -63,6 +72,7 @@ export default function AgendaForm({ onSave }: { onSave: () => void }) {
         Novo Compromisso
       </h3>
       <form onSubmit={handleAddCompromisso} className="space-y-4">
+        {/* título */}
         <input
           type="text"
           name="titulo"
@@ -72,6 +82,8 @@ export default function AgendaForm({ onSave }: { onSave: () => void }) {
           required
           className="w-full p-2 rounded-lg border border-gray-300"
         />
+
+        {/* data */}
         <input
           type="datetime-local"
           name="data"
@@ -80,6 +92,20 @@ export default function AgendaForm({ onSave }: { onSave: () => void }) {
           required
           className="w-full p-2 rounded-lg border border-gray-300"
         />
+
+        {/* marcar concluído */}
+        <label className="flex items-center space-x-2 text-sm text-gray-700">
+          <input
+            type="checkbox"
+            name="concluido"
+            checked={formState.concluido}
+            onChange={handleInputChange}
+            className="w-4 h-4"
+          />
+          <span>Já está concluído?</span>
+        </label>
+
+        {/* botão */}
         <button
           type="submit"
           className="w-full p-3 bg-blue-500 text-white font-bold rounded-xl flex items-center justify-center space-x-2"
@@ -88,16 +114,25 @@ export default function AgendaForm({ onSave }: { onSave: () => void }) {
           {loading ? <FaSpinner className="animate-spin" /> : <FaPlus />}
           <span>Adicionar Compromisso</span>
         </button>
+
+        {/* feedback */}
         {status === "success" && (
-          <p className="text-green-500">Compromisso adicionado com sucesso!</p>
+          <p className="flex items-center gap-1 text-green-600 font-medium mt-2">
+            <FaCheckCircle /> Compromisso adicionado com sucesso!
+          </p>
         )}
         {status === "error" && (
-          <p className="text-red-500">Erro ao adicionar compromisso.</p>
+          <p className="text-red-500 font-medium mt-2">
+            Erro ao adicionar compromisso. Tente novamente.
+          </p>
         )}
       </form>
     </div>
   );
 }
+
+
+
 
 
 

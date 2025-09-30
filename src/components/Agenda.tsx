@@ -6,6 +6,7 @@ import {
   FaClipboardList,
   FaSpinner,
   FaChevronLeft,
+  FaUndo,
 } from "react-icons/fa";
 import AgendaForm from "./AgendaForm";
 
@@ -62,30 +63,58 @@ export default function Agenda() {
     setLoading(true);
     try {
       const token = localStorage.getItem("auth_token");
-      const userId = localStorage.getItem("user_id");
-      if (!token || !userId) {
+      if (!token) {
         window.location.href = "/login";
         return;
       }
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/compromissos?userId=${userId}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/compromissos`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
-      if (!response.ok) {
-        throw new Error("Erro ao buscar compromissos.");
-      }
+
+      if (!response.ok) throw new Error("Erro ao buscar compromissos.");
+
       const data: Compromisso[] = await response.json();
       setCompromissos(data);
     } catch (err: unknown) {
-      if (err instanceof Error) setError(err.message);
-      else setError("Erro desconhecido.");
+      setError(err instanceof Error ? err.message : "Erro desconhecido.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleConcluir = async (id: number) => {
+    try {
+      const token = localStorage.getItem("auth_token");
+      if (!token) return;
+
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compromissos/${id}/concluir`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      fetchCompromissos();
+    } catch {
+      alert("Erro ao concluir compromisso.");
+    }
+  };
+
+  const handleReabrir = async (id: number) => {
+    try {
+      const token = localStorage.getItem("auth_token");
+      if (!token) return;
+
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compromissos/${id}/reabrir`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      fetchCompromissos();
+    } catch {
+      alert("Erro ao reabrir compromisso.");
     }
   };
 
@@ -103,17 +132,13 @@ export default function Agenda() {
   }
 
   if (error) {
-    return (
-      <div className="text-center p-6 text-red-500">
-        Erro ao carregar: {error}
-      </div>
-    );
+    return <div className="text-center p-6 text-red-500">Erro: {error}</div>;
   }
 
   const compromissosConcluidos = compromissos.filter((c) => c.concluido).length;
   const compromissosPendentes = compromissos.filter((c) => !c.concluido).length;
   const totalCompromissos = compromissosConcluidos + compromissosPendentes;
-  const taxaConclusaoSemanal =
+  const taxaConclusao =
     totalCompromissos > 0
       ? ((compromissosConcluidos / totalCompromissos) * 100).toFixed(0)
       : "0";
@@ -142,11 +167,33 @@ export default function Agenda() {
         <h3 className="text-xl font-bold text-gray-800 mb-4">{title}</h3>
         <ul className="space-y-4">
           {list.map((item) => (
-            <li key={item.id} className="p-4 bg-gray-100 rounded-lg">
-              <p className="font-semibold text-gray-700">{item.titulo}</p>
-              <p className="text-sm text-gray-500">
-                Data: {new Date(item.data).toLocaleString("pt-BR")}
-              </p>
+            <li
+              key={item.id}
+              className="p-4 bg-gray-100 rounded-lg flex justify-between items-center"
+            >
+              <div>
+                <p className="font-semibold text-gray-700">{item.titulo}</p>
+                <p className="text-sm text-gray-500">
+                  {new Date(item.data).toLocaleString("pt-BR")}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                {item.concluido ? (
+                  <button
+                    onClick={() => handleReabrir(item.id)}
+                    className="px-3 py-1 rounded bg-yellow-500 text-white text-sm flex items-center gap-1 hover:bg-yellow-600"
+                  >
+                    <FaUndo /> Reabrir
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleConcluir(item.id)}
+                    className="px-3 py-1 rounded bg-green-600 text-white text-sm flex items-center gap-1 hover:bg-green-700"
+                  >
+                    <FaCheckCircle /> Concluir
+                  </button>
+                )}
+              </div>
             </li>
           ))}
         </ul>
@@ -182,7 +229,7 @@ export default function Agenda() {
         <Card
           icon={<FaClipboardList />}
           title="Taxa de Conclusão"
-          value={`${taxaConclusaoSemanal}%`}
+          value={`${taxaConclusao}%`}
           onClick={() => {}}
           isActive={false}
         />
@@ -198,26 +245,31 @@ export default function Agenda() {
         </h3>
         {compromissos.length > 0 ? (
           <ul className="space-y-2">
-            {compromissos.map((compromisso) => (
+            {compromissos.map((c) => (
               <li
-                key={compromisso.id}
+                key={c.id}
                 className="p-3 bg-gray-100 rounded-lg text-gray-700 flex items-center justify-between"
               >
                 <div>
-                  <p className="font-semibold">{compromisso.titulo}</p>
+                  <p className="font-semibold">{c.titulo}</p>
                   <p className="text-gray-500 text-sm">
-                    {new Date(compromisso.data).toLocaleString("pt-BR")}
+                    {new Date(c.data).toLocaleString("pt-BR")}
                   </p>
                 </div>
-                <span
-                  className={`px-2 py-1 rounded-full text-xs font-bold ${
-                    compromisso.concluido
-                      ? "bg-green-500 text-white"
-                      : "bg-red-500 text-white"
-                  }`}
-                >
-                  {compromisso.concluido ? "Concluído" : "Pendente"}
-                </span>
+                <div className="flex gap-2">
+                  {c.concluido ? (
+                    <span className="px-2 py-1 rounded-full text-xs font-bold bg-green-500 text-white">
+                      Concluído
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => handleConcluir(c.id)}
+                      className="px-3 py-1 rounded bg-green-600 text-white text-sm flex items-center gap-1 hover:bg-green-700"
+                    >
+                      <FaCheckCircle /> Concluir
+                    </button>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
@@ -228,6 +280,8 @@ export default function Agenda() {
     </div>
   );
 }
+
+
 
 
 

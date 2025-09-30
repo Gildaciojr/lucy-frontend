@@ -6,6 +6,7 @@ import {
   FaCalendarCheck,
   FaSpinner,
   FaChevronLeft,
+  FaTrash,
 } from "react-icons/fa";
 import ConteudoForm from "./ConteudoForm";
 
@@ -63,24 +64,19 @@ export default function Conteudo() {
     setLoading(true);
     try {
       const token = localStorage.getItem("auth_token");
-      const userId = localStorage.getItem("user_id");
-      if (!token || !userId) {
+      if (!token) {
         window.location.href = "/login";
         return;
       }
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/conteudo?userId=${userId}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/conteudo`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
 
-      if (!response.ok) {
-        throw new Error("Erro ao buscar ideias.");
-      }
+      if (!response.ok) throw new Error("Erro ao buscar ideias.");
       const data: Conteudo[] = await response.json();
       setConteudos(data);
     } catch (err: unknown) {
@@ -95,6 +91,43 @@ export default function Conteudo() {
     fetchConteudos();
   }, []);
 
+  // --- Ações de atualização ---
+  const toggleFavorito = async (id: number, current: boolean) => {
+    await updateConteudo(id, { favorito: !current });
+  };
+
+  const toggleAgendado = async (id: number, current: boolean) => {
+    await updateConteudo(id, { agendado: !current });
+  };
+
+  const deleteConteudo = async (id: number) => {
+    const token = localStorage.getItem("auth_token");
+    if (!token) return;
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/conteudo/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    fetchConteudos();
+  };
+
+  const updateConteudo = async (
+    id: number,
+    updates: Partial<Conteudo>
+  ): Promise<void> => {
+    const token = localStorage.getItem("auth_token");
+    if (!token) return;
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/conteudo/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(updates),
+    });
+    fetchConteudos();
+  };
+
+  // --- UI ---
   if (loading) {
     return (
       <div className="text-center p-6 flex items-center justify-center space-x-2">
@@ -132,11 +165,45 @@ export default function Conteudo() {
         <h3 className="text-xl font-bold text-gray-800 mb-4">{title}</h3>
         <ul className="space-y-4">
           {list.map((item) => (
-            <li key={item.id} className="p-4 bg-gray-100 rounded-lg">
-              <p className="font-semibold text-gray-700">{item.ideia}</p>
-              <p className="text-sm text-gray-500">
-                Criado em: {new Date(item.createdAt).toLocaleDateString("pt-BR")}
-              </p>
+            <li
+              key={item.id}
+              className="p-4 bg-gray-100 rounded-lg flex justify-between items-center"
+            >
+              <div>
+                <p className="font-semibold text-gray-700">{item.ideia}</p>
+                <p className="text-sm text-gray-500">
+                  Criado em:{" "}
+                  {new Date(item.createdAt).toLocaleDateString("pt-BR")}
+                </p>
+              </div>
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => toggleFavorito(item.id, item.favorito)}
+                  className={`px-3 py-1 rounded ${
+                    item.favorito
+                      ? "bg-yellow-500 text-white"
+                      : "bg-gray-200 text-gray-700"
+                  }`}
+                >
+                  Favorito
+                </button>
+                <button
+                  onClick={() => toggleAgendado(item.id, item.agendado)}
+                  className={`px-3 py-1 rounded ${
+                    item.agendado
+                      ? "bg-blue-500 text-white"
+                      : "bg-gray-200 text-gray-700"
+                  }`}
+                >
+                  Agendado
+                </button>
+                <button
+                  onClick={() => deleteConteudo(item.id)}
+                  className="px-3 py-1 rounded bg-red-500 text-white flex items-center"
+                >
+                  <FaTrash />
+                </button>
+              </div>
             </li>
           ))}
         </ul>
@@ -144,9 +211,7 @@ export default function Conteudo() {
     );
   };
 
-  if (viewDetails) {
-    return renderDetails();
-  }
+  if (viewDetails) return renderDetails();
 
   const ideiasFavoritas = conteudos.filter((c) => c.favorito).length;
   const postsAgendados = conteudos.filter((c) => c.agendado).length;
@@ -184,7 +249,7 @@ export default function Conteudo() {
         <ConteudoForm onSave={fetchConteudos} />
       </div>
 
-      <div className="bg-white rounded-xl shadow-md p-6">
+      <div className="bg-white rounded-xl shadow-md p-6 mt-8">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
           Ideias Recentes
         </h3>
@@ -206,5 +271,6 @@ export default function Conteudo() {
     </div>
   );
 }
+
 
 

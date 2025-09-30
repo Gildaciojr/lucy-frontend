@@ -7,6 +7,7 @@ export default function FinancasForm({ onSave }: { onSave: () => void }) {
   const [formState, setFormState] = useState({
     categoria: "",
     valor: "",
+    tipo: "despesa",
   });
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<"success" | "error" | null>(null);
@@ -30,7 +31,6 @@ export default function FinancasForm({ onSave }: { onSave: () => void }) {
     "Trabalho",
     "Impostos",
     "Investimentos",
-    "Recebimentos",
     "Outros",
   ];
 
@@ -47,8 +47,7 @@ export default function FinancasForm({ onSave }: { onSave: () => void }) {
     setStatus(null);
     try {
       const token = localStorage.getItem("auth_token");
-      const userId = localStorage.getItem("user_id");
-      if (!token || !userId) {
+      if (!token) {
         window.location.href = "/login";
         return;
       }
@@ -62,8 +61,9 @@ export default function FinancasForm({ onSave }: { onSave: () => void }) {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            ...formState,
-            userId: parseInt(userId, 10),
+            categoria: formState.categoria,
+            valor: parseFloat(formState.valor),
+            tipo: formState.tipo,
           }),
         }
       );
@@ -71,7 +71,7 @@ export default function FinancasForm({ onSave }: { onSave: () => void }) {
         throw new Error("Erro ao adicionar finança.");
       }
       setStatus("success");
-      setFormState({ categoria: "", valor: "" });
+      setFormState({ categoria: "", valor: "", tipo: "despesa" });
       onSave();
     } catch {
       setStatus("error");
@@ -109,6 +109,15 @@ export default function FinancasForm({ onSave }: { onSave: () => void }) {
           required
           className="w-full p-2 rounded-lg border border-gray-300"
         />
+        <select
+          name="tipo"
+          value={formState.tipo}
+          onChange={handleInputChange}
+          className="w-full p-2 rounded-lg border border-gray-300"
+        >
+          <option value="receita">Receita</option>
+          <option value="despesa">Despesa</option>
+        </select>
         <button
           type="submit"
           className="w-full p-3 bg-green-500 text-white font-bold rounded-xl flex items-center justify-center space-x-2"
@@ -127,6 +136,8 @@ export default function FinancasForm({ onSave }: { onSave: () => void }) {
     </div>
   );
 }
+
+
 
 
 

@@ -13,9 +13,7 @@ export default function ConteudoForm({ onSave }: { onSave: () => void }) {
   const [status, setStatus] = useState<"success" | "error" | null>(null);
 
   const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
+    e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>
   ) => {
     const { name, value } = e.target;
     setFormState((prev) => ({ ...prev, [name]: value }));
@@ -32,9 +30,7 @@ export default function ConteudoForm({ onSave }: { onSave: () => void }) {
     setStatus(null);
     try {
       const token = localStorage.getItem("auth_token");
-      const userId = localStorage.getItem("user_id");
-
-      if (!token || !userId) {
+      if (!token) {
         window.location.href = "/login";
         return;
       }
@@ -47,12 +43,11 @@ export default function ConteudoForm({ onSave }: { onSave: () => void }) {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ ...formState, userId: parseInt(userId, 10) }),
+          body: JSON.stringify(formState),
         }
       );
-      if (!response.ok) {
-        throw new Error("Erro ao adicionar ideia.");
-      }
+      if (!response.ok) throw new Error("Erro ao adicionar ideia.");
+
       setStatus("success");
       setFormState({ ideia: "", favorito: false, agendado: false });
       onSave();
@@ -65,9 +60,7 @@ export default function ConteudoForm({ onSave }: { onSave: () => void }) {
 
   return (
     <div className="bg-white rounded-xl shadow-md p-6">
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">
-        Nova Ideia
-      </h3>
+      <h3 className="text-lg font-semibold text-gray-800 mb-4">Nova Ideia</h3>
       <form onSubmit={handleAddConteudo} className="space-y-4">
         <textarea
           name="ideia"
@@ -118,6 +111,7 @@ export default function ConteudoForm({ onSave }: { onSave: () => void }) {
     </div>
   );
 }
+
 
 
 

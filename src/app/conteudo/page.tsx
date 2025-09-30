@@ -1,23 +1,36 @@
 "use client";
 
-import Conteudo from "../../components/Conteudo";
+import Conteudo from "@/components/Conteudo";
 
 export default function ConteudoPage() {
   return (
-    <div className="flex flex-col min-h-screen p-4 bg-gray-100">
-      <header className="py-4 text-center">
-        <div className="p-4 bg-purple-100 rounded-xl shadow-md transition-colors duration-200 hover:bg-purple-200 cursor-pointer">
-          <h1 className="text-3xl font-bold text-lucy-purple">Lucy</h1>
-          <p className="text-gray-500">Gerencie suas ideias e conteúdos</p>
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex flex-col items-center">
+          <h1 className="text-3xl font-extrabold text-purple-700">Lucy</h1>
+          <p className="text-gray-500 text-sm">
+            Gerencie suas ideias e conteúdos de forma organizada
+          </p>
         </div>
       </header>
-      <main className="flex-1 p-6 flex flex-col items-center">
-        <div className="w-full max-w-6xl">
+
+      {/* Main */}
+      <main className="flex-1 px-6 py-8">
+        <div className="max-w-6xl mx-auto">
           <Conteudo />
         </div>
       </main>
+
+      {/* Footer */}
+      <footer className="bg-white border-t mt-8">
+        <div className="max-w-6xl mx-auto px-6 py-4 text-center text-gray-400 text-sm">
+          © {new Date().getFullYear()} Lucy — Gestão de Ideias
+        </div>
+      </footer>
     </div>
   );
 }
+
 
 

@@ -6,6 +6,7 @@ import {
   FaMoneyBillWave,
   FaArrowUp,
   FaArrowDown,
+  FaBalanceScale,
   FaSpinner,
   FaChevronLeft,
 } from "react-icons/fa";
@@ -28,6 +29,7 @@ interface Financa {
   categoria: string;
   valor: string;
   data: string;
+  tipo: "receita" | "despesa";
   userId: number;
 }
 
@@ -69,7 +71,7 @@ export default function Financas() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewDetails, setViewDetails] = useState<
-    null | "all" | "maior" | "menor"
+    null | "all" | "maiorReceita" | "maiorDespesa"
   >(null);
 
   const fetchFinancas = async () => {
@@ -121,22 +123,39 @@ export default function Financas() {
     return <div className="text-center p-6 text-red-500">{error}</div>;
   }
 
-  const valoresNumericos = financas.map((item) => parseFloat(item.valor));
+  // 🔹 Separar receitas e despesas
+  const receitas = financas.filter((f) => f.tipo === "receita");
+  const despesas = financas.filter((f) => f.tipo === "despesa");
 
-  const totalGastos = valoresNumericos.reduce((sum, item) => sum + item, 0);
-  const maiorGasto =
-    valoresNumericos.length > 0 ? Math.max(...valoresNumericos) : 0;
-  const menorGasto =
-    valoresNumericos.length > 0 ? Math.min(...valoresNumericos) : 0;
+  const totalReceitas = receitas.reduce(
+    (sum, f) => sum + parseFloat(f.valor),
+    0
+  );
+  const totalDespesas = despesas.reduce(
+    (sum, f) => sum + parseFloat(f.valor),
+    0
+  );
+  const saldo = totalReceitas - totalDespesas;
 
+  const maiorReceita =
+    receitas.length > 0
+      ? Math.max(...receitas.map((f) => parseFloat(f.valor)))
+      : 0;
+
+  const maiorDespesa =
+    despesas.length > 0
+      ? Math.max(...despesas.map((f) => parseFloat(f.valor)))
+      : 0;
+
+  // 🔹 Gráfico Pizza (categorias)
   const aggregatedData = financas.reduce(
     (acc, item) => {
-      const existing = acc.find((d) => d.name === item.categoria);
+      const existing = acc.find((d) => d.name === `${item.categoria} (${item.tipo})`);
       const valor = parseFloat(item.valor);
       if (existing) {
         existing.value += valor;
       } else {
-        acc.push({ name: item.categoria, value: valor });
+        acc.push({ name: `${item.categoria} (${item.tipo})`, value: valor });
       }
       return acc;
     },
@@ -144,14 +163,15 @@ export default function Financas() {
   );
 
   const COLORS = [
-    "#FF8042",
+    "#0088FE",
     "#00C49F",
     "#FFBB28",
-    "#0088FE",
+    "#FF8042",
     "#AF19FF",
     "#FF5733",
   ];
 
+  // 🔹 Gráfico Barras (mensal)
   const monthlyData = financas.reduce(
     (acc, item) => {
       const month = new Date(item.data).toLocaleString("default", {
@@ -159,39 +179,25 @@ export default function Financas() {
         year: "numeric",
       });
       if (!acc[month]) {
-        acc[month] = 0;
+        acc[month] = { receitas: 0, despesas: 0 };
       }
-      acc[month] += parseFloat(item.valor);
+      if (item.tipo === "receita") {
+        acc[month].receitas += parseFloat(item.valor);
+      } else {
+        acc[month].despesas += parseFloat(item.valor);
+      }
       return acc;
     },
-    {} as Record<string, number>
+    {} as Record<string, { receitas: number; despesas: number }>
   );
 
   const monthlyChartData = Object.keys(monthlyData).map((key) => ({
     name: key,
-    gastos: monthlyData[key],
+    receitas: monthlyData[key].receitas,
+    despesas: monthlyData[key].despesas,
   }));
 
-  const sortedMonths = Object.keys(monthlyData).sort(
-    (a, b) => new Date(a).getTime() - new Date(b).getTime()
-  );
-  const currentMonth = sortedMonths[sortedMonths.length - 1];
-  const previousMonth = sortedMonths[sortedMonths.length - 2];
-
-  const alertMessage = () => {
-    if (
-      previousMonth &&
-      monthlyData[currentMonth] > monthlyData[previousMonth]
-    ) {
-      const diff =
-        ((monthlyData[currentMonth] - monthlyData[previousMonth]) /
-          monthlyData[previousMonth]) *
-        100;
-      return `Atenção: seus gastos aumentaram ${diff.toFixed(2)}% em relação ao mês anterior.`;
-    }
-    return null;
-  };
-
+  // 🔹 Renderização de detalhes
   const renderDetails = () => {
     let title = "";
     let list: Financa[] = [];
@@ -199,12 +205,16 @@ export default function Financas() {
     if (viewDetails === "all") {
       title = "Todos os Registros";
       list = financas;
-    } else if (viewDetails === "maior") {
-      title = "Maior Gasto";
-      list = financas.filter((f) => parseFloat(f.valor) === maiorGasto);
-    } else if (viewDetails === "menor") {
-      title = "Menor Gasto";
-      list = financas.filter((f) => parseFloat(f.valor) === menorGasto);
+    } else if (viewDetails === "maiorReceita") {
+      title = "Maior Receita";
+      list = receitas.filter(
+        (f) => parseFloat(f.valor) === maiorReceita
+      );
+    } else if (viewDetails === "maiorDespesa") {
+      title = "Maior Despesa";
+      list = despesas.filter(
+        (f) => parseFloat(f.valor) === maiorDespesa
+      );
     }
 
     return (
@@ -222,6 +232,9 @@ export default function Financas() {
             <li key={item.id} className="p-4 bg-gray-100 rounded-lg">
               <p className="font-semibold text-gray-700">
                 Categoria: {item.categoria}
+              </p>
+              <p className="text-sm text-gray-500">
+                Tipo: {item.tipo === "receita" ? "Receita" : "Despesa"}
               </p>
               <p className="text-sm text-gray-500">
                 Valor: R$ {parseFloat(item.valor).toFixed(2).replace(".", ",")}
@@ -246,46 +259,52 @@ export default function Financas() {
         Controle Financeiro
       </h2>
 
-      {alertMessage() && (
-        <div
-          className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded-lg"
-          role="alert"
-        >
-          <p className="font-bold">Aviso</p>
-          <p>{alertMessage()}</p>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         <FinanceCard
           icon={<FaMoneyBillWave />}
-          title="Total"
-          value={`R$ ${totalGastos.toFixed(2).replace(".", ",")}`}
+          title="Total Receitas"
+          value={`R$ ${totalReceitas.toFixed(2).replace(".", ",")}`}
+          color="bg-green-500"
+          onClick={() => setViewDetails("all")}
+          isActive={viewDetails === "all"}
+        />
+        <FinanceCard
+          icon={<FaArrowDown />}
+          title="Total Despesas"
+          value={`R$ ${totalDespesas.toFixed(2).replace(".", ",")}`}
           color="bg-red-500"
           onClick={() => setViewDetails("all")}
           isActive={viewDetails === "all"}
         />
         <FinanceCard
+          icon={<FaBalanceScale />}
+          title="Saldo"
+          value={`R$ ${saldo.toFixed(2).replace(".", ",")}`}
+          color={saldo >= 0 ? "bg-blue-500" : "bg-orange-500"}
+          onClick={() => setViewDetails("all")}
+          isActive={viewDetails === "all"}
+        />
+        <FinanceCard
           icon={<FaArrowUp />}
-          title="Maior Gasto"
-          value={`R$ ${maiorGasto.toFixed(2).replace(".", ",")}`}
-          color="bg-orange-500"
-          onClick={() => setViewDetails("maior")}
-          isActive={viewDetails === "maior"}
+          title="Maior Receita"
+          value={`R$ ${maiorReceita.toFixed(2).replace(".", ",")}`}
+          color="bg-teal-500"
+          onClick={() => setViewDetails("maiorReceita")}
+          isActive={viewDetails === "maiorReceita"}
         />
         <FinanceCard
           icon={<FaArrowDown />}
-          title="Menor Gasto"
-          value={`R$ ${menorGasto.toFixed(2).replace(".", ",")}`}
-          color="bg-green-500"
-          onClick={() => setViewDetails("menor")}
-          isActive={viewDetails === "menor"}
+          title="Maior Despesa"
+          value={`R$ ${maiorDespesa.toFixed(2).replace(".", ",")}`}
+          color="bg-purple-500"
+          onClick={() => setViewDetails("maiorDespesa")}
+          isActive={viewDetails === "maiorDespesa"}
         />
         <FinanceCard
           icon={<FaChartPie />}
           title="Registros"
           value={financas.length.toString()}
-          color="bg-blue-500"
+          color="bg-gray-600"
           onClick={() => setViewDetails("all")}
           isActive={viewDetails === "all"}
         />
@@ -297,7 +316,7 @@ export default function Financas() {
 
       <div className="bg-white rounded-xl shadow-md p-6 mb-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
-          Gastos por Categoria
+          Distribuição por Categoria
         </h3>
         <ResponsiveContainer width="100%" height={300}>
           <PieChart>
@@ -325,7 +344,7 @@ export default function Financas() {
 
       <div className="bg-white rounded-xl shadow-md p-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
-          Gastos Mensais
+          Evolução Mensal
         </h3>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={monthlyChartData}>
@@ -333,13 +352,15 @@ export default function Financas() {
             <YAxis />
             <Tooltip />
             <Legend />
-            <Bar dataKey="gastos" fill="#82ca9d" />
+            <Bar dataKey="receitas" fill="#4CAF50" name="Receitas" />
+            <Bar dataKey="despesas" fill="#F44336" name="Despesas" />
           </BarChart>
         </ResponsiveContainer>
       </div>
     </div>
   );
 }
+
 
 
 
