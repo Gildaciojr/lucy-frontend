@@ -71,8 +71,6 @@ export default function Header() {
 
   const handleLogout = () => {
     localStorage.removeItem("auth_token");
-    localStorage.removeItem("user_id");
-    localStorage.removeItem("username");
     window.location.href = "/login";
   };
 
@@ -168,6 +166,7 @@ export default function Header() {
     </header>
   );
 }
+
 
 
 

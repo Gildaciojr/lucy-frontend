@@ -44,18 +44,16 @@ export default function Settings() {
   const fetchUserPlan = async () => {
     try {
       const token = localStorage.getItem("auth_token");
-      const userId = localStorage.getItem("user_id");
-      if (!token || !userId) {
+      if (!token) {
         window.location.href = "/login";
         return;
       }
 
+      // 🔹 agora o backend pega userId do token
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/users/${userId}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/users/me`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
 
@@ -93,8 +91,7 @@ export default function Settings() {
 
     try {
       const token = localStorage.getItem("auth_token");
-      const userId = localStorage.getItem("user_id");
-      if (!token || !userId) {
+      if (!token) {
         window.location.href = "/login";
         return;
       }
@@ -110,7 +107,6 @@ export default function Settings() {
           body: JSON.stringify({
             rating: feedbackRating,
             comment: feedback,
-            userId: parseInt(userId, 10),
           }),
         }
       );
@@ -223,6 +219,7 @@ export default function Settings() {
     </div>
   );
 }
+
 
 
 

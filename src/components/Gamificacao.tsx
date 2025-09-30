@@ -52,18 +52,16 @@ export default function Gamificacao() {
   const fetchGamificacoes = async () => {
     try {
       const token = localStorage.getItem("auth_token");
-      const userId = localStorage.getItem("user_id");
-      if (!token || !userId) {
+      if (!token) {
         window.location.href = "/login";
         return;
       }
 
+      // 🔹 agora o backend pega userId do token
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/gamificacao?userId=${userId}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/gamificacao`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
 
@@ -176,6 +174,7 @@ export default function Gamificacao() {
     </div>
   );
 }
+
 
 
 

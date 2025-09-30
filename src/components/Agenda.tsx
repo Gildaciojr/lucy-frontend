@@ -76,7 +76,6 @@ export default function Agenda() {
       );
 
       if (!response.ok) throw new Error("Erro ao buscar compromissos.");
-
       const data: Compromisso[] = await response.json();
       setCompromissos(data);
     } catch (err: unknown) {
@@ -87,35 +86,27 @@ export default function Agenda() {
   };
 
   const handleConcluir = async (id: number) => {
-    try {
-      const token = localStorage.getItem("auth_token");
-      if (!token) return;
+    const token = localStorage.getItem("auth_token");
+    if (!token) return;
 
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compromissos/${id}/concluir`, {
-        method: "PUT",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compromissos/${id}/concluir`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-      fetchCompromissos();
-    } catch {
-      alert("Erro ao concluir compromisso.");
-    }
+    fetchCompromissos();
   };
 
   const handleReabrir = async (id: number) => {
-    try {
-      const token = localStorage.getItem("auth_token");
-      if (!token) return;
+    const token = localStorage.getItem("auth_token");
+    if (!token) return;
 
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compromissos/${id}/reabrir`, {
-        method: "PUT",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compromissos/${id}/reabrir`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-      fetchCompromissos();
-    } catch {
-      alert("Erro ao reabrir compromisso.");
-    }
+    fetchCompromissos();
   };
 
   useEffect(() => {
@@ -201,9 +192,7 @@ export default function Agenda() {
     );
   };
 
-  if (viewDetails) {
-    return renderDetails();
-  }
+  if (viewDetails) return renderDetails();
 
   return (
     <div className="p-6 bg-gray-50 rounded-lg shadow-inner">
@@ -238,48 +227,10 @@ export default function Agenda() {
       <div className="mt-8">
         <AgendaForm onSave={fetchCompromissos} />
       </div>
-
-      <div className="bg-white rounded-xl shadow-md p-6 mt-8">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">
-          Próximos Compromissos
-        </h3>
-        {compromissos.length > 0 ? (
-          <ul className="space-y-2">
-            {compromissos.map((c) => (
-              <li
-                key={c.id}
-                className="p-3 bg-gray-100 rounded-lg text-gray-700 flex items-center justify-between"
-              >
-                <div>
-                  <p className="font-semibold">{c.titulo}</p>
-                  <p className="text-gray-500 text-sm">
-                    {new Date(c.data).toLocaleString("pt-BR")}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  {c.concluido ? (
-                    <span className="px-2 py-1 rounded-full text-xs font-bold bg-green-500 text-white">
-                      Concluído
-                    </span>
-                  ) : (
-                    <button
-                      onClick={() => handleConcluir(c.id)}
-                      className="px-3 py-1 rounded bg-green-600 text-white text-sm flex items-center gap-1 hover:bg-green-700"
-                    >
-                      <FaCheckCircle /> Concluir
-                    </button>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-gray-500">Nenhum compromisso cadastrado.</p>
-        )}
-      </div>
     </div>
   );
 }
+
 
 
 

@@ -80,42 +80,16 @@ export default function Conteudo() {
       const data: Conteudo[] = await response.json();
       setConteudos(data);
     } catch (err: unknown) {
-      if (err instanceof Error) setError(err.message);
-      else setError("Erro desconhecido.");
+      setError(err instanceof Error ? err.message : "Erro desconhecido.");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchConteudos();
-  }, []);
-
-  // --- Ações de atualização ---
-  const toggleFavorito = async (id: number, current: boolean) => {
-    await updateConteudo(id, { favorito: !current });
-  };
-
-  const toggleAgendado = async (id: number, current: boolean) => {
-    await updateConteudo(id, { agendado: !current });
-  };
-
-  const deleteConteudo = async (id: number) => {
+  const updateConteudo = async (id: number, updates: Partial<Conteudo>) => {
     const token = localStorage.getItem("auth_token");
     if (!token) return;
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/conteudo/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    fetchConteudos();
-  };
 
-  const updateConteudo = async (
-    id: number,
-    updates: Partial<Conteudo>
-  ): Promise<void> => {
-    const token = localStorage.getItem("auth_token");
-    if (!token) return;
     await fetch(`${process.env.NEXT_PUBLIC_API_URL}/conteudo/${id}`, {
       method: "PUT",
       headers: {
@@ -124,10 +98,34 @@ export default function Conteudo() {
       },
       body: JSON.stringify(updates),
     });
+
     fetchConteudos();
   };
 
-  // --- UI ---
+  const toggleFavorito = (id: number, current: boolean) => {
+    updateConteudo(id, { favorito: !current });
+  };
+
+  const toggleAgendado = (id: number, current: boolean) => {
+    updateConteudo(id, { agendado: !current });
+  };
+
+  const deleteConteudo = async (id: number) => {
+    const token = localStorage.getItem("auth_token");
+    if (!token) return;
+
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/conteudo/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    fetchConteudos();
+  };
+
+  useEffect(() => {
+    fetchConteudos();
+  }, []);
+
   if (loading) {
     return (
       <div className="text-center p-6 flex items-center justify-center space-x-2">
@@ -172,8 +170,7 @@ export default function Conteudo() {
               <div>
                 <p className="font-semibold text-gray-700">{item.ideia}</p>
                 <p className="text-sm text-gray-500">
-                  Criado em:{" "}
-                  {new Date(item.createdAt).toLocaleDateString("pt-BR")}
+                  Criado em: {new Date(item.createdAt).toLocaleDateString("pt-BR")}
                 </p>
               </div>
               <div className="flex items-center space-x-3">
@@ -216,10 +213,7 @@ export default function Conteudo() {
   const ideiasFavoritas = conteudos.filter((c) => c.favorito).length;
   const postsAgendados = conteudos.filter((c) => c.agendado).length;
   const ideiasRecentes = [...conteudos]
-    .sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    )
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 3);
 
   return (
@@ -271,6 +265,7 @@ export default function Conteudo() {
     </div>
   );
 }
+
 
 
 

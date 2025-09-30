@@ -12,7 +12,6 @@ export interface Lead {
 }
 
 export async function fetchLeads(): Promise<Lead[]> {
-  // apiFetch já injeta o Authorization do localStorage, quando existir
   return apiFetch<Lead[]>("/leads");
 }
 

@@ -42,7 +42,7 @@ export async function apiFetch<T>(
     ...(options.headers as Record<string, string> | undefined),
   };
 
-  // Injeta Bearer automaticamente no client, se não veio explicitamente
+  // Injeta Bearer automaticamente no client
   if (
     typeof window !== "undefined" &&
     !Object.prototype.hasOwnProperty.call(headers, "Authorization")
@@ -70,6 +70,7 @@ export async function apiFetch<T>(
 
   return payload as T;
 }
+
 
 
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Navigation from "./Navigation";
+import { getCurrentUser, logout } from "@/lib/auth";
 
 export default function ClientLayoutWrapper({
   children,
@@ -18,22 +19,27 @@ export default function ClientLayoutWrapper({
     pathname === "/login" || pathname === "/signup" || pathname === "/register";
 
   useEffect(() => {
-    // só roda no cliente
-    if (!isPublic) {
-      const token = localStorage.getItem("auth_token");
-      if (!token) {
-        router.push("/login");
-        return;
+    let cancelled = false;
+
+    const checkAuth = async () => {
+      if (!isPublic) {
+        const user = await getCurrentUser();
+        if (!user && !cancelled) {
+          router.replace("/login");
+          return;
+        }
       }
-    }
-    setReady(true);
+      if (!cancelled) setReady(true);
+    };
+
+    checkAuth();
+    return () => {
+      cancelled = true;
+    };
   }, [isPublic, router]);
 
   const handleLogout = () => {
-    try {
-      localStorage.removeItem("auth_token");
-      localStorage.removeItem("user_id");
-    } catch {}
+    logout();
     router.push("/login");
   };
 
@@ -62,6 +68,7 @@ export default function ClientLayoutWrapper({
     </div>
   );
 }
+
 
 
 

@@ -78,30 +78,23 @@ export default function Financas() {
     setLoading(true);
     try {
       const token = localStorage.getItem("auth_token");
-      const userId = localStorage.getItem("user_id");
-      if (!token || !userId) {
+      if (!token) {
         window.location.href = "/login";
         return;
       }
 
       const response = await fetch(
-  `${process.env.NEXT_PUBLIC_API_URL}/financas`,
-  {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  }
-);
+        `${process.env.NEXT_PUBLIC_API_URL}/financas`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
-
-      if (!response.ok) {
-        throw new Error("Erro ao buscar finanças.");
-      }
+      if (!response.ok) throw new Error("Erro ao buscar finanças.");
       const data: Financa[] = await response.json();
       setFinancas(data);
     } catch (err: unknown) {
-      if (err instanceof Error) setError(err.message);
-      else setError("Erro desconhecido.");
+      setError(err instanceof Error ? err.message : "Erro desconhecido.");
     } finally {
       setLoading(false);
     }
@@ -151,7 +144,9 @@ export default function Financas() {
   // 🔹 Gráfico Pizza (categorias)
   const aggregatedData = financas.reduce(
     (acc, item) => {
-      const existing = acc.find((d) => d.name === `${item.categoria} (${item.tipo})`);
+      const existing = acc.find(
+        (d) => d.name === `${item.categoria} (${item.tipo})`
+      );
       const valor = parseFloat(item.valor);
       if (existing) {
         existing.value += valor;
@@ -208,14 +203,10 @@ export default function Financas() {
       list = financas;
     } else if (viewDetails === "maiorReceita") {
       title = "Maior Receita";
-      list = receitas.filter(
-        (f) => parseFloat(f.valor) === maiorReceita
-      );
+      list = receitas.filter((f) => parseFloat(f.valor) === maiorReceita);
     } else if (viewDetails === "maiorDespesa") {
       title = "Maior Despesa";
-      list = despesas.filter(
-        (f) => parseFloat(f.valor) === maiorDespesa
-      );
+      list = despesas.filter((f) => parseFloat(f.valor) === maiorDespesa);
     }
 
     return (
@@ -361,6 +352,7 @@ export default function Financas() {
     </div>
   );
 }
+
 
 
 
