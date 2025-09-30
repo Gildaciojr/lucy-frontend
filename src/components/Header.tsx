@@ -6,9 +6,9 @@ import { FaUserCircle, FaSignOutAlt } from "react-icons/fa";
 
 interface User {
   id: number;
-  name: string;
-  username?: string;
+  username: string;
   email?: string;
+  name?: string;
   phone?: string;
 }
 
@@ -25,7 +25,7 @@ export default function Header() {
       return;
     }
 
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => {
@@ -71,6 +71,8 @@ export default function Header() {
 
   const handleLogout = () => {
     localStorage.removeItem("auth_token");
+    localStorage.removeItem("user_id");
+    localStorage.removeItem("username");
     window.location.href = "/login";
   };
 
@@ -92,6 +94,7 @@ export default function Header() {
 
           {open && (
             <div className="absolute right-0 mt-2 w-72 bg-white shadow-xl rounded-xl border p-4 space-y-4 z-50">
+              {/* Atualizações */}
               <div>
                 <label className="block text-xs text-gray-500">Nome</label>
                 <input
@@ -142,6 +145,7 @@ export default function Header() {
                 </button>
               </div>
 
+              {/* Logout */}
               <button
                 onClick={handleLogout}
                 className="w-full flex items-center justify-center gap-2 py-2 mt-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
@@ -166,6 +170,7 @@ export default function Header() {
     </header>
   );
 }
+
 
 
 

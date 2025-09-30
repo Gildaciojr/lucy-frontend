@@ -23,6 +23,7 @@ import {
   YAxis,
 } from "recharts";
 import FinancasForm from "./FinancasForm";
+import MonthSummary from "./MonthSummary";
 
 interface Financa {
   id: number;
@@ -31,6 +32,19 @@ interface Financa {
   data: string;
   tipo: "receita" | "despesa";
   userId: number;
+}
+
+interface Compromisso {
+  id: number;
+  titulo: string;
+  data: string;
+  concluido: boolean;
+}
+
+interface Ideia {
+  id: number;
+  ideia: string;
+  criadoEm: string;
 }
 
 interface FinanceCardProps {
@@ -68,47 +82,78 @@ const FinanceCard: React.FC<FinanceCardProps> = ({
 
 export default function Financas() {
   const [financas, setFinancas] = useState<Financa[]>([]);
+  const [compromissos, setCompromissos] = useState<Compromisso[]>([]);
+  const [ideias, setIdeias] = useState<Ideia[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewDetails, setViewDetails] = useState<
     null | "all" | "maiorReceita" | "maiorDespesa"
   >(null);
 
+  // 🔹 Buscar finanças
   const fetchFinancas = async () => {
-    setLoading(true);
     try {
       const token = localStorage.getItem("auth_token");
       if (!token) {
         window.location.href = "/login";
         return;
       }
-
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/financas`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
       if (!response.ok) throw new Error("Erro ao buscar finanças.");
       const data: Financa[] = await response.json();
       setFinancas(data);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro desconhecido.");
-    } finally {
-      setLoading(false);
     }
   };
 
+  // 🔹 Buscar compromissos
+  const fetchCompromissos = async () => {
+    try {
+      const token = localStorage.getItem("auth_token");
+      if (!token) return;
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/compromissos`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!response.ok) return;
+      const data: Compromisso[] = await response.json();
+      setCompromissos(data);
+    } catch {}
+  };
+
+  // 🔹 Buscar ideias
+  const fetchIdeias = async () => {
+    try {
+      const token = localStorage.getItem("auth_token");
+      if (!token) return;
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/conteudo`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!response.ok) return;
+      const data: Ideia[] = await response.json();
+      setIdeias(data);
+    } catch {}
+  };
+
   useEffect(() => {
-    fetchFinancas();
+    const loadAll = async () => {
+      setLoading(true);
+      await Promise.all([fetchFinancas(), fetchCompromissos(), fetchIdeias()]);
+      setLoading(false);
+    };
+    loadAll();
   }, []);
 
   if (loading) {
     return (
       <div className="text-center p-6 flex items-center justify-center space-x-2">
         <FaSpinner className="animate-spin" />
-        <span>Carregando finanças...</span>
+        <span>Carregando dados...</span>
       </div>
     );
   }
@@ -117,10 +162,9 @@ export default function Financas() {
     return <div className="text-center p-6 text-red-500">{error}</div>;
   }
 
-  // 🔹 Separar receitas e despesas
+  // 🔹 Totais
   const receitas = financas.filter((f) => f.tipo === "receita");
   const despesas = financas.filter((f) => f.tipo === "despesa");
-
   const totalReceitas = receitas.reduce(
     (sum, f) => sum + parseFloat(f.valor),
     0
@@ -141,7 +185,35 @@ export default function Financas() {
       ? Math.max(...despesas.map((f) => parseFloat(f.valor)))
       : 0;
 
-  // 🔹 Gráfico Pizza (categorias)
+  // 🔹 Próximo compromisso
+  const futuro = compromissos
+    .filter((c) => new Date(c.data) > new Date() && !c.concluido)
+    .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+  const proximoCompromisso = futuro.length
+    ? `${futuro[0].titulo} (${new Date(futuro[0].data).toLocaleDateString(
+        "pt-BR"
+      )})`
+    : "Nenhum";
+
+  // 🔹 Última ideia
+  const ultimaIdeia =
+    ideias.length > 0
+      ? ideias.sort(
+          (a, b) =>
+            new Date(b.criadoEm).getTime() - new Date(a.criadoEm).getTime()
+        )[0].ideia
+      : "Nenhuma";
+
+  // 🔹 Resumo do mês
+  const resumo = {
+    totalReceitas,
+    totalDespesas,
+    saldo,
+    proximoCompromisso,
+    ultimaIdeia,
+  };
+
+  // 🔹 Gráfico Pizza
   const aggregatedData = financas.reduce(
     (acc, item) => {
       const existing = acc.find(
@@ -167,7 +239,7 @@ export default function Financas() {
     "#FF5733",
   ];
 
-  // 🔹 Gráfico Barras (mensal)
+  // 🔹 Gráfico Barras
   const monthlyData = financas.reduce(
     (acc, item) => {
       const month = new Date(item.data).toLocaleString("default", {
@@ -193,7 +265,7 @@ export default function Financas() {
     despesas: monthlyData[key].despesas,
   }));
 
-  // 🔹 Renderização de detalhes
+  // 🔹 Renderização detalhes
   const renderDetails = () => {
     let title = "";
     let list: Financa[] = [];
@@ -251,6 +323,12 @@ export default function Financas() {
         Controle Financeiro
       </h2>
 
+      {/* Resumo do Mês */}
+      <div className="mb-8">
+        <MonthSummary data={resumo} />
+      </div>
+
+      {/* Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         <FinanceCard
           icon={<FaMoneyBillWave />}
@@ -302,10 +380,12 @@ export default function Financas() {
         />
       </div>
 
+      {/* Formulário */}
       <div className="mt-8">
         <FinancasForm onSave={fetchFinancas} />
       </div>
 
+      {/* Gráfico de Pizza */}
       <div className="bg-white rounded-xl shadow-md p-6 mb-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
           Distribuição por Categoria
@@ -334,6 +414,7 @@ export default function Financas() {
         </ResponsiveContainer>
       </div>
 
+      {/* Gráfico de Barras */}
       <div className="bg-white rounded-xl shadow-md p-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
           Evolução Mensal
@@ -352,6 +433,8 @@ export default function Financas() {
     </div>
   );
 }
+
+
 
 
 

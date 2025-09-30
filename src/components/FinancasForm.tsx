@@ -52,21 +52,19 @@ export default function FinancasForm({ onSave }: { onSave: () => void }) {
         return;
       }
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/financas`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            categoria: formState.categoria,
-            valor: parseFloat(formState.valor),
-            tipo: formState.tipo,
-          }),
-        }
-      );
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/financas`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  },
+  body: JSON.stringify({
+    categoria: formState.categoria,
+    valor: parseFloat(formState.valor),
+    tipo: formState.tipo,
+    data: new Date().toISOString(),
+  }),
+});
       if (!response.ok) {
         throw new Error("Erro ao adicionar finança.");
       }

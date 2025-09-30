@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Navigation from "./Navigation";
-import { getCurrentUser, logout } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 
 export default function ClientLayoutWrapper({
   children,
@@ -14,32 +14,29 @@ export default function ClientLayoutWrapper({
   const router = useRouter();
   const [ready, setReady] = useState(false);
 
-  // Definir rotas públicas (sem login)
+  // rotas públicas
   const isPublic =
     pathname === "/login" || pathname === "/signup" || pathname === "/register";
 
   useEffect(() => {
-    let cancelled = false;
-
-    const checkAuth = async () => {
-      if (!isPublic) {
-        const user = await getCurrentUser();
-        if (!user && !cancelled) {
-          router.replace("/login");
-          return;
-        }
-      }
-      if (!cancelled) setReady(true);
-    };
-
-    checkAuth();
-    return () => {
-      cancelled = true;
-    };
+    if (!isPublic) {
+      getCurrentUser()
+        .then((user) => {
+          if (!user) {
+            router.push("/login");
+          }
+        })
+        .finally(() => setReady(true));
+    } else {
+      setReady(true);
+    }
   }, [isPublic, router]);
 
   const handleLogout = () => {
-    logout();
+    try {
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("user_id");
+    } catch {}
     router.push("/login");
   };
 
@@ -68,6 +65,7 @@ export default function ClientLayoutWrapper({
     </div>
   );
 }
+
 
 
 
