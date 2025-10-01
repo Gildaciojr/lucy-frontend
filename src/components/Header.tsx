@@ -18,6 +18,9 @@ export default function Header() {
   const [form, setForm] = useState({ name: "", phone: "", password: "" });
   const [message, setMessage] = useState("");
 
+  const strongPassword = (s: string) =>
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(s);
+
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
     if (!token) return;
@@ -39,6 +42,12 @@ export default function Header() {
   const handleUpdate = async (field: "name" | "phone" | "password") => {
     const token = localStorage.getItem("auth_token");
     if (!token) return;
+
+    if (field === "password" && !strongPassword(form.password)) {
+      setMessage("❌ A senha precisa ter maiúscula, minúscula, número e caractere especial (mín. 8).");
+      setTimeout(() => setMessage(""), 3000);
+      return;
+    }
 
     const body: Record<string, string> = {};
     body[field] = form[field];
@@ -85,7 +94,6 @@ export default function Header() {
 
           {open && (
             <div className="absolute right-0 mt-2 w-72 bg-white shadow-xl rounded-xl border p-4 space-y-4 z-50">
-              {/* Nome */}
               <div>
                 <label className="block text-xs text-gray-500">Nome</label>
                 <input
@@ -99,7 +107,6 @@ export default function Header() {
                 </button>
               </div>
 
-              {/* Telefone */}
               <div>
                 <label className="block text-xs text-gray-500">Telefone</label>
                 <input
@@ -113,7 +120,6 @@ export default function Header() {
                 </button>
               </div>
 
-              {/* Senha */}
               <div>
                 <label className="block text-xs text-gray-500">Senha</label>
                 <input
@@ -122,12 +128,14 @@ export default function Header() {
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   className="w-full p-2 border rounded-lg"
                 />
+                <p className="text-xs text-gray-500">
+                  A senha deve conter maiúscula, minúscula, número e caractere especial.
+                </p>
                 <button onClick={() => handleUpdate("password")} className="mt-1 text-xs text-purple-600 hover:underline">
                   Atualizar Senha
                 </button>
               </div>
 
-              {/* Sair */}
               <button
                 onClick={handleLogout}
                 className="w-full flex items-center justify-center gap-2 py-2 mt-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
@@ -152,6 +160,7 @@ export default function Header() {
     </header>
   );
 }
+
 
 
 

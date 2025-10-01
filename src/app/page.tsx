@@ -25,16 +25,14 @@ interface Financa {
   categoria: string;
   valor: string;
   data: string;
-  tipo?: "receita" | "despesa"; // opcional
+  tipo?: "receita" | "despesa";
 }
-
 interface Compromisso {
   id: number;
   titulo: string;
   data: string;
   concluido: boolean;
 }
-
 interface Conteudo {
   id: number;
   ideia: string;
@@ -42,19 +40,16 @@ interface Conteudo {
   agendado: boolean;
   createdAt: string;
 }
-
 interface Gamificacao {
   id: number;
   badge: string;
   dataConquista: string;
 }
-
 interface ChartItem {
   name: string;
   uso: number;
   [key: string]: string | number;
 }
-
 interface SummaryData {
   totalReceitas: number;
   totalDespesas: number;
@@ -85,10 +80,8 @@ export default function HomePage() {
       try {
         const token = localStorage.getItem("auth_token");
         if (!token) throw new Error("Usuário não autenticado.");
-
         const headers = { Authorization: `Bearer ${token}` };
 
-        // 🔄 Agora as rotas não recebem mais userId na query
         const financasData = await apiFetch<Financa[]>("/financas", { headers });
         const compromissosData = await apiFetch<Compromisso[]>("/compromissos", { headers });
         const conteudoData = await apiFetch<Conteudo[]>("/conteudo", { headers });
@@ -109,22 +102,17 @@ export default function HomePage() {
         });
 
         const saldo = totalReceitas - totalDespesas;
-
         const proximoCompromisso =
           compromissosData.length > 0
-            ? compromissosData
-                .slice()
-                .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())[0].titulo
+            ? compromissosData.slice().sort((a, b) =>
+                new Date(a.data).getTime() - new Date(b.data).getTime()
+              )[0].titulo
             : "Nenhum agendado";
-
         const ultimaIdeia =
           conteudoData.length > 0
-            ? conteudoData
-                .slice()
-                .sort(
-                  (a, b) =>
-                    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-                )[0].ideia
+            ? conteudoData.slice().sort((a, b) =>
+                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+              )[0].ideia
             : "Nenhuma ideia";
 
         const chartData: ChartItem[] = [
@@ -170,7 +158,7 @@ export default function HomePage() {
         <div className="w-full space-y-8">
           <MonthSummary data={data} />
 
-          {/* 📌 Cards de resumo */}
+          {/* Cards de resumo */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="bg-white shadow rounded-xl p-4 text-center">
               <h4 className="text-sm text-gray-500">Receitas</h4>
@@ -208,7 +196,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* 📊 Gráficos */}
+          {/* Gráficos */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white rounded-xl shadow-md p-4">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">
@@ -255,7 +243,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* 📋 Últimas movimentações */}
+          {/* Últimas movimentações */}
           <div className="bg-white rounded-xl shadow-md p-4">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">
               Últimas movimentações financeiras
@@ -295,22 +283,12 @@ export default function HomePage() {
               </div>
             )}
           </div>
-
-          {/* ⚡ Insights */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="p-4 bg-yellow-100 text-yellow-800 rounded-lg shadow">
-              ⚡ Você gastou mais este mês em Transporte.
-            </div>
-            <div className="p-4 bg-green-100 text-green-800 rounded-lg shadow">
-              🎯 Sua meta de poupança está 80% concluída.
-            </div>
-          </div>
         </div>
       </main>
 
       <Navigation />
 
-      {/* 🔗 Botão flutuante do WhatsApp */}
+      {/* Botão flutuante WhatsApp */}
       <a
         href="https://wa.me/message/JQ6SLHBNNAAHG1"
         target="_blank"
@@ -322,6 +300,7 @@ export default function HomePage() {
     </div>
   );
 }
+
 
 
 

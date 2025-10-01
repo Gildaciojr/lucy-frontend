@@ -17,6 +17,9 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const router = useRouter();
 
+  const strongPassword = (s: string) =>
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(s);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -26,12 +29,19 @@ export default function SignupPage() {
     setLoading(true);
     setError("");
 
+    if (!strongPassword(form.password)) {
+      setLoading(false);
+      setError(
+        "A senha deve ter no mínimo 8 caracteres, incluindo maiúscula, minúscula, número e caractere especial."
+      );
+      return;
+    }
+
     try {
       await apiFetch("/auth/register", {
         method: "POST",
         body: JSON.stringify(form),
       });
-
       router.push("/login");
     } catch (err: unknown) {
       if (err instanceof Error) setError(err.message);
@@ -52,6 +62,9 @@ export default function SignupPage() {
           <input name="username" placeholder="Usuário" value={form.username} onChange={handleChange} required className="w-full p-3 border rounded-lg" />
           <input type="email" name="email" placeholder="E-mail" value={form.email} onChange={handleChange} required className="w-full p-3 border rounded-lg" />
           <input type="password" name="password" placeholder="Senha" value={form.password} onChange={handleChange} required className="w-full p-3 border rounded-lg" />
+          <p className="text-xs text-gray-500">
+            A senha deve ter pelo menos 8 caracteres, incluindo maiúscula, minúscula, número e caractere especial.
+          </p>
           <input name="phone" placeholder="Telefone" value={form.phone} onChange={handleChange} className="w-full p-3 border rounded-lg" />
 
           <button type="submit" disabled={loading} className="w-full py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg flex items-center justify-center space-x-2">
@@ -77,7 +90,6 @@ export default function SignupPage() {
     </div>
   );
 }
-
 
 
 
