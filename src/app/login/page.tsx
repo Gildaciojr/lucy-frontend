@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link"; // 👈 Importando Link do Next.js
 import { FaSpinner, FaSignInAlt, FaLock } from "react-icons/fa";
 import { apiFetch } from "@/lib/api";
 
@@ -76,18 +77,20 @@ export default function LoginPage() {
 
         {error && <p className="text-center text-red-500 mt-4">{error}</p>}
 
+        {/* Cadastro */}
         <p className="mt-6 text-center text-sm">
           Não tem conta?{" "}
-          <a href="/signup" className="text-purple-600 hover:underline">
+          <Link href="/signup" className="text-purple-600 hover:underline">
             Cadastre-se
-          </a>
+          </Link>
         </p>
 
+        {/* Esqueceu a senha */}
         <p className="mt-2 text-center text-sm">
           Esqueceu sua senha?{" "}
-          <a href="/reset-password" className="text-purple-600 hover:underline">
+          <Link href="/reset-password" className="text-purple-600 hover:underline">
             Clique aqui
-          </a>
+          </Link>
         </p>
 
         <footer className="mt-8 text-center text-sm text-gray-500 flex items-center justify-center gap-2">
@@ -98,6 +101,7 @@ export default function LoginPage() {
     </div>
   );
 }
+
 
 
 
