@@ -83,6 +83,13 @@ export default function LoginPage() {
           </a>
         </p>
 
+        <p className="mt-2 text-center text-sm">
+          Esqueceu sua senha?{" "}
+          <a href="/reset-password" className="text-purple-600 hover:underline">
+            Clique aqui
+          </a>
+        </p>
+
         <footer className="mt-8 text-center text-sm text-gray-500 flex items-center justify-center gap-2">
           <FaLock className="text-purple-600" />
           <span>Seus dados estão totalmente seguros e protegidos.</span>
