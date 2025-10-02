@@ -19,13 +19,16 @@ import {
 } from "recharts";
 import { apiFetch } from "@/lib/api";
 
-interface Financa {
+/** Itens de finanças agora vêm unificados (dashboard + whatsapp) do endpoint /financas */
+interface FinanceItem {
   id: number;
   categoria: string;
-  valor: string;
-  data: string;
-  tipo?: "receita" | "despesa";
+  valor: number | string; // backend envia number; protegemos caso venha string
+  data: string; // ISO
+  tipo: "receita" | "despesa";
+  origem: "dashboard" | "whatsapp";
 }
+
 interface Compromisso {
   id: number;
   titulo: string;
@@ -56,7 +59,7 @@ interface SummaryData {
   proximoCompromisso: string;
   ultimaIdeia: string;
   chartData: ChartItem[];
-  financasRecentes: Financa[];
+  financasRecentes: FinanceItem[];
 }
 
 const COLORS = ["#6d28d9", "#22c55e", "#facc15", "#ef4444"];
@@ -81,7 +84,8 @@ export default function HomePage() {
         if (!token) throw new Error("Usuário não autenticado.");
         const headers = { Authorization: `Bearer ${token}` };
 
-        const financasData = await apiFetch<Financa[]>("/financas", { headers });
+        // 🔹 Agora /financas já retorna dashboard + whatsapp normalizados
+        const financasData = await apiFetch<FinanceItem[]>("/financas", { headers });
         const compromissosData = await apiFetch<Compromisso[]>("/compromissos", { headers });
         const conteudoData = await apiFetch<Conteudo[]>("/conteudo", { headers });
         const gamificacaoData = await apiFetch<Gamificacao[]>("/gamificacao", { headers });
@@ -89,29 +93,38 @@ export default function HomePage() {
         let totalReceitas = 0;
         let totalDespesas = 0;
 
+        // 🔹 Totais baseados no campo tipo (independe do sinal do valor)
         financasData.forEach((f) => {
-          const valor = parseFloat(f.valor);
-          if (!Number.isNaN(valor)) {
-            if (f.tipo === "despesa" || valor < 0) {
-              totalDespesas += Math.abs(valor);
-            } else {
-              totalReceitas += valor;
-            }
+          const valorNum = Number(f.valor);
+          if (Number.isNaN(valorNum)) return;
+          if (f.tipo === "despesa") {
+            totalDespesas += Math.abs(valorNum);
+          } else {
+            totalReceitas += Math.abs(valorNum);
           }
         });
 
         const saldo = totalReceitas - totalDespesas;
+
         const proximoCompromisso =
           compromissosData.length > 0
-            ? compromissosData.slice().sort((a, b) =>
-                new Date(a.data).getTime() - new Date(b.data).getTime()
-              )[0].titulo
+            ? compromissosData
+                .slice()
+                .sort(
+                  (a, b) =>
+                    new Date(a.data).getTime() - new Date(b.data).getTime()
+                )[0].titulo
             : "Nenhum agendado";
+
         const ultimaIdeia =
           conteudoData.length > 0
-            ? conteudoData.slice().sort((a, b) =>
-                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-              )[0].ideia
+            ? conteudoData
+                .slice()
+                .sort(
+                  (a, b) =>
+                    new Date(b.createdAt).getTime() -
+                    new Date(a.createdAt).getTime()
+                )[0].ideia
             : "Nenhuma ideia";
 
         const chartData: ChartItem[] = [
@@ -121,6 +134,15 @@ export default function HomePage() {
           { name: "Gamificação", uso: gamificacaoData.length },
         ];
 
+        // 🔹 Pega as 5 últimas movimentações (de qualquer origem)
+        const financasRecentes = financasData
+          .slice()
+          .sort(
+            (a, b) =>
+              new Date(b.data).getTime() - new Date(a.data).getTime()
+          )
+          .slice(0, 5);
+
         setData({
           totalReceitas,
           totalDespesas,
@@ -128,14 +150,17 @@ export default function HomePage() {
           proximoCompromisso,
           ultimaIdeia,
           chartData,
-          financasRecentes: financasData.slice(-5).reverse(),
+          financasRecentes,
         });
       } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : "Erro desconhecido ao buscar resumo.");
+        setError(
+          err instanceof Error ? err.message : "Erro desconhecido ao buscar resumo."
+        );
       } finally {
         setLoading(false);
       }
     };
+
     fetchSummary();
   }, []);
 
@@ -151,7 +176,7 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100 relative">
-      {/* 🔹 Header já está no layout.tsx → removido aqui */}
+      {/* 🔹 Header já está no layout.tsx */}
 
       <main className="flex-1 p-6 flex flex-col mb-20">
         <div className="w-full space-y-8">
@@ -257,26 +282,33 @@ export default function HomePage() {
                       <th className="px-4 py-2 text-left">Categoria</th>
                       <th className="px-4 py-2 text-left">Valor</th>
                       <th className="px-4 py-2 text-left">Data</th>
+                      <th className="px-4 py-2 text-left">Origem</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {data.financasRecentes.map((f) => (
-                      <tr key={f.id}>
-                        <td className="px-4 py-2">{f.categoria}</td>
-                        <td
-                          className={`px-4 py-2 ${
-                            parseFloat(f.valor) >= 0
-                              ? "text-green-600"
-                              : "text-red-600"
-                          }`}
-                        >
-                          R$ {parseFloat(f.valor).toFixed(2)}
-                        </td>
-                        <td className="px-4 py-2">
-                          {new Date(f.data).toLocaleDateString("pt-BR")}
-                        </td>
-                      </tr>
-                    ))}
+                    {data.financasRecentes.map((f) => {
+                      const valorNum = Number(f.valor);
+                      return (
+                        <tr key={`${f.origem}-${f.id}`}>
+                          <td className="px-4 py-2">{f.categoria}</td>
+                          <td
+                            className={`px-4 py-2 ${
+                              f.tipo === "despesa"
+                                ? "text-red-600"
+                                : "text-green-600"
+                            }`}
+                          >
+                            R$ {Number.isNaN(valorNum) ? "-" : valorNum.toFixed(2)}
+                          </td>
+                          <td className="px-4 py-2">
+                            {new Date(f.data).toLocaleDateString("pt-BR")}
+                          </td>
+                          <td className="px-4 py-2">
+                            {f.origem === "whatsapp" ? "WhatsApp" : "Dashboard"}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -299,6 +331,7 @@ export default function HomePage() {
     </div>
   );
 }
+
 
 
 
