@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Header from "../components/Header";
 import Navigation from "../components/Navigation";
 import MonthSummary from "../components/MonthSummary";
 import { FaSpinner, FaWhatsapp } from "react-icons/fa";
@@ -152,7 +151,7 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100 relative">
-      <Header />
+      {/* 🔹 Header já está no layout.tsx → removido aqui */}
 
       <main className="flex-1 p-6 flex flex-col mb-20">
         <div className="w-full space-y-8">

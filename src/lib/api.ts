@@ -71,6 +71,50 @@ export async function apiFetch<T>(
   return payload as T;
 }
 
+/* ===========================================================
+   🔹 API Registros Financeiros
+   =========================================================== */
+
+export async function getRegistrosFinanceiros() {
+  return apiFetch("/registros-financeiros");
+}
+
+export async function createRegistroFinanceiro(data: {
+  responsavel: string;
+  categoria: string;
+  tipo: "gasto" | "receita";
+  valor: number;
+  descricao?: string;
+  data_hora?: string;
+}) {
+  return apiFetch("/registros-financeiros", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateRegistroFinanceiro(
+  id: number,
+  data: Partial<{
+    responsavel: string;
+    categoria: string;
+    tipo: "gasto" | "receita";
+    valor: number;
+    descricao?: string;
+    data_hora?: string;
+  }>
+) {
+  return apiFetch(`/registros-financeiros/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteRegistroFinanceiro(id: number) {
+  return apiFetch(`/registros-financeiros/${id}`, { method: "DELETE" });
+}
+
+
 
 
 

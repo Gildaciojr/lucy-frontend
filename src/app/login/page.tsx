@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link"; // 👈 Importando Link do Next.js
+import Link from "next/link";
 import { FaSpinner, FaSignInAlt, FaLock } from "react-icons/fa";
 import { apiFetch } from "@/lib/api";
 
@@ -29,11 +29,11 @@ export default function LoginPage() {
 
       localStorage.setItem("auth_token", data.access_token);
       localStorage.setItem("user_id", String(data.user.id));
+      localStorage.setItem("username", data.user.username);
 
       router.push("/");
     } catch (err: unknown) {
-      if (err instanceof Error) setError(err.message);
-      else setError("Erro desconhecido no login.");
+      setError(err instanceof Error ? err.message : "Erro desconhecido no login.");
     } finally {
       setLoading(false);
     }
@@ -42,7 +42,7 @@ export default function LoginPage() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-400 to-purple-600 p-4">
       <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
-        <h1 className="text-3xl font-bold text-center text-purple-700 mb-6">Lucy</h1>
+        <h1 className="text-3xl font-bold text-center text-purple-700 mb-6">lucy</h1>
         <p className="text-center text-gray-500 mb-6">Entre na sua conta</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -77,7 +77,6 @@ export default function LoginPage() {
 
         {error && <p className="text-center text-red-500 mt-4">{error}</p>}
 
-        {/* Cadastro */}
         <p className="mt-6 text-center text-sm">
           Não tem conta?{" "}
           <Link href="/signup" className="text-purple-600 hover:underline">
@@ -85,7 +84,6 @@ export default function LoginPage() {
           </Link>
         </p>
 
-        {/* Esqueceu a senha */}
         <p className="mt-2 text-center text-sm">
           Esqueceu sua senha?{" "}
           <Link href="/reset-password" className="text-purple-600 hover:underline">
@@ -94,13 +92,15 @@ export default function LoginPage() {
         </p>
 
         <footer className="mt-8 text-center text-sm text-gray-500 flex items-center justify-center gap-2">
-          <FaLock className="text-purple-600" />
+          {/* Alterado para dourado */}
+          <FaLock className="text-yellow-500" />
           <span>Seus dados estão totalmente seguros e protegidos.</span>
         </footer>
       </div>
     </div>
   );
 }
+
 
 
 

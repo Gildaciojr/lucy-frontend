@@ -6,7 +6,7 @@ export default function ConteudoPage() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm">
+      <header className="bg-purple-100 shadow-sm">
         <div className="max-w-6xl mx-auto px-6 py-4 flex flex-col items-center">
           <h1 className="text-3xl font-extrabold text-purple-700">Lucy</h1>
           <p className="text-gray-500 text-sm">

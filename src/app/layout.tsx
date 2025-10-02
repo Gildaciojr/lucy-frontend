@@ -19,12 +19,13 @@ export default function RootLayout({
   return (
     <html lang="pt">
       <body className={inter.className}>
-        <Header />
+        <Header /> {/* ✅ Fica só aqui */}
         <ClientLayoutWrapper>{children}</ClientLayoutWrapper>
       </body>
     </html>
   );
 }
+
 
 
 
