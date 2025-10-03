@@ -10,12 +10,13 @@ import {
 } from "react-icons/fa";
 import AgendaForm from "./AgendaForm";
 
-interface Compromisso {
+interface CompromissoItem {
   id: number;
   titulo: string;
   data: string;
   concluido: boolean;
-  userId: number;
+  // vem do backend (NormalizadoCompromisso)
+  origem: "dashboard" | "whatsapp";
 }
 
 interface CardProps {
@@ -26,13 +27,7 @@ interface CardProps {
   isActive: boolean;
 }
 
-const Card: React.FC<CardProps> = ({
-  icon,
-  title,
-  value,
-  onClick,
-  isActive,
-}) => {
+const Card: React.FC<CardProps> = ({ icon, title, value, onClick, isActive }) => {
   return (
     <div
       className={`flex items-center space-x-4 p-4 bg-white rounded-xl shadow-md cursor-pointer transition-transform transform hover:scale-105 ${
@@ -52,12 +47,10 @@ const Card: React.FC<CardProps> = ({
 };
 
 export default function Agenda() {
-  const [compromissos, setCompromissos] = useState<Compromisso[]>([]);
+  const [compromissos, setCompromissos] = useState<CompromissoItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [viewDetails, setViewDetails] = useState<
-    null | "concluidos" | "pendentes"
-  >(null);
+  const [viewDetails, setViewDetails] = useState<null | "concluidos" | "pendentes">(null);
 
   const fetchCompromissos = async () => {
     setLoading(true);
@@ -70,13 +63,12 @@ export default function Agenda() {
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/compromissos`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       if (!response.ok) throw new Error("Erro ao buscar compromissos.");
-      const data: Compromisso[] = await response.json();
+
+      const data = (await response.json()) as CompromissoItem[];
       setCompromissos(data);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro desconhecido.");
@@ -136,7 +128,7 @@ export default function Agenda() {
 
   const renderDetails = () => {
     let title = "";
-    let list: Compromisso[] = [];
+    let list: CompromissoItem[] = [];
 
     if (viewDetails === "concluidos") {
       title = "Compromissos Concluídos";
@@ -157,36 +149,40 @@ export default function Agenda() {
         </button>
         <h3 className="text-xl font-bold text-gray-800 mb-4">{title}</h3>
         <ul className="space-y-4">
-          {list.map((item) => (
-            <li
-              key={item.id}
-              className="p-4 bg-gray-100 rounded-lg flex justify-between items-center"
-            >
-              <div>
-                <p className="font-semibold text-gray-700">{item.titulo}</p>
-                <p className="text-sm text-gray-500">
-                  {new Date(item.data).toLocaleString("pt-BR")}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                {item.concluido ? (
-                  <button
-                    onClick={() => handleReabrir(item.id)}
-                    className="px-3 py-1 rounded bg-yellow-500 text-white text-sm flex items-center gap-1 hover:bg-yellow-600"
-                  >
-                    <FaUndo /> Reabrir
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleConcluir(item.id)}
-                    className="px-3 py-1 rounded bg-green-600 text-white text-sm flex items-center gap-1 hover:bg-green-700"
-                  >
-                    <FaCheckCircle /> Concluir
-                  </button>
-                )}
-              </div>
-            </li>
-          ))}
+          {list.map((item) => {
+            const isDashboard = item.origem === "dashboard";
+            return (
+              <li
+                key={`${item.origem}-${item.id}`}
+                className="p-4 bg-gray-100 rounded-lg flex justify-between items-center"
+              >
+                <div>
+                  <p className="font-semibold text-gray-700">{item.titulo}</p>
+                  <p className="text-sm text-gray-500">
+                    {new Date(item.data).toLocaleString("pt-BR")}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  {isDashboard && item.concluido && (
+                    <button
+                      onClick={() => handleReabrir(item.id)}
+                      className="px-3 py-1 rounded bg-yellow-500 text-white text-sm flex items-center gap-1 hover:bg-yellow-600"
+                    >
+                      <FaUndo /> Reabrir
+                    </button>
+                  )}
+                  {isDashboard && !item.concluido && (
+                    <button
+                      onClick={() => handleConcluir(item.id)}
+                      className="px-3 py-1 rounded bg-green-600 text-white text-sm flex items-center gap-1 hover:bg-green-700"
+                    >
+                      <FaCheckCircle /> Concluir
+                    </button>
+                  )}
+                </div>
+              </li>
+            );
+          })}
         </ul>
       </div>
     );
@@ -230,6 +226,7 @@ export default function Agenda() {
     </div>
   );
 }
+
 
 
 
