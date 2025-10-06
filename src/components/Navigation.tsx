@@ -4,18 +4,19 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   FaHome,
-  FaMoneyBillWave,
+  FaWallet,
   FaCalendarAlt,
-  FaBook,
+  FaLightbulb,
+  FaTrophy,
   FaChartBar,
   FaCog,
 } from "react-icons/fa";
 
-const items = [
+const NAV = [
   { href: "/", label: "Início", icon: <FaHome /> },
-  { href: "/financas", label: "Finanças", icon: <FaMoneyBillWave /> },
+  { href: "/financas", label: "Finanças", icon: <FaWallet /> },
   { href: "/agenda", label: "Agenda", icon: <FaCalendarAlt /> },
-  { href: "/conteudo", label: "Conteúdo", icon: <FaBook /> },
+  { href: "/conteudo", label: "Conteúdo", icon: <FaLightbulb /> },
   { href: "/relatorios", label: "Relatórios", icon: <FaChartBar /> },
   { href: "/configuracoes", label: "Configurações", icon: <FaCog /> },
 ];
@@ -24,20 +25,21 @@ export default function Navigation() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-sm z-50">
-      <ul className="grid grid-cols-5 sm:grid-cols-6 gap-1 max-w-4xl mx-auto">
-        {items.map((it) => {
-          const active = pathname === it.href;
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-purple-200 bg-white">
+      <ul className="max-w-5xl mx-auto grid grid-cols-7 gap-1 px-2 py-2">
+        {NAV.map((item) => {
+          const active = pathname === item.href;
           return (
-            <li key={it.href}>
+            <li key={item.href}>
               <Link
-                href={it.href}
-                className={`flex flex-col items-center py-3 text-xs ${
-                  active ? "text-purple-600" : "text-gray-600"
-                } hover:text-purple-600`}
+                href={item.href}
+                className={`flex flex-col items-center justify-center rounded-xl px-2 py-2 text-xs font-semibold transition
+                  ${active ? "bg-purple-600 text-white" : "text-gray-700 hover:bg-purple-50 hover:text-purple-700"}`}
               >
-                <span className="text-lg">{it.icon}</span>
-                <span className="mt-1">{it.label}</span>
+                <span className={`text-lg ${active ? "text-white" : "text-purple-700/90"}`}>
+                  {item.icon}
+                </span>
+                <span className="mt-1 leading-none">{item.label}</span>
               </Link>
             </li>
           );
@@ -46,3 +48,4 @@ export default function Navigation() {
     </nav>
   );
 }
+
