@@ -52,22 +52,27 @@ export default function FinancasForm({ onSave }: { onSave: () => void }) {
         return;
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/financas`, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-  },
-  body: JSON.stringify({
-    categoria: formState.categoria,
-    valor: parseFloat(formState.valor),
-    tipo: formState.tipo,
-    data: new Date().toISOString(),
-  }),
-});
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/financas`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            categoria: formState.categoria,
+            valor: parseFloat(formState.valor),
+            tipo: formState.tipo,
+            data: new Date().toISOString(),
+          }),
+        }
+      );
+
       if (!response.ok) {
         throw new Error("Erro ao adicionar finança.");
       }
+
       setStatus("success");
       setFormState({ categoria: "", valor: "", tipo: "despesa" });
       onSave();
@@ -80,9 +85,7 @@ export default function FinancasForm({ onSave }: { onSave: () => void }) {
 
   return (
     <div className="bg-white rounded-xl shadow-md p-6">
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">
-        Nova Finança
-      </h3>
+      <h3 className="text-lg font-semibold text-gray-800 mb-4">Nova Finança</h3>
       <form onSubmit={handleAddFinanca} className="space-y-4">
         <select
           name="categoria"
@@ -98,6 +101,7 @@ export default function FinancasForm({ onSave }: { onSave: () => void }) {
             </option>
           ))}
         </select>
+
         <input
           type="number"
           name="valor"
@@ -107,6 +111,7 @@ export default function FinancasForm({ onSave }: { onSave: () => void }) {
           required
           className="w-full p-2 rounded-lg border border-gray-300"
         />
+
         <select
           name="tipo"
           value={formState.tipo}
@@ -116,6 +121,7 @@ export default function FinancasForm({ onSave }: { onSave: () => void }) {
           <option value="receita">Receita</option>
           <option value="despesa">Despesa</option>
         </select>
+
         <button
           type="submit"
           className="w-full p-3 bg-green-500 text-white font-bold rounded-xl flex items-center justify-center space-x-2"
@@ -124,6 +130,7 @@ export default function FinancasForm({ onSave }: { onSave: () => void }) {
           {loading ? <FaSpinner className="animate-spin" /> : <FaPlus />}
           <span>Adicionar</span>
         </button>
+
         {status === "success" && (
           <p className="text-green-500">Finança adicionada com sucesso!</p>
         )}
@@ -134,6 +141,7 @@ export default function FinancasForm({ onSave }: { onSave: () => void }) {
     </div>
   );
 }
+
 
 
 

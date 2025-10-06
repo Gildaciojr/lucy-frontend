@@ -15,9 +15,7 @@ interface MonthSummaryProps {
 export default function MonthSummary({ data }: MonthSummaryProps) {
   return (
     <div className="bg-white rounded-xl shadow-md p-6">
-      <h2 className="text-xl font-bold text-purple-700 mb-6">
-        Resumo do Mês
-      </h2>
+      <h2 className="text-xl font-bold text-purple-700 mb-6">Resumo do Mês</h2>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="p-4 bg-green-50 rounded-lg shadow-sm text-center">
@@ -62,8 +60,6 @@ export default function MonthSummary({ data }: MonthSummaryProps) {
     </div>
   );
 }
-
-
 
 
 

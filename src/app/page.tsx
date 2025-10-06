@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Navigation from "../components/Navigation";
 import MonthSummary from "../components/MonthSummary";
 import { FaSpinner, FaWhatsapp } from "react-icons/fa";
@@ -19,11 +19,11 @@ import {
 } from "recharts";
 import { apiFetch } from "@/lib/api";
 
-/** Itens de finanças agora vêm unificados (dashboard + whatsapp) do endpoint /financas */
+/** Itens de finanças já vêm unificados (dashboard + whatsapp) do endpoint /financas */
 interface FinanceItem {
   id: number;
   categoria: string;
-  valor: number | string; // backend envia number; protegemos caso venha string
+  valor: number | string;
   data: string; // ISO
   tipo: "receita" | "despesa";
   origem: "dashboard" | "whatsapp";
@@ -62,10 +62,22 @@ interface SummaryData {
   financasRecentes: FinanceItem[];
 }
 
+type TipoFilter = "all" | "receita" | "despesa";
+
 const COLORS = ["#6d28d9", "#22c55e", "#facc15", "#ef4444"];
 
 export default function HomePage() {
-  const [data, setData] = useState<SummaryData>({
+  // ----------------- filtros -----------------
+  const [from, setFrom] = useState<string>(""); // YYYY-MM-DD
+  const [to, setTo] = useState<string>("");
+  const [tipoFilter, setTipoFilter] = useState<TipoFilter>("all");
+
+  // ----------------- estados -----------------
+  const [financasRaw, setFinancasRaw] = useState<FinanceItem[]>([]);
+  const [compromissos, setCompromissos] = useState<Compromisso[]>([]);
+  const [conteudo, setConteudo] = useState<Conteudo[]>([]);
+  const [gamificacao, setGamificacao] = useState<Gamificacao[]>([]);
+  const [summary, setSummary] = useState<SummaryData>({
     totalReceitas: 0,
     totalDespesas: 0,
     saldo: 0,
@@ -75,95 +87,178 @@ export default function HomePage() {
     financasRecentes: [],
   });
   const [loading, setLoading] = useState(true);
+  const [loadingFinancas, setLoadingFinancas] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchSummary = async () => {
-      try {
-        const token = localStorage.getItem("auth_token");
-        if (!token) throw new Error("Usuário não autenticado.");
-        const headers = { Authorization: `Bearer ${token}` };
+  // ----------------- helpers -----------------
+  const parseValor = (v: number | string) => {
+    const n = Number(v);
+    return Number.isNaN(n) ? 0 : n;
+  };
 
-        // 🔹 Agora /financas já retorna dashboard + whatsapp normalizados
-        const financasData = await apiFetch<FinanceItem[]>("/financas", { headers });
-        const compromissosData = await apiFetch<Compromisso[]>("/compromissos", { headers });
-        const conteudoData = await apiFetch<Conteudo[]>("/conteudo", { headers });
-        const gamificacaoData = await apiFetch<Gamificacao[]>("/gamificacao", { headers });
+  const buildFinancasUrl = useCallback(() => {
+    const qs = new URLSearchParams();
+    if (from) qs.set("from", from);
+    if (to) qs.set("to", to);
+    return `/financas${qs.toString() ? `?${qs.toString()}` : ""}`;
+  }, [from, to]);
 
-        let totalReceitas = 0;
-        let totalDespesas = 0;
+  // aplica filtro de tipo local (cliente)
+  const filterByTipo = useCallback(
+    (items: FinanceItem[]): FinanceItem[] => {
+      if (tipoFilter === "all") return items;
+      return items.filter((f) => f.tipo === tipoFilter);
+    },
+    [tipoFilter]
+  );
 
-        // 🔹 Totais baseados no campo tipo (independe do sinal do valor)
-        financasData.forEach((f) => {
-          const valorNum = Number(f.valor);
-          if (Number.isNaN(valorNum)) return;
-          if (f.tipo === "despesa") {
-            totalDespesas += Math.abs(valorNum);
-          } else {
-            totalReceitas += Math.abs(valorNum);
-          }
-        });
+  // computa summary a partir de dados carregados + filtro de tipo
+  const recomputeSummary = useCallback(
+    (financasBase: FinanceItem[], compromissosData: Compromisso[], conteudoData: Conteudo[], gamifData: Gamificacao[]) => {
+      const financas = filterByTipo(financasBase);
 
-        const saldo = totalReceitas - totalDespesas;
+      // Totais
+      let totalReceitas = 0;
+      let totalDespesas = 0;
+      financas.forEach((f) => {
+        const valorNum = parseValor(f.valor);
+        if (f.tipo === "despesa") totalDespesas += Math.abs(valorNum);
+        else totalReceitas += Math.abs(valorNum);
+      });
+      const saldo = totalReceitas - totalDespesas;
 
-        const proximoCompromisso =
-          compromissosData.length > 0
-            ? compromissosData
-                .slice()
-                .sort(
-                  (a, b) =>
-                    new Date(a.data).getTime() - new Date(b.data).getTime()
-                )[0].titulo
-            : "Nenhum agendado";
+      // Próximo compromisso
+      const proximoCompromisso =
+        compromissosData.length > 0
+          ? compromissosData
+              .slice()
+              .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())[0].titulo
+          : "Nenhum agendado";
 
-        const ultimaIdeia =
-          conteudoData.length > 0
-            ? conteudoData
-                .slice()
-                .sort(
-                  (a, b) =>
-                    new Date(b.createdAt).getTime() -
-                    new Date(a.createdAt).getTime()
-                )[0].ideia
-            : "Nenhuma ideia";
+      // Última ideia
+      const ultimaIdeia =
+        conteudoData.length > 0
+          ? conteudoData
+              .slice()
+              .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
+              .ideia
+          : "Nenhuma ideia";
 
-        const chartData: ChartItem[] = [
-          { name: "Finanças", uso: financasData.length },
-          { name: "Agenda", uso: compromissosData.length },
-          { name: "Conteúdo", uso: conteudoData.length },
-          { name: "Gamificação", uso: gamificacaoData.length },
-        ];
+      // Chart por módulo
+      const chartData: ChartItem[] = [
+        { name: "Finanças", uso: financas.length },
+        { name: "Agenda", uso: compromissosData.length },
+        { name: "Conteúdo", uso: conteudoData.length },
+        { name: "Gamificação", uso: gamifData.length },
+      ];
 
-        // 🔹 Pega as 5 últimas movimentações (de qualquer origem)
-        const financasRecentes = financasData
-          .slice()
-          .sort(
-            (a, b) =>
-              new Date(b.data).getTime() - new Date(a.data).getTime()
-          )
-          .slice(0, 5);
+      // 5 últimas movimentações (filtradas por tipo e período)
+      const financasRecentes = financas
+        .slice()
+        .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
+        .slice(0, 5);
 
-        setData({
-          totalReceitas,
-          totalDespesas,
-          saldo,
-          proximoCompromisso,
-          ultimaIdeia,
-          chartData,
-          financasRecentes,
-        });
-      } catch (err: unknown) {
-        setError(
-          err instanceof Error ? err.message : "Erro desconhecido ao buscar resumo."
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
+      setSummary({
+        totalReceitas,
+        totalDespesas,
+        saldo,
+        proximoCompromisso,
+        ultimaIdeia,
+        chartData,
+        financasRecentes,
+      });
+    },
+    [filterByTipo]
+  );
 
-    fetchSummary();
+  // ----------------- carregamento -----------------
+  const loadStaticModules = useCallback(async (headers: Record<string, string>) => {
+    // módulos que não dependem de período (ou você pode incluir futuramente)
+    const [comp, cont, gam] = await Promise.all([
+      apiFetch<Compromisso[]>("/compromissos", { headers }),
+      apiFetch<Conteudo[]>("/conteudo", { headers }),
+      apiFetch<Gamificacao[]>("/gamificacao", { headers }),
+    ]);
+    setCompromissos(comp);
+    setConteudo(cont);
+    setGamificacao(gam);
+    return { comp, cont, gam };
   }, []);
 
+  const loadFinancas = useCallback(
+    async (headers: Record<string, string>) => {
+      setLoadingFinancas(true);
+      try {
+        const url = buildFinancasUrl();
+        const financasData = await apiFetch<FinanceItem[]>(url, { headers });
+        setFinancasRaw(financasData);
+        return financasData;
+      } finally {
+        setLoadingFinancas(false);
+      }
+    },
+    [buildFinancasUrl]
+  );
+
+  const initialLoad = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const token = localStorage.getItem("auth_token");
+      if (!token) throw new Error("Usuário não autenticado.");
+      const headers = { Authorization: `Bearer ${token}` };
+
+      const [{ comp, cont, gam }, financasData] = await Promise.all([
+        loadStaticModules(headers),
+        loadFinancas(headers),
+      ]);
+
+      recomputeSummary(financasData, comp, cont, gam);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro ao carregar o resumo.");
+    } finally {
+      setLoading(false);
+    }
+  }, [loadStaticModules, loadFinancas, recomputeSummary]);
+
+  useEffect(() => {
+    initialLoad();
+  }, [initialLoad]);
+
+  // quando o filtro de tipo mudar, recalcula o summary localmente
+  useEffect(() => {
+    recomputeSummary(financasRaw, compromissos, conteudo, gamificacao);
+  }, [tipoFilter, financasRaw, compromissos, conteudo, gamificacao, recomputeSummary]);
+
+  // ----------------- ações UI -----------------
+  const onApplyPeriod = async () => {
+    try {
+      setError(null);
+      const token = localStorage.getItem("auth_token");
+      if (!token) throw new Error("Usuário não autenticado.");
+      const headers = { Authorization: `Bearer ${token}` };
+
+      const financasData = await loadFinancas(headers);
+      recomputeSummary(financasData, compromissos, conteudo, gamificacao);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro ao aplicar período.");
+    }
+  };
+
+  const onClearFilters = () => {
+    setFrom("");
+    setTo("");
+    setTipoFilter("all");
+    // Recarrega dados completos
+    initialLoad();
+  };
+
+  const toggleTipo = (t: Exclude<TipoFilter, "all">) => {
+    setTipoFilter((prev) => (prev === t ? "all" : t));
+  };
+
+  // ----------------- UI -----------------
   if (loading)
     return (
       <div className="text-center p-4 flex items-center justify-center space-x-2">
@@ -176,144 +271,166 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100 relative">
-      {/* 🔹 Header já está no layout.tsx */}
-
-      <main className="flex-1 p-6 flex flex-col mb-20">
-        <div className="w-full space-y-8">
-          <MonthSummary data={data} />
-
-          {/* Cards de resumo */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div className="bg-white shadow rounded-xl p-4 text-center">
-              <h4 className="text-sm text-gray-500">Receitas</h4>
-              <p className="text-xl font-bold text-green-600">
-                R$ {data.totalReceitas.toFixed(2)}
-              </p>
-            </div>
-            <div className="bg-white shadow rounded-xl p-4 text-center">
-              <h4 className="text-sm text-gray-500">Despesas</h4>
-              <p className="text-xl font-bold text-red-600">
-                R$ {data.totalDespesas.toFixed(2)}
-              </p>
-            </div>
-            <div className="bg-white shadow rounded-xl p-4 text-center">
-              <h4 className="text-sm text-gray-500">Saldo</h4>
-              <p
-                className={`text-xl font-bold ${
-                  data.saldo >= 0 ? "text-green-600" : "text-red-600"
-                }`}
-              >
-                R$ {data.saldo.toFixed(2)}
-              </p>
-            </div>
-            <div className="bg-white shadow rounded-xl p-4 text-center">
-              <h4 className="text-sm text-gray-500">Próximo Compromisso</h4>
-              <p className="text-sm font-semibold text-gray-700">
-                {data.proximoCompromisso}
-              </p>
-            </div>
-            <div className="bg-white shadow rounded-xl p-4 text-center">
-              <h4 className="text-sm text-gray-500">Última Ideia</h4>
-              <p className="text-sm font-semibold text-gray-700">
-                {data.ultimaIdeia}
-              </p>
-            </div>
+      <main className="flex-1 p-6 flex flex-col mb-20 space-y-6">
+        {/* Filtros */}
+        <div className="bg-white rounded-xl shadow p-4 flex flex-col md:flex-row md:items-end gap-3">
+          <div className="flex flex-col">
+            <label className="text-xs text-gray-600">Data inicial</label>
+            <input
+              type="date"
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+              className="border rounded-lg px-3 py-2"
+            />
+          </div>
+          <div className="flex flex-col">
+            <label className="text-xs text-gray-600">Data final</label>
+            <input
+              type="date"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              className="border rounded-lg px-3 py-2"
+            />
           </div>
 
-          {/* Gráficos */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white rounded-xl shadow-md p-4">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                Resumo de atividades
-              </h3>
-              <ResponsiveContainer width="100%" height={250}>
-                <LineChart data={data.chartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="uso"
-                    stroke="#6d28d9"
-                    activeDot={{ r: 8 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+          <div className="flex-1" />
 
-            <div className="bg-white rounded-xl shadow-md p-4">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                Distribuição por módulo
-              </h3>
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie
-                    data={data.chartData}
-                    dataKey="uso"
-                    nameKey="name"
-                    outerRadius={100}
-                    label
-                  >
-                    {data.chartData.map((_, i) => (
-                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+          <div className="flex gap-2">
+            <button
+              onClick={onApplyPeriod}
+              disabled={loadingFinancas}
+              className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold disabled:opacity-50"
+            >
+              {loadingFinancas ? "Aplicando..." : "Aplicar período"}
+            </button>
+            <button
+              onClick={onClearFilters}
+              className="px-4 py-2 rounded-lg bg-gray-200 text-gray-800 font-semibold"
+            >
+              Limpar filtros
+            </button>
+          </div>
+        </div>
+
+        {/* Resumo do mês (usa os totais já filtrados) */}
+        <MonthSummary data={summary} />
+
+        {/* Cards de resumo (clique ativa filtro de tipo) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <button
+            className={`bg-white shadow rounded-xl p-4 text-center border-2 ${
+              tipoFilter === "receita" ? "border-green-500" : "border-transparent"
+            }`}
+            onClick={() => toggleTipo("receita")}
+          >
+            <h4 className="text-sm text-gray-500">Receitas</h4>
+            <p className="text-xl font-bold text-green-600">
+              R$ {summary.totalReceitas.toFixed(2)}
+            </p>
+            <p className="text-xs text-gray-400 mt-1">
+              {tipoFilter === "receita" ? "Filtrando receitas" : "Clique para filtrar"}
+            </p>
+          </button>
+
+          <button
+            className={`bg-white shadow rounded-xl p-4 text-center border-2 ${
+              tipoFilter === "despesa" ? "border-red-500" : "border-transparent"
+            }`}
+            onClick={() => toggleTipo("despesa")}
+          >
+            <h4 className="text-sm text-gray-500">Despesas</h4>
+            <p className="text-xl font-bold text-red-600">
+              R$ {summary.totalDespesas.toFixed(2)}
+            </p>
+            <p className="text-xs text-gray-400 mt-1">
+              {tipoFilter === "despesa" ? "Filtrando despesas" : "Clique para filtrar"}
+            </p>
+          </button>
+
+          <div className="bg-white shadow rounded-xl p-4 text-center">
+            <h4 className="text-sm text-gray-500">Saldo</h4>
+            <p className={`text-xl font-bold ${summary.saldo >= 0 ? "text-green-600" : "text-red-600"}`}>
+              R$ {summary.saldo.toFixed(2)}
+            </p>
           </div>
 
-          {/* Últimas movimentações */}
+          <div className="bg-white shadow rounded-xl p-4 text-center">
+            <h4 className="text-sm text-gray-500">Próximo Compromisso</h4>
+            <p className="text-sm font-semibold text-gray-700">{summary.proximoCompromisso}</p>
+          </div>
+
+          <div className="bg-white shadow rounded-xl p-4 text-center">
+            <h4 className="text-sm text-gray-500">Última Ideia</h4>
+            <p className="text-sm font-semibold text-gray-700">{summary.ultimaIdeia}</p>
+          </div>
+        </div>
+
+        {/* Gráficos */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white rounded-xl shadow-md p-4">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">
-              Últimas movimentações financeiras
-            </h3>
-            {data.financasRecentes.length === 0 ? (
-              <p className="text-gray-500">Nenhum registro encontrado.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 text-sm">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-2 text-left">Categoria</th>
-                      <th className="px-4 py-2 text-left">Valor</th>
-                      <th className="px-4 py-2 text-left">Data</th>
-                      <th className="px-4 py-2 text-left">Origem</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {data.financasRecentes.map((f) => {
-                      const valorNum = Number(f.valor);
-                      return (
-                        <tr key={`${f.origem}-${f.id}`}>
-                          <td className="px-4 py-2">{f.categoria}</td>
-                          <td
-                            className={`px-4 py-2 ${
-                              f.tipo === "despesa"
-                                ? "text-red-600"
-                                : "text-green-600"
-                            }`}
-                          >
-                            R$ {Number.isNaN(valorNum) ? "-" : valorNum.toFixed(2)}
-                          </td>
-                          <td className="px-4 py-2">
-                            {new Date(f.data).toLocaleDateString("pt-BR")}
-                          </td>
-                          <td className="px-4 py-2">
-                            {f.origem === "whatsapp" ? "WhatsApp" : "Dashboard"}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Resumo de atividades</h3>
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={summary.chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="uso" stroke="#6d28d9" activeDot={{ r: 8 }} />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
+
+          <div className="bg-white rounded-xl shadow-md p-4">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Distribuição por módulo</h3>
+            <ResponsiveContainer width="100%" height={250}>
+              <PieChart>
+                <Pie data={summary.chartData} dataKey="uso" nameKey="name" outerRadius={100} label>
+                  {summary.chartData.map((_, i) => (
+                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Últimas movimentações (respeita filtros) */}
+        <div className="bg-white rounded-xl shadow-md p-4">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Últimas movimentações financeiras</h3>
+          {summary.financasRecentes.length === 0 ? (
+            <p className="text-gray-500">Nenhum registro encontrado.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-2 text-left">Categoria</th>
+                    <th className="px-4 py-2 text-left">Valor</th>
+                    <th className="px-4 py-2 text-left">Data</th>
+                    <th className="px-4 py-2 text-left">Origem</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {summary.financasRecentes.map((f) => {
+                    const valorNum = parseValor(f.valor);
+                    return (
+                      <tr key={`${f.origem}-${f.id}`}>
+                        <td className="px-4 py-2">{f.categoria}</td>
+                        <td className={`px-4 py-2 ${f.tipo === "despesa" ? "text-red-600" : "text-green-600"}`}>
+                          R$ {Number.isNaN(valorNum) ? "-" : valorNum.toFixed(2)}
+                        </td>
+                        <td className="px-4 py-2">{new Date(f.data).toLocaleDateString("pt-BR")}</td>
+                        <td className="px-4 py-2">{f.origem === "whatsapp" ? "WhatsApp" : "Dashboard"}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </main>
 
@@ -331,6 +448,7 @@ export default function HomePage() {
     </div>
   );
 }
+
 
 
 
