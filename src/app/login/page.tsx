@@ -18,21 +18,33 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
+    if (!username || !password) {
+      setError("Por favor, preencha usuário e senha.");
+      setLoading(false);
+      return;
+    }
+
     try {
       const data = await apiFetch<{ access_token: string; user: { id: number; username: string } }>(
         "/auth/login",
         {
           method: "POST",
+          headers: {
+            "Content-Type": "application/json", // ✅ garante que o backend leia o corpo corretamente
+          },
           body: JSON.stringify({ username, password }),
         }
       );
 
+      // Salva dados no localStorage
       localStorage.setItem("auth_token", data.access_token);
       localStorage.setItem("user_id", String(data.user.id));
       localStorage.setItem("username", data.user.username);
 
+      // Redireciona para a Home
       router.push("/");
     } catch (err: unknown) {
+      console.error("Erro no login:", err);
       setError(err instanceof Error ? err.message : "Erro desconhecido no login.");
     } finally {
       setLoading(false);
@@ -92,7 +104,6 @@ export default function LoginPage() {
         </p>
 
         <footer className="mt-8 text-center text-sm text-gray-500 flex items-center justify-center gap-2">
-          {/* Alterado para dourado */}
           <FaLock className="text-yellow-500" />
           <span>Seus dados estão totalmente seguros e protegidos.</span>
         </footer>
@@ -100,8 +111,6 @@ export default function LoginPage() {
     </div>
   );
 }
-
-
 
 
 
