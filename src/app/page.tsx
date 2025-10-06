@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import Navigation from "../components/Navigation";
 import MonthSummary from "../components/MonthSummary";
-import { FaSpinner, FaWhatsapp } from "react-icons/fa";
+import { FaSpinner, FaWhatsapp, FaTrophy } from "react-icons/fa";
 import {
   ResponsiveContainer,
   LineChart,
@@ -114,7 +115,12 @@ export default function HomePage() {
 
   // computa summary a partir de dados carregados + filtro de tipo
   const recomputeSummary = useCallback(
-    (financasBase: FinanceItem[], compromissosData: Compromisso[], conteudoData: Conteudo[], gamifData: Gamificacao[]) => {
+    (
+      financasBase: FinanceItem[],
+      compromissosData: Compromisso[],
+      conteudoData: Conteudo[],
+      gamifData: Gamificacao[]
+    ) => {
       const financas = filterByTipo(financasBase);
 
       // Totais
@@ -132,7 +138,9 @@ export default function HomePage() {
         compromissosData.length > 0
           ? compromissosData
               .slice()
-              .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())[0].titulo
+              .sort(
+                (a, b) => new Date(a.data).getTime() - new Date(b.data).getTime()
+              )[0].titulo
           : "Nenhum agendado";
 
       // Última ideia
@@ -140,8 +148,11 @@ export default function HomePage() {
         conteudoData.length > 0
           ? conteudoData
               .slice()
-              .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
-              .ideia
+              .sort(
+                (a, b) =>
+                  new Date(b.createdAt).getTime() -
+                  new Date(a.createdAt).getTime()
+              )[0].ideia
           : "Nenhuma ideia";
 
       // Chart por módulo
@@ -155,7 +166,9 @@ export default function HomePage() {
       // 5 últimas movimentações (filtradas por tipo e período)
       const financasRecentes = financas
         .slice()
-        .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
+        .sort(
+          (a, b) => new Date(b.data).getTime() - new Date(a.data).getTime()
+        )
         .slice(0, 5);
 
       setSummary({
@@ -173,7 +186,6 @@ export default function HomePage() {
 
   // ----------------- carregamento -----------------
   const loadStaticModules = useCallback(async (headers: Record<string, string>) => {
-    // módulos que não dependem de período (ou você pode incluir futuramente)
     const [comp, cont, gam] = await Promise.all([
       apiFetch<Compromisso[]>("/compromissos", { headers }),
       apiFetch<Conteudo[]>("/conteudo", { headers }),
@@ -250,7 +262,6 @@ export default function HomePage() {
     setFrom("");
     setTo("");
     setTipoFilter("all");
-    // Recarrega dados completos
     initialLoad();
   };
 
@@ -268,6 +279,15 @@ export default function HomePage() {
     );
 
   if (error) return <div className="text-center p-4 text-red-500">Erro: {error}</div>;
+
+  // Métricas simples de gamificação para o card
+  const totalConquistas = gamificacao.length;
+  const legendaConquistas =
+    totalConquistas === 0
+      ? "Sem conquistas ainda"
+      : totalConquistas === 1
+      ? "1 conquista"
+      : `${totalConquistas} conquistas`;
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100 relative">
@@ -312,8 +332,29 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Resumo do mês (usa os totais já filtrados) */}
+        {/* Resumo do mês */}
         <MonthSummary data={summary} />
+
+        {/* 💎 Card de Gamificação na HOME */}
+        <Link
+          href="/gamificacao"
+          className="group block bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500 rounded-2xl shadow-md p-6 text-white hover:shadow-lg transition-shadow"
+        >
+          <div className="flex items-center gap-4">
+            <div className="p-4 bg-white/15 rounded-2xl backdrop-blur-sm">
+              <FaTrophy className="w-8 h-8" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-bold">Gamificação</h3>
+              <p className="text-sm opacity-90">
+                {legendaConquistas} • toque para ver suas metas e badges
+              </p>
+            </div>
+            <div className="text-sm font-semibold bg-white/20 px-3 py-1 rounded-full">
+              Ver página
+            </div>
+          </div>
+        </Link>
 
         {/* Cards de resumo (clique ativa filtro de tipo) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -448,6 +489,7 @@ export default function HomePage() {
     </div>
   );
 }
+
 
 
 
