@@ -1,8 +1,16 @@
 {
   "compilerOptions": {
-    "jsx": "preserve",
-    "target": "ES2017",
+    /* 🚀 Correção principal */
+    "jsx": "react-jsx",
+
+    /* 🧠 Compatibilidade moderna */
+    "target": "ESNext",
     "lib": ["dom", "dom.iterable", "esnext"],
+
+    /* 🧩 Suporte a React types (corrige JSX.Element e outros) */
+    "types": ["react", "react-dom"],
+
+    /* 🔧 Configurações de build */
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -13,17 +21,20 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "incremental": true,
-    "typeRoots": [
-      "./src/types",
-      "./node_modules/@types"
-    ],
+
+    /* 🧭 Importações absolutas */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+
+    /* 💡 Plugins */
     "plugins": [
       { "name": "next" }
     ],
-    "baseUrl": ".", 
-    "paths": {
-      "@/*": ["src/*"]
-    }
+
+    /* 🗂️ TypeRoots personalizados */
+    "typeRoots": ["./src/types", "./node_modules/@types"]
   },
   "include": [
     "next-env.d.ts",

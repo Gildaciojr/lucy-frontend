@@ -19,28 +19,36 @@ const NAV = [
   { href: "/conteudo", label: "Conteúdo", icon: <FaLightbulb /> },
   { href: "/reports", label: "Relatórios", icon: <FaChartBar /> },
   { href: "/settings", label: "Configurações", icon: <FaCog /> },
-
 ];
 
 export default function Navigation() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-purple-300 bg-purple-100 shadow-inner backdrop-blur-md">
-      <ul className="max-w-5xl mx-auto grid grid-cols-7 gap-1 px-2 py-2">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-purple-200 bg-purple-100 backdrop-blur-lg">
+      <ul className="flex justify-around items-center max-w-5xl mx-auto px-1 py-1 sm:py-2">
         {NAV.map((item) => {
           const active = pathname === item.href;
           return (
-            <li key={item.href}>
+            <li key={item.href} className="flex-1 text-center">
               <Link
                 href={item.href}
-                className={`flex flex-col items-center justify-center rounded-xl px-2 py-2 text-xs font-semibold transition
-                  ${active ? "bg-purple-600 text-white" : "text-gray-700 hover:bg-purple-50 hover:text-purple-700"}`}
+                className={`flex flex-col items-center justify-center px-2 py-1 sm:py-2 rounded-xl text-[10px] sm:text-xs font-semibold transition-all duration-150 ${
+                  active
+                    ? "bg-purple-600 text-white shadow-md scale-105"
+                    : "text-gray-700 hover:bg-purple-200 hover:text-purple-700"
+                }`}
               >
-                <span className={`text-lg ${active ? "text-white" : "text-purple-700/90"}`}>
+                <span
+                  className={`text-base sm:text-lg mb-0.5 ${
+                    active ? "text-white" : "text-purple-700/80"
+                  }`}
+                >
                   {item.icon}
                 </span>
-                <span className="mt-1 leading-none">{item.label}</span>
+                <span className="truncate w-full leading-none">
+                  {item.label}
+                </span>
               </Link>
             </li>
           );
@@ -49,4 +57,5 @@ export default function Navigation() {
     </nav>
   );
 }
+
 

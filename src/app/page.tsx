@@ -347,7 +347,7 @@ export default function HomePage() {
             <div className="flex-1">
               <h3 className="text-xl font-bold">Gamificação</h3>
               <p className="text-sm opacity-90">
-                {legendaConquistas} • toque para ver suas metas e badges
+                {legendaConquistas} • Toque para ver suas metas e conquistas
               </p>
             </div>
             <div className="text-sm font-semibold bg-white/20 px-3 py-1 rounded-full">
