@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useCallback, JSX } from "react";
 import {
   FaMoneyBillWave,
   FaArrowDown,
@@ -317,11 +317,12 @@ export default function Financas() {
 
         <div className="flex flex-wrap gap-3 justify-center md:justify-start">
           {["today", "week", "month"].map((mode) => {
-            const icons: Record<string, JSX.Element> = {
-              today: <FaCalendarDay />,
-              week: <FaCalendarWeek />,
-              month: <FaCalendarAlt />,
-            };
+          const icons: Record<string, React.ReactNode> = {
+           today: <FaCalendarDay />,
+           week: <FaCalendarWeek />,
+           month: <FaCalendarAlt />,
+};
+
             const labels: Record<string, string> = {
               today: "Hoje",
               week: "Semana",
