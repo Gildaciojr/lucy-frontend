@@ -171,7 +171,7 @@ export default function GamificacaoPage() {
   const unlockedNames = (summary?.achievements ?? []).map((a) => a.name);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-purple-100 p-4 sm:p-6">
+    <div className="min-h-screen bg-gradient-to-b from-purple-50 via-bg-purple-200 to-purple-100 p-4 sm:p-6">
       <div className="max-w-6xl mx-auto space-y-10">
         {/* Header com estrela e contador */}
         <motion.div
