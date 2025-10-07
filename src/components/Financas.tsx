@@ -17,11 +17,11 @@ import {
   Pie,
   Cell,
   Tooltip,
-  Legend,
   BarChart,
   Bar,
   XAxis,
   YAxis,
+  Legend,
 } from "recharts";
 import FinancasForm from "./FinancasForm";
 import MonthSummary from "./MonthSummary";
@@ -37,19 +37,6 @@ interface Financa {
   tipo: Tipo;
   userId: number;
   origem?: Origem;
-}
-
-interface Compromisso {
-  id: number;
-  titulo: string;
-  data: string;
-  concluido: boolean;
-}
-
-interface Ideia {
-  id: number;
-  ideia: string;
-  criadoEm: string;
 }
 
 interface FinanceCardProps {
@@ -98,20 +85,13 @@ const getDateRange = (mode: "today" | "week" | "month") => {
 };
 
 export default function Financas() {
-  const [financas, setFinancas] = useState<Financa[]>([]);
-  const [compromissos, setCompromissos] = useState<Compromisso[]>([]);
-  const [ideias, setIdeias] = useState<Ideia[]>([]);
+  const [todasFinancas, setTodasFinancas] = useState<Financa[]>([]);
+  const [financasFiltradas, setFinancasFiltradas] = useState<Financa[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingFinancas, setLoadingFinancas] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const [tipoFiltro, setTipoFiltro] = useState<"all" | Tipo>("all");
-  const [from, setFrom] = useState<string>("");
-  const [to, setTo] = useState<string>("");
-
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
-  // === 🔥 Função principal de busca de dados ===
   const fetchFinancas = useCallback(async () => {
     try {
       setLoadingFinancas(true);
@@ -121,78 +101,31 @@ export default function Financas() {
         return;
       }
 
-      const qs = new URLSearchParams();
-      if (from) qs.set("from", from);
-      if (to) qs.set("to", to);
-      if (tipoFiltro !== "all") qs.set("tipo", tipoFiltro);
-
-      const url = `${process.env.NEXT_PUBLIC_API_URL}/financas${
-        qs.toString() ? `?${qs.toString()}` : ""
-      }`;
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/financas`;
 
       const response = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!response.ok) throw new Error("Erro ao buscar finanças.");
 
+      if (!response.ok) throw new Error("Erro ao buscar finanças.");
       const data: Financa[] = await response.json();
-      setFinancas(data);
-    } catch (err: unknown) {
+
+      setTodasFinancas(data);
+      setFinancasFiltradas(data);
+    } catch (err) {
       setError(err instanceof Error ? err.message : "Erro desconhecido.");
     } finally {
       setLoadingFinancas(false);
     }
-  }, [from, to, tipoFiltro]);
-
-  // === Compromissos & Ideias ===
-  const fetchCompromissos = async () => {
-    try {
-      const token = localStorage.getItem("auth_token");
-      if (!token) return;
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/compromissos`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (!response.ok) return;
-      const data: Compromisso[] = await response.json();
-      setCompromissos(data);
-    } catch {}
-  };
-
-  const fetchIdeias = async () => {
-    try {
-      const token = localStorage.getItem("auth_token");
-      if (!token) return;
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/conteudo`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (!response.ok) return;
-      const data: Ideia[] = await response.json();
-      setIdeias(data);
-    } catch {}
-  };
-
-  // === Inicializa dados gerais ===
-  useEffect(() => {
-    const loadAll = async () => {
-      setLoading(true);
-      await Promise.all([fetchFinancas(), fetchCompromissos(), fetchIdeias()]);
-      setLoading(false);
-    };
-    loadAll();
   }, []);
 
-  // ✅ Quando filtros mudarem, recarrega finanças automaticamente
   useEffect(() => {
-    if (!loading) {
-      void fetchFinancas();
-    }
-  }, [from, to, tipoFiltro, loading, fetchFinancas]);
+    setLoading(true);
+    fetchFinancas().finally(() => setLoading(false));
+  }, [fetchFinancas]);
 
-  // === Totais e cálculos ===
-  const receitas = financas.filter((f) => f.tipo === "receita");
-  const despesas = financas.filter((f) => f.tipo === "despesa");
+  const receitas = todasFinancas.filter((f) => f.tipo === "receita");
+  const despesas = todasFinancas.filter((f) => f.tipo === "despesa");
 
   const totalReceitas = receitas.reduce(
     (sum, f) => sum + Number(f.valor || 0),
@@ -204,31 +137,6 @@ export default function Financas() {
   );
   const saldo = totalReceitas - totalDespesas;
 
-  const futuro = compromissos
-    .filter((c) => new Date(c.data) > new Date() && !c.concluido)
-    .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
-  const proximoCompromisso = futuro.length
-    ? `${futuro[0].titulo} (${new Date(futuro[0].data).toLocaleDateString(
-        "pt-BR"
-      )})`
-    : "Nenhum";
-
-  const ultimaIdeia =
-    ideias.length > 0
-      ? ideias.sort(
-          (a, b) =>
-            new Date(b.criadoEm).getTime() - new Date(a.criadoEm).getTime()
-        )[0].ideia
-      : "Nenhuma";
-
-  const resumo = {
-    totalReceitas,
-    totalDespesas,
-    saldo,
-    proximoCompromisso,
-    ultimaIdeia,
-  };
-
   const COLORS = [
     "#6d28d9",
     "#22c55e",
@@ -239,7 +147,7 @@ export default function Financas() {
   ];
 
   const aggregatedData = useMemo(() => {
-    return financas.reduce((acc, item) => {
+    return todasFinancas.reduce((acc, item) => {
       const key = `${item.categoria} (${item.tipo})`;
       const valor = Number(item.valor || 0);
       const found = acc.find((d) => d.name === key);
@@ -247,10 +155,10 @@ export default function Financas() {
       else acc.push({ name: key, value: valor });
       return acc;
     }, [] as { name: string; value: number }[]);
-  }, [financas]);
+  }, [todasFinancas]);
 
   const monthlyChartData = useMemo(() => {
-    const m = financas.reduce((acc, item) => {
+    const m = todasFinancas.reduce((acc, item) => {
       const month = new Date(item.data).toLocaleString("default", {
         month: "short",
         year: "numeric",
@@ -266,7 +174,31 @@ export default function Financas() {
       receitas: m[key].receitas,
       despesas: m[key].despesas,
     }));
-  }, [financas]);
+  }, [todasFinancas]);
+
+  const handleClick = (
+    tipo: "receita" | "despesa" | "all",
+    mode: "today" | "week" | "month"
+  ) => {
+    const range = getDateRange(mode);
+    const fromDate = new Date(range.from);
+    const toDate = new Date(range.to);
+
+    const filtrados = todasFinancas.filter((f) => {
+      const dataItem = new Date(f.data);
+      const dentroDoPeriodo = dataItem >= fromDate && dataItem <= toDate;
+      const tipoMatch = tipo === "all" ? true : f.tipo === tipo;
+      return dentroDoPeriodo && tipoMatch;
+    });
+
+    setFinancasFiltradas(filtrados);
+
+    setTimeout(() => {
+      document
+        .getElementById("lista-financas")
+        ?.scrollIntoView({ behavior: "smooth" });
+    }, 150);
+  };
 
   if (loading)
     return (
@@ -288,8 +220,6 @@ export default function Financas() {
         Controle Financeiro
       </h2>
 
-      <MonthSummary data={resumo} />
-
       {/* 🔥 Filtros rápidos */}
       <div className="bg-white rounded-xl shadow p-4 mb-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
@@ -309,13 +239,6 @@ export default function Financas() {
               month: "Mês",
             };
 
-            const handleClick = (tipo: "receita" | "despesa" | "all") => {
-              const range = getDateRange(mode);
-              setFrom(range.from);
-              setTo(range.to);
-              setTipoFiltro(tipo);
-            };
-
             return (
               <div key={mode} className="relative group">
                 <button className="flex items-center gap-2 bg-purple-100 hover:bg-purple-200 text-purple-700 font-semibold px-4 py-2 rounded-lg shadow transition">
@@ -324,19 +247,19 @@ export default function Financas() {
                 </button>
                 <div className="absolute hidden group-hover:flex flex-col mt-2 bg-white border border-purple-100 rounded-lg shadow-md z-10 w-36">
                   <button
-                    onClick={() => handleClick("receita")}
+                    onClick={() => handleClick("receita", mode)}
                     className="px-4 py-2 hover:bg-purple-50 text-left"
                   >
                     Receitas
                   </button>
                   <button
-                    onClick={() => handleClick("despesa")}
+                    onClick={() => handleClick("despesa", mode)}
                     className="px-4 py-2 hover:bg-purple-50 text-left"
                   >
                     Despesas
                   </button>
                   <button
-                    onClick={() => handleClick("all")}
+                    onClick={() => handleClick("all", mode)}
                     className="px-4 py-2 hover:bg-purple-50 text-left"
                   >
                     Tudo
@@ -348,7 +271,7 @@ export default function Financas() {
         </div>
       </div>
 
-      {/* Cards */}
+      {/* 💰 Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         <FinanceCard
           icon={<FaMoneyBillWave />}
@@ -370,15 +293,14 @@ export default function Financas() {
         />
       </div>
 
-      <FinancasForm onSave={fetchFinancas} />
+      {/* 📊 Gráfico - Distribuição por Categoria */}
+      <div className="bg-white rounded-xl shadow-md p-6 flex flex-col items-center">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">
+          Distribuição por Categoria
+        </h3>
 
-      {/* === Gráficos === */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-        <div className="bg-white rounded-xl shadow-md p-6 flex flex-col items-center">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">
-            Distribuição por Categoria
-          </h3>
-          <ResponsiveContainer width="100%" height={320}>
+        <div className="flex justify-center items-center w-full">
+          <ResponsiveContainer width="90%" height={320}>
             <PieChart>
               <Pie
                 data={aggregatedData}
@@ -421,35 +343,13 @@ export default function Financas() {
                   boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                 }}
               />
-              <Legend
-                layout="horizontal"
-                verticalAlign="bottom"
-                align="center"
-                wrapperStyle={{ fontSize: "12px", marginTop: "10px" }}
-              />
             </PieChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">
-            Evolução Mensal
-          </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={monthlyChartData}>
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="receitas" fill="#4CAF50" name="Receitas" />
-              <Bar dataKey="despesas" fill="#F44336" name="Despesas" />
-            </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* === Lista === */}
-      <div className="bg-white rounded-xl shadow-md p-6 mt-6">
+      {/* 🧾 Lista Filtrada */}
+      <div id="lista-financas" className="bg-white rounded-xl shadow-md p-6 mt-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
           Lançamentos Filtrados
         </h3>
@@ -457,7 +357,7 @@ export default function Financas() {
           <div className="flex items-center gap-2 text-gray-600">
             <FaSpinner className="animate-spin" /> Carregando…
           </div>
-        ) : financas.length === 0 ? (
+        ) : financasFiltradas.length === 0 ? (
           <div className="text-gray-600">Nenhum lançamento encontrado.</div>
         ) : (
           <div className="overflow-x-auto">
@@ -482,7 +382,7 @@ export default function Financas() {
                 </tr>
               </thead>
               <tbody>
-                {financas
+                {financasFiltradas
                   .slice()
                   .sort(
                     (a, b) =>
