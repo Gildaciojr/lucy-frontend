@@ -10,6 +10,7 @@ import {
   FaCalendarDay,
   FaCalendarWeek,
   FaCalendarAlt,
+  FaChevronDown,
   FaUndo,
 } from "react-icons/fa";
 import {
@@ -91,6 +92,7 @@ export default function Financas() {
   const [loadingFinancas, setLoadingFinancas] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
 
   const fetchFinancas = useCallback(async () => {
     try {
@@ -137,6 +139,7 @@ export default function Financas() {
     });
 
     setFinancasFiltradas(filtrados);
+    setOpenMenu(null);
     setTimeout(() => {
       document
         .getElementById("lista-financas")
@@ -146,12 +149,23 @@ export default function Financas() {
 
   const limparFiltros = () => {
     setFinancasFiltradas(todasFinancas);
+    setOpenMenu(null);
     setTimeout(() => {
       document
         .getElementById("lista-financas")
         ?.scrollIntoView({ behavior: "smooth" });
     }, 200);
   };
+
+  // Fecha o menu quando clicar fora
+  useEffect(() => {
+    const closeMenu = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest(".filter-button")) setOpenMenu(null);
+    };
+    document.addEventListener("click", closeMenu);
+    return () => document.removeEventListener("click", closeMenu);
+  }, []);
 
   const receitas = todasFinancas.filter((f) => f.tipo === "receita");
   const despesas = todasFinancas.filter((f) => f.tipo === "despesa");
@@ -247,38 +261,48 @@ export default function Financas() {
             };
 
             return (
-              <div key={mode} className="relative group">
-                <button className="flex items-center gap-2 bg-purple-100 hover:bg-purple-200 text-purple-700 font-semibold px-4 py-2 rounded-lg shadow transition">
+              <div key={mode} className="relative">
+                <button
+                  onClick={() => setOpenMenu(openMenu === mode ? null : mode)}
+                  className="filter-button flex items-center gap-2 bg-purple-100 hover:bg-purple-200 text-purple-700 font-semibold px-4 py-2 rounded-lg shadow transition"
+                >
                   {icons[mode]}
                   {labels[mode]}
+                  <FaChevronDown
+                    className={`transition-transform ${
+                      openMenu === mode ? "rotate-180" : ""
+                    }`}
+                  />
                 </button>
-                <div className="absolute hidden group-hover:flex flex-col mt-2 bg-white border border-purple-100 rounded-lg shadow-md z-10 w-36">
-                  <button
-                    onClick={() => handleFilterClick("receita", mode)}
-                    className="px-4 py-2 hover:bg-purple-50 text-left"
-                  >
-                    Receitas
-                  </button>
-                  <button
-                    onClick={() => handleFilterClick("despesa", mode)}
-                    className="px-4 py-2 hover:bg-purple-50 text-left"
-                  >
-                    Despesas
-                  </button>
-                  <button
-                    onClick={() => handleFilterClick("all", mode)}
-                    className="px-4 py-2 hover:bg-purple-50 text-left"
-                  >
-                    Tudo
-                  </button>
-                </div>
+
+                {openMenu === mode && (
+                  <div className="absolute left-0 mt-2 bg-white border border-purple-100 rounded-lg shadow-md z-10 w-36">
+                    <button
+                      onClick={() => handleFilterClick("receita", mode)}
+                      className="px-4 py-2 hover:bg-purple-50 text-left w-full"
+                    >
+                      Receitas
+                    </button>
+                    <button
+                      onClick={() => handleFilterClick("despesa", mode)}
+                      className="px-4 py-2 hover:bg-purple-50 text-left w-full"
+                    >
+                      Despesas
+                    </button>
+                    <button
+                      onClick={() => handleFilterClick("all", mode)}
+                      className="px-4 py-2 hover:bg-purple-50 text-left w-full"
+                    >
+                      Tudo
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* 🧾 Formulário */}
       <FinancasForm onSave={fetchFinancas} />
 
       {/* 💰 Cards */}
@@ -303,61 +327,58 @@ export default function Financas() {
         />
       </div>
 
-      {/* 📊 Gráfico */}
+      {/* Gráfico */}
       <div className="bg-white rounded-xl shadow-md p-6 flex flex-col items-center">
         <h3 className="text-xl font-bold text-purple-700 mb-5 text-center tracking-wide">
           Distribuição por Categoria 💰
         </h3>
-
-        <div className="flex justify-center items-center w-full">
-          <ResponsiveContainer width="90%" height={320}>
-            <PieChart>
-              <Pie
-                data={aggregatedData}
-                cx="50%"
-                cy="50%"
-                innerRadius={70}
-                outerRadius={110}
-                dataKey="value"
-                paddingAngle={3}
-                isAnimationActive
-                labelLine={false}
-                onMouseEnter={(_, index) => setActiveIndex(index)}
-                onMouseLeave={() => setActiveIndex(null)}
-              >
-                {aggregatedData.map((_, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={COLORS[index % COLORS.length]}
-                    style={{
-                      transform: activeIndex === index ? "scale(1.08)" : "scale(1)",
-                      transformOrigin: "center",
-                      transition: "transform 0.25s ease-out, filter 0.25s",
-                      filter:
-                        activeIndex === index
-                          ? "drop-shadow(0 0 6px rgba(109,40,217,0.6))"
-                          : "none",
-                    }}
-                  />
-                ))}
-              </Pie>
-              <Tooltip
-                formatter={(value: number, _, item) => [
-                  `R$ ${value.toFixed(2).replace(".", ",")}`,
-                  item?.payload?.name,
-                ]}
-                contentStyle={{
-                  backgroundColor: "white",
-                  borderRadius: "10px",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
+        <ResponsiveContainer width="90%" height={320}>
+          <PieChart>
+            <Pie
+              data={aggregatedData}
+              cx="50%"
+              cy="50%"
+              innerRadius={70}
+              outerRadius={110}
+              dataKey="value"
+              paddingAngle={3}
+              isAnimationActive
+              labelLine={false}
+              onMouseEnter={(_, index) => setActiveIndex(index)}
+              onMouseLeave={() => setActiveIndex(null)}
+            >
+              {aggregatedData.map((_, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={COLORS[index % COLORS.length]}
+                  style={{
+                    transform: activeIndex === index ? "scale(1.08)" : "scale(1)",
+                    transformOrigin: "center",
+                    transition: "transform 0.25s ease-out, filter 0.25s",
+                    filter:
+                      activeIndex === index
+                        ? "drop-shadow(0 0 6px rgba(109,40,217,0.6))"
+                        : "none",
+                  }}
+                />
+              ))}
+            </Pie>
+            <Tooltip
+              formatter={(value: number, _, item) => [
+                `R$ ${value.toFixed(2).replace(".", ",")}`,
+                item?.payload?.name,
+              ]}
+              contentStyle={{
+                backgroundColor: "white",
+                borderRadius: "10px",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+              }}
+            />
+          </PieChart>
+        </ResponsiveContainer>
       </div>
 
-      {/* 📋 Lista */}
+      {/* Lista */}
       <div
         id="lista-financas"
         className="bg-white rounded-xl shadow-md p-6 mt-6"
@@ -456,6 +477,8 @@ export default function Financas() {
     </div>
   );
 }
+
+
 
 
 
