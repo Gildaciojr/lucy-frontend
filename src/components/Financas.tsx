@@ -61,6 +61,7 @@ const FinanceCard: React.FC<FinanceCardProps> = ({
   </div>
 );
 
+// Função utilitária para definir o intervalo de datas
 const getDateRange = (mode: "today" | "week" | "month") => {
   const now = new Date();
   let from: string;
@@ -92,6 +93,7 @@ export default function Financas() {
   const [error, setError] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
+  // Busca todas as finanças do usuário
   const fetchFinancas = useCallback(async () => {
     try {
       setLoadingFinancas(true);
@@ -101,15 +103,12 @@ export default function Financas() {
         return;
       }
 
-      const url = `${process.env.NEXT_PUBLIC_API_URL}/financas`;
-
-      const response = await fetch(url, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/financas`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       if (!response.ok) throw new Error("Erro ao buscar finanças.");
       const data: Financa[] = await response.json();
-
       setTodasFinancas(data);
       setFinancasFiltradas(data);
     } catch (err) {
@@ -124,6 +123,32 @@ export default function Financas() {
     fetchFinancas().finally(() => setLoading(false));
   }, [fetchFinancas]);
 
+  // Lógica de filtros rápidos
+  const handleFilterClick = (
+    tipo: "receita" | "despesa" | "all",
+    mode: "today" | "week" | "month"
+  ) => {
+    const { from, to } = getDateRange(mode);
+    const fromDate = new Date(from);
+    const toDate = new Date(to);
+
+    const filtrados = todasFinancas.filter((f) => {
+      const dataItem = new Date(f.data);
+      const dentroDoPeriodo = dataItem >= fromDate && dataItem <= toDate;
+      const tipoMatch = tipo === "all" ? true : f.tipo === tipo;
+      return dentroDoPeriodo && tipoMatch;
+    });
+
+    setFinancasFiltradas(filtrados);
+
+    // Rola automaticamente até a lista
+    setTimeout(() => {
+      document
+        .getElementById("lista-financas")
+        ?.scrollIntoView({ behavior: "smooth" });
+    }, 150);
+  };
+
   const receitas = todasFinancas.filter((f) => f.tipo === "receita");
   const despesas = todasFinancas.filter((f) => f.tipo === "despesa");
 
@@ -137,14 +162,7 @@ export default function Financas() {
   );
   const saldo = totalReceitas - totalDespesas;
 
-  const COLORS = [
-    "#6d28d9",
-    "#22c55e",
-    "#facc15",
-    "#ef4444",
-    "#3b82f6",
-    "#9333ea",
-  ];
+  const COLORS = ["#6d28d9", "#22c55e", "#facc15", "#ef4444", "#3b82f6", "#9333ea"];
 
   const aggregatedData = useMemo(() => {
     return todasFinancas.reduce((acc, item) => {
@@ -164,8 +182,7 @@ export default function Financas() {
         year: "numeric",
       });
       if (!acc[month]) acc[month] = { receitas: 0, despesas: 0 };
-      if (item.tipo === "receita")
-        acc[month].receitas += Number(item.valor || 0);
+      if (item.tipo === "receita") acc[month].receitas += Number(item.valor || 0);
       else acc[month].despesas += Number(item.valor || 0);
       return acc;
     }, {} as Record<string, { receitas: number; despesas: number }>);
@@ -176,30 +193,6 @@ export default function Financas() {
     }));
   }, [todasFinancas]);
 
-  const handleClick = (
-    tipo: "receita" | "despesa" | "all",
-    mode: "today" | "week" | "month"
-  ) => {
-    const range = getDateRange(mode);
-    const fromDate = new Date(range.from);
-    const toDate = new Date(range.to);
-
-    const filtrados = todasFinancas.filter((f) => {
-      const dataItem = new Date(f.data);
-      const dentroDoPeriodo = dataItem >= fromDate && dataItem <= toDate;
-      const tipoMatch = tipo === "all" ? true : f.tipo === tipo;
-      return dentroDoPeriodo && tipoMatch;
-    });
-
-    setFinancasFiltradas(filtrados);
-
-    setTimeout(() => {
-      document
-        .getElementById("lista-financas")
-        ?.scrollIntoView({ behavior: "smooth" });
-    }, 150);
-  };
-
   if (loading)
     return (
       <div className="flex justify-center items-center p-6 text-purple-600 space-x-2">
@@ -209,16 +202,22 @@ export default function Financas() {
 
   if (error)
     return (
-      <div className="text-center p-6 text-red-500 font-semibold">
-        Erro: {error}
-      </div>
+      <div className="text-center p-6 text-red-500 font-semibold">Erro: {error}</div>
     );
 
   return (
     <div className="p-6 bg-gray-50 rounded-lg shadow-inner">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">
-        Controle Financeiro
-      </h2>
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">Controle Financeiro</h2>
+
+      <MonthSummary
+        data={{
+          totalReceitas,
+          totalDespesas,
+          saldo,
+          proximoCompromisso: "",
+          ultimaIdeia: "",
+        }}
+      />
 
       {/* 🔥 Filtros rápidos */}
       <div className="bg-white rounded-xl shadow p-4 mb-6">
@@ -247,19 +246,19 @@ export default function Financas() {
                 </button>
                 <div className="absolute hidden group-hover:flex flex-col mt-2 bg-white border border-purple-100 rounded-lg shadow-md z-10 w-36">
                   <button
-                    onClick={() => handleClick("receita", mode)}
+                    onClick={() => handleFilterClick("receita", mode)}
                     className="px-4 py-2 hover:bg-purple-50 text-left"
                   >
                     Receitas
                   </button>
                   <button
-                    onClick={() => handleClick("despesa", mode)}
+                    onClick={() => handleFilterClick("despesa", mode)}
                     className="px-4 py-2 hover:bg-purple-50 text-left"
                   >
                     Despesas
                   </button>
                   <button
-                    onClick={() => handleClick("all", mode)}
+                    onClick={() => handleFilterClick("all", mode)}
                     className="px-4 py-2 hover:bg-purple-50 text-left"
                   >
                     Tudo
@@ -271,8 +270,11 @@ export default function Financas() {
         </div>
       </div>
 
+      {/* 🧾 Formulário para adicionar finanças */}
+      <FinancasForm onSave={fetchFinancas} />
+
       {/* 💰 Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8 mt-6">
         <FinanceCard
           icon={<FaMoneyBillWave />}
           title="Total Receitas"
@@ -293,7 +295,7 @@ export default function Financas() {
         />
       </div>
 
-      {/* 📊 Gráfico - Distribuição por Categoria */}
+      {/* 📊 Gráfico */}
       <div className="bg-white rounded-xl shadow-md p-6 flex flex-col items-center">
         <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">
           Distribuição por Categoria
@@ -320,8 +322,7 @@ export default function Financas() {
                     key={`cell-${index}`}
                     fill={COLORS[index % COLORS.length]}
                     style={{
-                      transform:
-                        activeIndex === index ? "scale(1.08)" : "scale(1)",
+                      transform: activeIndex === index ? "scale(1.08)" : "scale(1)",
                       transformOrigin: "center",
                       transition: "transform 0.25s ease-out, filter 0.25s",
                       filter:
@@ -348,8 +349,11 @@ export default function Financas() {
         </div>
       </div>
 
-      {/* 🧾 Lista Filtrada */}
-      <div id="lista-financas" className="bg-white rounded-xl shadow-md p-6 mt-6">
+      {/* 📋 Lista de lançamentos */}
+      <div
+        id="lista-financas"
+        className="bg-white rounded-xl shadow-md p-6 mt-6"
+      >
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
           Lançamentos Filtrados
         </h3>
@@ -385,8 +389,7 @@ export default function Financas() {
                 {financasFiltradas
                   .slice()
                   .sort(
-                    (a, b) =>
-                      new Date(b.data).getTime() - new Date(a.data).getTime()
+                    (a, b) => new Date(b.data).getTime() - new Date(a.data).getTime()
                   )
                   .map((i) => {
                     const valorNum = Number(i.valor || 0);
@@ -435,6 +438,7 @@ export default function Financas() {
     </div>
   );
 }
+
 
 
 
