@@ -17,8 +17,9 @@ const NAV = [
   { href: "/financas", label: "Finanças", icon: <FaWallet /> },
   { href: "/agenda", label: "Agenda", icon: <FaCalendarAlt /> },
   { href: "/conteudo", label: "Conteúdo", icon: <FaLightbulb /> },
-  { href: "/relatorios", label: "Relatórios", icon: <FaChartBar /> },
-  { href: "/configuracoes", label: "Configurações", icon: <FaCog /> },
+  { href: "/reports", label: "Relatórios", icon: <FaChartBar /> },
+  { href: "/settings", label: "Configurações", icon: <FaCog /> },
+
 ];
 
 export default function Navigation() {
