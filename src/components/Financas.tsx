@@ -1,19 +1,15 @@
 "use client";
 
-import React, { useEffect, useMemo, useState, useCallback, JSX } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
   FaMoneyBillWave,
   FaArrowDown,
   FaBalanceScale,
   FaSpinner,
   FaFilter,
-  FaSearch,
-  FaTrash,
   FaCalendarDay,
   FaCalendarWeek,
   FaCalendarAlt,
-  FaArrowUp,
-  FaCoins,
 } from "react-icons/fa";
 import {
   ResponsiveContainer,
@@ -91,29 +87,6 @@ const FinanceCard: React.FC<FinanceCardProps> = ({
       </div>
     </div>
   );
-};
-
-// utilitário para intervalos automáticos
-const getDateRange = (mode: "today" | "week" | "month") => {
-  const now = new Date();
-  let from: string, to: string;
-  switch (mode) {
-    case "today":
-      from = to = now.toISOString().split("T")[0];
-      break;
-    case "week":
-      const weekAgo = new Date(now);
-      weekAgo.setDate(now.getDate() - 7);
-      from = weekAgo.toISOString().split("T")[0];
-      to = now.toISOString().split("T")[0];
-      break;
-    case "month":
-      const startMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      from = startMonth.toISOString().split("T")[0];
-      to = now.toISOString().split("T")[0];
-      break;
-  }
-  return { from, to };
 };
 
 export default function Financas() {
@@ -309,19 +282,19 @@ export default function Financas() {
       {/* Resumo do mês */}
       <MonthSummary data={resumo} />
 
-      {/* 🧭 FILTROS RÁPIDOS */}
-      <div className="bg-white rounded-xl shadow p-4 mt-6 mb-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-          <FaFilter /> Filtros Rápidos
+      {/* 🔥 Filtros rápidos */}
+      <div className="bg-white rounded-xl shadow p-4 mb-6">
+        <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+          <FaFilter /> Filtros rápidos
         </h3>
 
         <div className="flex flex-wrap gap-3 justify-center md:justify-start">
-          {["today", "week", "month"].map((mode) => {
-          const icons: Record<string, React.ReactNode> = {
-           today: <FaCalendarDay />,
-           week: <FaCalendarWeek />,
-           month: <FaCalendarAlt />,
-};
+          {(["today", "week", "month"] as const).map((mode) => {
+            const icons: Record<string, React.ReactNode> = {
+              today: <FaCalendarDay />,
+              week: <FaCalendarWeek />,
+              month: <FaCalendarAlt />,
+            };
 
             const labels: Record<string, string> = {
               today: "Hoje",
@@ -329,53 +302,56 @@ export default function Financas() {
               month: "Mês",
             };
 
+            const handleClick = (tipo: "receita" | "despesa" | "all") => {
+              const now = new Date();
+              let fromDate = "";
+              let toDate = "";
+
+              if (mode === "today") {
+                fromDate = toDate = now.toISOString().slice(0, 10);
+              } else if (mode === "week") {
+                const weekAgo = new Date();
+                weekAgo.setDate(now.getDate() - 7);
+                fromDate = weekAgo.toISOString().slice(0, 10);
+                toDate = now.toISOString().slice(0, 10);
+              } else if (mode === "month") {
+                const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+                fromDate = firstDay.toISOString().slice(0, 10);
+                toDate = now.toISOString().slice(0, 10);
+              }
+
+              setFrom(fromDate);
+              setTo(toDate);
+              setTipoFiltro(tipo === "all" ? "all" : tipo);
+              void fetchFinancas();
+            };
+
             return (
               <div key={mode} className="relative group">
-                <button className="flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-xl hover:bg-purple-200 transition">
-                  {icons[mode]} {labels[mode]}
+                <button className="flex items-center gap-2 bg-purple-100 hover:bg-purple-200 text-purple-700 font-semibold px-4 py-2 rounded-lg shadow transition">
+                  {icons[mode]}
+                  {labels[mode]}
                 </button>
-                <div className="absolute hidden group-hover:flex flex-col bg-white border rounded-xl shadow-lg mt-2 w-40 p-2 z-20">
+
+                {/* Menu flutuante */}
+                <div className="absolute hidden group-hover:flex flex-col mt-2 bg-white border border-purple-100 rounded-lg shadow-md z-10 w-36">
                   <button
-                    onClick={() => {
-                      const { from, to } = getDateRange(
-                        mode as "today" | "week" | "month"
-                      );
-                      setFrom(from);
-                      setTo(to);
-                      setTipoFiltro("receita");
-                      fetchFinancas();
-                    }}
-                    className="flex items-center gap-2 px-2 py-1 rounded hover:bg-green-100 text-green-600"
+                    onClick={() => handleClick("receita")}
+                    className="px-4 py-2 hover:bg-purple-50 text-left"
                   >
-                    <FaArrowUp /> Receitas
+                    Receitas
                   </button>
                   <button
-                    onClick={() => {
-                      const { from, to } = getDateRange(
-                        mode as "today" | "week" | "month"
-                      );
-                      setFrom(from);
-                      setTo(to);
-                      setTipoFiltro("despesa");
-                      fetchFinancas();
-                    }}
-                    className="flex items-center gap-2 px-2 py-1 rounded hover:bg-red-100 text-red-600"
+                    onClick={() => handleClick("despesa")}
+                    className="px-4 py-2 hover:bg-purple-50 text-left"
                   >
-                    <FaArrowDown /> Despesas
+                    Despesas
                   </button>
                   <button
-                    onClick={() => {
-                      const { from, to } = getDateRange(
-                        mode as "today" | "week" | "month"
-                      );
-                      setFrom(from);
-                      setTo(to);
-                      setTipoFiltro("all");
-                      fetchFinancas();
-                    }}
-                    className="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-100 text-gray-600"
+                    onClick={() => handleClick("all")}
+                    className="px-4 py-2 hover:bg-purple-50 text-left"
                   >
-                    <FaCoins /> Tudo
+                    Tudo
                   </button>
                 </div>
               </div>
@@ -408,50 +384,71 @@ export default function Financas() {
 
       <FinancasForm onSave={fetchFinancas} />
 
-      {/* Gráficos */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">
-            Distribuição por Categoria
-          </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={aggregatedData}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={80}
-                dataKey="value"
-              >
-                {aggregatedData.map((_, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={COLORS[index % COLORS.length]}
-                  />
-                ))}
-              </Pie>
-              <Tooltip />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
+      {/* 📊 Distribuição por Categoria */}
+      <div className="bg-white rounded-xl shadow-md p-6 mb-6 overflow-hidden">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">
+          Distribuição por Categoria
+        </h3>
+        {loadingFinancas ? (
+          <div className="flex items-center gap-2 text-gray-600">
+            <FaSpinner className="animate-spin" /> Carregando…
+          </div>
+        ) : aggregatedData.length === 0 ? (
+          <p className="text-gray-500">Nenhum dado disponível.</p>
+        ) : (
+          <div className="flex justify-center items-center">
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={aggregatedData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={90}
+                  dataKey="value"
+                  labelLine={false}
+ label={(props) => {
+  const name = props.name ?? "Categoria";
+  const percent = typeof props.percent === "number" ? props.percent : 0;
+  return `${name} (${(percent * 100).toFixed(0)}%)`;
+}}
 
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">
-            Evolução Mensal
-          </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={monthlyChartData}>
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="receitas" fill="#4CAF50" name="Receitas" />
-              <Bar dataKey="despesas" fill="#F44336" name="Despesas" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+
+                >
+                  {aggregatedData.map((_, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={COLORS[index % COLORS.length]}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend
+                  layout="horizontal"
+                  verticalAlign="bottom"
+                  align="center"
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+
+      {/* 📈 Evolução Mensal */}
+      <div className="bg-white rounded-xl shadow-md p-6">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">
+          Evolução Mensal
+        </h3>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={monthlyChartData}>
+            <XAxis dataKey="name" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Bar dataKey="receitas" fill="#4CAF50" name="Receitas" />
+            <Bar dataKey="despesas" fill="#F44336" name="Despesas" />
+          </BarChart>
+        </ResponsiveContainer>
       </div>
 
       {/* Lista */}
@@ -541,3 +538,4 @@ export default function Financas() {
     </div>
   );
 }
+
