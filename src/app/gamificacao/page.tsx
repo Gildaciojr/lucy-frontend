@@ -3,15 +3,19 @@
 import React, { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import {
-  FaTrophy,
-  FaPlus,
-  FaSpinner,
-  FaFlagCheckered,
-  FaMedal,
   FaStar,
+  FaSpinner,
+  FaMedal,
   FaFire,
   FaChartLine,
-  FaGift,
+  FaCalendarCheck,
+  FaClipboardList,
+  FaMoneyBillWave,
+  FaLightbulb,
+  FaLock,
+  FaListOl,
+  FaCheckCircle,
+  FaRocket,
 } from "react-icons/fa";
 import { motion } from "framer-motion";
 
@@ -52,8 +56,11 @@ interface Goal {
 
 export default function GamificacaoPage() {
   const [summary, setSummary] = useState<Summary | null>(null);
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [animatedPoints, setAnimatedPoints] = useState(0);
 
   const [title, setTitle] = useState("");
   const [targetCommits, setTargetCommits] = useState<string>("");
@@ -84,6 +91,21 @@ export default function GamificacaoPage() {
     void loadAll();
   }, []);
 
+  // contador animado
+  useEffect(() => {
+    if (!summary) return;
+    const total = summary.totalPoints ?? 0;
+    const start = 0; // corrigido prefer-const
+    const duration = 1200;
+    const step = (timestamp: number, startTime: number) => {
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      setAnimatedPoints(Math.floor(progress * total));
+      if (progress < 1) requestAnimationFrame((now) => step(now, startTime));
+    };
+    requestAnimationFrame((now) => step(now, now));
+  }, [summary]);
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const createGoal = async (e: React.FormEvent) => {
     e.preventDefault();
     const token = localStorage.getItem("auth_token");
@@ -106,6 +128,7 @@ export default function GamificacaoPage() {
     await loadAll();
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const toggleAchieved = async (id: number, achieved: boolean) => {
     const token = localStorage.getItem("auth_token");
     if (!token) return;
@@ -126,10 +149,31 @@ export default function GamificacaoPage() {
       </div>
     );
 
+  const availableAchievements = [
+    { name: "Primeiros Passos", color: "bg-green-500", icon: <span className="text-white font-bold text-sm">1</span>, points: 50 },
+    { name: "Organizado(a)", color: "bg-yellow-400", icon: <FaListOl className="text-white" />, points: 150 },
+    { name: "Pontual", color: "bg-blue-500", icon: <FaCheckCircle className="text-white" />, points: 200 },
+    { name: "Controlado(a)", color: "bg-orange-400", icon: <FaRocket className="text-white" />, points: 200 },
+    { name: "Criador(a)", color: "bg-purple-500", icon: <FaLightbulb className="text-white" />, points: 250 },
+    { name: "Bloqueado(a)", color: "bg-gray-400", icon: <FaLock className="text-white" />, points: 0 },
+  ];
+
+  const pointActions = [
+    { name: "Primeiro acesso do dia", points: 10, icon: <FaFire className="text-orange-500" /> },
+    { name: "Criar compromisso na agenda", points: 20, icon: <FaClipboardList className="text-blue-500" /> },
+    { name: "Concluir compromisso", points: 30, icon: <FaCalendarCheck className="text-green-600" /> },
+    { name: "Registrar despesa ou receita", points: 20, icon: <FaMoneyBillWave className="text-emerald-600" /> },
+    { name: "Criar conteúdo", points: 40, icon: <FaLightbulb className="text-yellow-400" /> },
+    { name: "03 dias seguidos de uso", points: 50, icon: <FaMedal className="text-purple-500" /> },
+    { name: "07 dias seguidos de uso", points: 100, icon: <FaStar className="text-yellow-500" /> },
+  ];
+
+  const unlockedNames = (summary?.achievements ?? []).map((a) => a.name);
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-purple-100 p-6">
+    <div className="min-h-screen bg-gradient-to-b from-purple-50 via-white to-purple-100 p-4 sm:p-6">
       <div className="max-w-6xl mx-auto space-y-10">
-        {/* Header */}
+        {/* Header com estrela e contador */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -137,21 +181,22 @@ export default function GamificacaoPage() {
           className="bg-white rounded-2xl shadow p-6 border border-purple-100 flex items-center gap-4"
         >
           <div className="p-4 rounded-full bg-yellow-100 text-yellow-600 text-4xl">
-            <FaTrophy />
+            <FaStar />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-purple-700">
-              Gamificação Lucy
-            </h1>
+            <h1 className="text-3xl font-bold text-purple-700">Pontuação Total</h1>
+            <motion.p
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ repeat: Infinity, duration: 2 }}
+              className="text-4xl font-extrabold text-purple-700"
+            >
+              {animatedPoints}
+            </motion.p>
             <p className="text-gray-600">
-              Pontos: <b>{summary?.totalPoints ?? 0}</b> • Streak atual:{" "}
-              <b>{summary?.currentStreak ?? 0} dias</b> (máx:{" "}
-              {summary?.longestStreak ?? 0}) • Conquistas:{" "}
+              Streak atual: <b>{summary?.currentStreak ?? 0} dias</b> • Máx:{" "}
+              <b>{summary?.longestStreak ?? 0}</b> • Conquistas:{" "}
               <b>{summary?.unlockedCount ?? 0}</b>
             </p>
-            {summary?.message && (
-              <p className="mt-2 text-sm text-gray-700">{summary.message}</p>
-            )}
           </div>
         </motion.div>
 
@@ -176,140 +221,57 @@ export default function GamificacaoPage() {
           </div>
         </div>
 
-        {/* Metas */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="bg-white rounded-2xl shadow p-5 border border-purple-100"
-          >
-            <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-              <FaFlagCheckered className="text-purple-600" /> Definir nova meta
-            </h2>
-            <form onSubmit={createGoal} className="space-y-3">
-              <input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-                placeholder="Título da meta (ex.: Economizar R$ 500)"
-                className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-400"
-              />
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <input
-                  type="number"
-                  value={targetCommits}
-                  onChange={(e) => setTargetCommits(e.target.value)}
-                  placeholder="Compromissos"
-                  className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-400"
-                />
-                <input
-                  type="number"
-                  step="0.01"
-                  value={targetSavings}
-                  onChange={(e) => setTargetSavings(e.target.value)}
-                  placeholder="Economia (R$)"
-                  className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-400"
-                />
-                <input
-                  value={targetCustom}
-                  onChange={(e) => setTargetCustom(e.target.value)}
-                  placeholder="Outro objetivo"
-                  className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-400"
-                />
-              </div>
-              <button
-                type="submit"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 text-white font-semibold hover:bg-purple-700 transition"
-              >
-                <FaPlus /> Salvar meta
-              </button>
-            </form>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="bg-white rounded-2xl shadow p-5 border border-purple-100"
-          >
-            <h2 className="text-lg font-semibold text-gray-800 mb-3">
-              Minhas metas
-            </h2>
-            {goals.length === 0 ? (
-              <p className="text-gray-600">Nenhuma meta definida.</p>
-            ) : (
-              <ul className="space-y-3">
-                {goals.map((g) => (
-                  <li
-                    key={g.id}
-                    className={`border rounded-lg p-3 flex items-center justify-between transition ${
-                      g.achieved
-                        ? "bg-purple-50 border-purple-300"
-                        : "hover:bg-gray-50 border-gray-200"
-                    }`}
-                  >
-                    <div>
-                      <p className="font-semibold">{g.title}</p>
-                      <p className="text-xs text-gray-600">
-                        {g.targetCommits
-                          ? `Compromissos: ${g.targetCommits} • `
-                          : ""}
-                        {g.targetSavings
-                          ? `Economia: R$ ${g.targetSavings} • `
-                          : ""}
-                        {g.targetCustom ? `Outro: ${g.targetCustom}` : ""}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => toggleAchieved(g.id, g.achieved)}
-                      className={`px-3 py-1 rounded-lg text-sm font-semibold ${
-                        g.achieved
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-gray-100 text-gray-700 hover:bg-purple-100 hover:text-purple-700"
-                      }`}
-                    >
-                      {g.achieved ? "Concluída" : "Marcar concluída"}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </motion.div>
-        </div>
-
-        {/* Conquistas */}
+        {/* Conquistas (badges coloridas) */}
         <div className="bg-white rounded-2xl shadow p-6 border border-purple-100">
           <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-            <FaGift className="text-fuchsia-500" /> Conquistas Desbloqueadas
+            <FaMedal className="text-purple-600" /> Conquistas
           </h2>
-          {summary?.achievements?.length ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {summary.achievements.map((a, i) => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+            {availableAchievements.map((ach) => {
+              const unlocked = unlockedNames.includes(ach.name);
+              return (
                 <motion.div
-                  key={a.code}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.1 }}
+                  key={ach.name}
                   whileHover={{ scale: 1.05 }}
-                  className="p-4 rounded-xl border shadow-sm bg-gradient-to-br from-purple-600 to-fuchsia-600 text-white hover:shadow-lg"
+                  className={`p-3 rounded-xl flex flex-col items-center justify-center text-center shadow-sm border transition ${
+                    unlocked
+                      ? "bg-purple-50 border-purple-300"
+                      : "bg-gray-50 border-gray-200 opacity-80"
+                  }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="text-3xl text-yellow-300">
-                      {i % 3 === 0 ? <FaStar /> : i % 3 === 1 ? <FaFire /> : <FaChartLine />}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-lg">{a.name}</h3>
-                      <p className="text-sm opacity-90">
-                        +{a.bonusPoints} pontos •{" "}
-                        {new Date(a.unlockedAt).toLocaleDateString("pt-BR")}
-                      </p>
-                    </div>
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center ${ach.color}`}>
+                    {ach.icon}
                   </div>
+                  <h3 className="font-semibold mt-2 text-gray-800 text-xs">{ach.name}</h3>
+                  <p className="text-[11px] text-gray-500 mt-1">+{ach.points} pts</p>
                 </motion.div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-600">Nenhuma conquista ainda.</p>
-          )}
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Como conseguir pontos */}
+        <div className="bg-white rounded-2xl shadow p-6 border border-purple-100">
+          <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+            <FaRocket className="text-fuchsia-500" /> Como conseguir pontos
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            {pointActions.map((action) => (
+              <motion.div
+                key={action.name}
+                whileHover={{ scale: 1.03 }}
+                className="p-3 rounded-xl bg-gradient-to-br from-purple-100 to-purple-50 border border-purple-200 flex items-center gap-3 shadow-sm"
+              >
+                <div className="text-xl">{action.icon}</div>
+                <div>
+                  <h4 className="font-semibold text-gray-800 text-sm">
+                    {action.name}
+                  </h4>
+                  <p className="text-xs text-gray-500">+{action.points} pts</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </div>
 
         {/* Últimas ações */}
@@ -344,6 +306,8 @@ export default function GamificacaoPage() {
     </div>
   );
 }
+
+
 
 
 

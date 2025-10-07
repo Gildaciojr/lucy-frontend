@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "axios": "^1.12.2",
-    "framer-motion": "^12.23.15",
+    "framer-motion": "^12.23.22",
     "jspdf": "^3.0.3",
     "jspdf-autotable": "^5.0.2",
     "next": "15.5.2",
@@ -46,4 +46,3 @@
     "node": "22.x"
   }
 }
-
