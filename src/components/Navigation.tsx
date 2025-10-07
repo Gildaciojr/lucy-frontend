@@ -26,7 +26,7 @@ export default function Navigation() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-purple-200 bg-white">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-purple-300 bg-purple-100 shadow-inner backdrop-blur-md">
       <ul className="max-w-5xl mx-auto grid grid-cols-7 gap-1 px-2 py-2">
         {NAV.map((item) => {
           const active = pathname === item.href;
