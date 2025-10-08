@@ -1,55 +1,31 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { FaStar, FaTrophy, FaSpinner, FaChevronLeft } from "react-icons/fa";
+import { FaStar, FaTrophy, FaSpinner, FaMedal } from "react-icons/fa";
+import { motion } from "framer-motion";
 
-interface Gamificacao {
-  id: number;
-  badge: string;
-  dataConquista: string;
-  userId: number;
+interface Achievement {
+  code: string;
+  name: string;
+  bonusPoints: number;
+  unlockedAt: string;
 }
 
-interface CardProps {
-  icon: React.ReactNode;
-  title: string;
-  value: string;
-  onClick: () => void;
-  isActive: boolean;
+interface Summary {
+  totalPoints: number;
+  currentStreak: number;
+  longestStreak: number;
+  unlockedCount: number;
+  message?: string;
+  achievements: Achievement[];
 }
-
-const Card: React.FC<CardProps> = ({
-  icon,
-  title,
-  value,
-  onClick,
-  isActive,
-}) => {
-  return (
-    <div
-      className={`flex items-center space-x-4 p-4 bg-white rounded-xl shadow-md cursor-pointer transition-transform transform hover:scale-105 ${
-        isActive ? "ring-2 ring-blue-500" : ""
-      }`}
-      onClick={onClick}
-    >
-      <div className="p-3 rounded-full bg-purple-500 text-white text-xl">
-        {icon}
-      </div>
-      <div>
-        <h3 className="text-sm font-semibold text-gray-500">{title}</h3>
-        <p className="text-xl font-bold text-gray-800">{value}</p>
-      </div>
-    </div>
-  );
-};
 
 export default function Gamificacao() {
-  const [gamificacoes, setGamificacoes] = useState<Gamificacao[]>([]);
+  const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [viewDetails, setViewDetails] = useState<null | "all">(null);
 
-  const fetchGamificacoes = async () => {
+  const fetchSummary = async () => {
     try {
       const token = localStorage.getItem("auth_token");
       if (!token) {
@@ -57,7 +33,6 @@ export default function Gamificacao() {
         return;
       }
 
-      // 🔹 agora o backend pega userId do token
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/gamificacao`,
         {
@@ -66,10 +41,11 @@ export default function Gamificacao() {
       );
 
       if (!response.ok) {
-        throw new Error("Erro ao buscar gamificação.");
+        throw new Error("Erro ao buscar dados da gamificação");
       }
-      const data: Gamificacao[] = await response.json();
-      setGamificacoes(data);
+
+      const data: Summary = await response.json();
+      setSummary(data);
     } catch (err: unknown) {
       if (err instanceof Error) setError(err.message);
       else setError("Erro desconhecido.");
@@ -79,99 +55,88 @@ export default function Gamificacao() {
   };
 
   useEffect(() => {
-    fetchGamificacoes();
+    fetchSummary();
+    // recarrega a cada 30s
+    const interval = setInterval(fetchSummary, 30000);
+    return () => clearInterval(interval);
   }, []);
 
-  if (loading) {
+  if (loading)
     return (
       <div className="text-center p-6 flex items-center justify-center space-x-2">
-        <FaSpinner className="animate-spin" />
-        <span>Carregando conquistas...</span>
+        <FaSpinner className="animate-spin text-purple-600" />
+        <span>Carregando gamificação...</span>
       </div>
     );
-  }
 
-  if (error) {
-    return <div className="text-center p-6 text-red-500">Erro: {error}</div>;
-  }
+  if (error)
+    return <div className="text-center text-red-500 p-6">Erro: {error}</div>;
 
-  const renderDetails = () => (
-    <div className="p-6 bg-white rounded-lg shadow-md">
-      <button
-        onClick={() => setViewDetails(null)}
-        className="flex items-center space-x-2 text-blue-500 hover:text-blue-700 font-bold mb-4"
-      >
-        <FaChevronLeft />
-        <span>Voltar</span>
-      </button>
-      <h3 className="text-xl font-bold text-gray-800 mb-4">
-        Detalhes das Conquistas
-      </h3>
-      <ul className="space-y-4">
-        {gamificacoes.length > 0 ? (
-          gamificacoes.map((badge) => (
-            <li key={badge.id} className="p-4 bg-gray-100 rounded-lg">
-              <p className="font-semibold text-gray-700">{badge.badge}</p>
-              <p className="text-sm text-gray-500">
-                Data: {new Date(badge.dataConquista).toLocaleDateString("pt-BR")}
-              </p>
-            </li>
-          ))
-        ) : (
-          <p className="text-gray-500">Nenhuma conquista encontrada.</p>
-        )}
-      </ul>
-    </div>
-  );
+  if (!summary)
+    return (
+      <div className="text-center text-gray-500 p-6">
+        Nenhum dado de gamificação disponível.
+      </div>
+    );
 
-  if (viewDetails) {
-    return renderDetails();
-  }
-
-  const scoreAtual = gamificacoes.length * 10;
+  const { totalPoints, currentStreak, longestStreak, unlockedCount, message } =
+    summary;
 
   return (
-    <div className="p-6 bg-gray-50 rounded-lg shadow-inner">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Gamificação</h2>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-        <Card
-          icon={<FaTrophy />}
-          title="Pontuação"
-          value={scoreAtual.toString()}
-          onClick={() => {}}
-          isActive={false}
-        />
-        <Card
-          icon={<FaStar />}
-          title="Conquistas"
-          value={gamificacoes.length.toString()}
-          onClick={() => setViewDetails("all")}
-          isActive={viewDetails === "all"}
-        />
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="p-6 rounded-2xl shadow-md bg-gradient-to-br from-purple-600 to-fuchsia-500 text-white"
+    >
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-2xl font-bold flex items-center gap-2">
+          <FaTrophy /> Gamificação
+        </h2>
+        <p className="text-lg font-semibold">
+          <FaStar className="inline text-yellow-300 mr-1" />
+          {totalPoints} pts
+        </p>
       </div>
 
-      <div className="bg-white rounded-xl shadow-md p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">
-          Minhas Conquistas
-        </h3>
-        {gamificacoes.length > 0 ? (
-          <ul className="space-y-2">
-            {gamificacoes.map((badge) => (
-              <li
-                key={badge.id}
-                className="p-3 bg-gray-100 rounded-lg text-gray-700"
-              >
-                <span className="font-semibold">{badge.badge}</span> -{" "}
-                {new Date(badge.dataConquista).toLocaleDateString("pt-BR")}
-              </li>
-            ))}
-          </ul>
+      <p className="text-sm opacity-90 mb-4">{message}</p>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+        <div className="bg-white/10 p-3 rounded-lg">
+          <p className="text-sm opacity-80">Pontuação</p>
+          <p className="text-xl font-bold">{totalPoints}</p>
+        </div>
+        <div className="bg-white/10 p-3 rounded-lg">
+          <p className="text-sm opacity-80">Conquistas</p>
+          <p className="text-xl font-bold">{unlockedCount}</p>
+        </div>
+        <div className="bg-white/10 p-3 rounded-lg">
+          <p className="text-sm opacity-80">Streak atual</p>
+          <p className="text-xl font-bold">{currentStreak} dias</p>
+        </div>
+        <div className="bg-white/10 p-3 rounded-lg">
+          <p className="text-sm opacity-80">Maior streak</p>
+          <p className="text-xl font-bold">{longestStreak}</p>
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2 justify-center">
+        {summary.achievements && summary.achievements.length > 0 ? (
+          summary.achievements.map((a) => (
+            <div
+              key={a.code}
+              className="flex items-center bg-white/20 px-3 py-1 rounded-full text-sm"
+            >
+              <FaMedal className="text-yellow-300 mr-2" />
+              {a.name}
+            </div>
+          ))
         ) : (
-          <p className="text-gray-500">Nenhuma conquista disponível.</p>
+          <p className="text-sm text-white/80">
+            Nenhuma conquista desbloqueada ainda.
+          </p>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }
 
