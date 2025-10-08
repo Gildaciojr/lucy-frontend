@@ -43,7 +43,7 @@ interface Conteudo {
   createdAt: string;
 }
 
-/** Novo formato de gamificação via /gamificacao/summary */
+/** Novo formato de gamificação via /gamificacao */
 interface GamificacaoSummary {
   totalPoints: number;
   currentStreak: number;
@@ -100,7 +100,7 @@ export default function HomePage() {
   const parseValor = (v: number | string) => {
     const n = Number(v);
     return Number.isNaN(n) ? 0 : n;
-    };
+  };
 
   const buildFinancasUrl = useCallback(() => {
     const qs = new URLSearchParams();
@@ -192,7 +192,7 @@ export default function HomePage() {
     const [comp, cont, gam] = await Promise.all([
       apiFetch<Compromisso[]>("/compromissos", { headers }),
       apiFetch<Conteudo[]>("/conteudo", { headers }),
-      apiFetch<GamificacaoSummary>("/gamificacao/summary", { headers }),
+      apiFetch<GamificacaoSummary>("/gamificacao", { headers }), // ✅ corrigido endpoint
     ]);
     setCompromissos(comp);
     setConteudo(cont);
@@ -229,7 +229,6 @@ export default function HomePage() {
         loadFinancas(headers),
       ]);
 
-      // seta a summary de gamificação e computa o resumo
       setGamificacao(gam);
       recomputeSummary(financasData, comp, cont);
     } catch (err: unknown) {
@@ -285,7 +284,6 @@ export default function HomePage() {
 
   if (error) return <div className="text-center p-4 text-red-500">Erro: {error}</div>;
 
-  // Métricas simples de gamificação para o card (corrigido para não dar undefined)
   const totalConquistas = gamificacao?.unlockedCount ?? 0;
   const legendaConquistas =
     totalConquistas === 0
@@ -297,7 +295,7 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-100 relative">
       <main className="flex-1 p-6 flex flex-col mb-20 space-y-6">
-        {/* Filtros (período + aplicar/limpar) */}
+        {/* Filtros */}
         <div className="bg-white rounded-xl shadow p-4 flex flex-col md:flex-row md:items-end gap-3">
           <div className="flex flex-col">
             <label className="text-xs text-gray-600">Data inicial</label>
@@ -337,7 +335,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* 🔁 Cards com filtro por tipo — no topo */}
+        {/* Cards financeiros e resumo */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <button
             className={`bg-white shadow rounded-xl p-4 text-center border-2 ${
@@ -348,9 +346,6 @@ export default function HomePage() {
             <h4 className="text-sm text-gray-500">Receitas</h4>
             <p className="text-xl font-bold text-green-600">
               R$ {summary.totalReceitas.toFixed(2)}
-            </p>
-            <p className="text-xs text-gray-400 mt-1">
-              {tipoFilter === "receita" ? "Filtrando receitas" : "Clique para filtrar"}
             </p>
           </button>
 
@@ -364,34 +359,38 @@ export default function HomePage() {
             <p className="text-xl font-bold text-red-600">
               R$ {summary.totalDespesas.toFixed(2)}
             </p>
-            <p className="text-xs text-gray-400 mt-1">
-              {tipoFilter === "despesa" ? "Filtrando despesas" : "Clique para filtrar"}
-            </p>
           </button>
 
           <div className="bg-white shadow rounded-xl p-4 text-center">
             <h4 className="text-sm text-gray-500">Saldo</h4>
-            <p className={`text-xl font-bold ${summary.saldo >= 0 ? "text-green-600" : "text-red-600"}`}>
+            <p
+              className={`text-xl font-bold ${
+                summary.saldo >= 0 ? "text-green-600" : "text-red-600"
+              }`}
+            >
               R$ {summary.saldo.toFixed(2)}
             </p>
           </div>
 
           <div className="bg-white shadow rounded-xl p-4 text-center">
             <h4 className="text-sm text-gray-500">Próximo Compromisso</h4>
-            <p className="text-sm font-semibold text-gray-700">{summary.proximoCompromisso}</p>
+            <p className="text-sm font-semibold text-gray-700">
+              {summary.proximoCompromisso}
+            </p>
           </div>
 
           <div className="bg-white shadow rounded-xl p-4 text-center">
             <h4 className="text-sm text-gray-500">Última Ideia</h4>
-            <p className="text-sm font-semibold text-gray-700">{summary.ultimaIdeia}</p>
+            <p className="text-sm font-semibold text-gray-700">
+              {summary.ultimaIdeia}
+            </p>
           </div>
         </div>
 
-        {/* 💎 Card de Gamificação na HOME (corrigido) */}
+        {/* 💎 Card de Gamificação */}
         <Link
           href="/gamificacao"
-          className="group block rounded-2xl shadow-md p-6 text-white hover:shadow-lg transition-shadow
-                     bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500"
+          className="group block rounded-2xl shadow-md p-6 text-white hover:shadow-lg transition-shadow bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500"
         >
           <div className="flex items-center gap-4">
             <div className="p-4 rounded-2xl bg-white/10">
@@ -412,7 +411,9 @@ export default function HomePage() {
         {/* Gráficos */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white rounded-xl shadow-md p-4">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Resumo de atividades</h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              Resumo de atividades
+            </h3>
             <ResponsiveContainer width="100%" height={250}>
               <LineChart data={summary.chartData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -420,16 +421,29 @@ export default function HomePage() {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Line type="monotone" dataKey="uso" stroke="#6d28d9" activeDot={{ r: 8 }} />
+                <Line
+                  type="monotone"
+                  dataKey="uso"
+                  stroke="#6d28d9"
+                  activeDot={{ r: 8 }}
+                />
               </LineChart>
             </ResponsiveContainer>
           </div>
 
           <div className="bg-white rounded-xl shadow-md p-4">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Distribuição por módulo</h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              Distribuição por módulo
+            </h3>
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
-                <Pie data={summary.chartData} dataKey="uso" nameKey="name" outerRadius={100} label>
+                <Pie
+                  data={summary.chartData}
+                  dataKey="uso"
+                  nameKey="name"
+                  outerRadius={100}
+                  label
+                >
                   {summary.chartData.map((_, i) => (
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
                   ))}
@@ -441,9 +455,11 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Últimas movimentações (respeita filtros) */}
+        {/* Últimas movimentações */}
         <div className="bg-white rounded-xl shadow-md p-4">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Últimas movimentações financeiras</h3>
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">
+            Últimas movimentações financeiras
+          </h3>
           {summary.financasRecentes.length === 0 ? (
             <p className="text-gray-500">Nenhum registro encontrado.</p>
           ) : (
@@ -463,11 +479,21 @@ export default function HomePage() {
                     return (
                       <tr key={`${f.origem}-${f.id}`}>
                         <td className="px-4 py-2">{f.categoria}</td>
-                        <td className={`px-4 py-2 ${f.tipo === "despesa" ? "text-red-600" : "text-green-600"}`}>
+                        <td
+                          className={`px-4 py-2 ${
+                            f.tipo === "despesa"
+                              ? "text-red-600"
+                              : "text-green-600"
+                          }`}
+                        >
                           R$ {Number.isNaN(valorNum) ? "-" : valorNum.toFixed(2)}
                         </td>
-                        <td className="px-4 py-2">{new Date(f.data).toLocaleDateString("pt-BR")}</td>
-                        <td className="px-4 py-2">{f.origem === "whatsapp" ? "WhatsApp" : "Dashboard"}</td>
+                        <td className="px-4 py-2">
+                          {new Date(f.data).toLocaleDateString("pt-BR")}
+                        </td>
+                        <td className="px-4 py-2">
+                          {f.origem === "whatsapp" ? "WhatsApp" : "Dashboard"}
+                        </td>
                       </tr>
                     );
                   })}
@@ -492,6 +518,7 @@ export default function HomePage() {
     </div>
   );
 }
+
 
 
 
