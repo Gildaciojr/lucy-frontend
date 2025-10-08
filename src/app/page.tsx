@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Navigation from "../components/Navigation";
-import MonthSummary from "../components/MonthSummary";
+// import MonthSummary from "../components/MonthSummary"; // removido do topo conforme solicitado
 import { FaSpinner, FaWhatsapp, FaTrophy } from "react-icons/fa";
 import {
   ResponsiveContainer,
@@ -150,8 +150,7 @@ export default function HomePage() {
               .slice()
               .sort(
                 (a, b) =>
-                  new Date(b.createdAt).getTime() -
-                  new Date(a.createdAt).getTime()
+                  new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
               )[0].ideia
           : "Nenhuma ideia";
 
@@ -292,7 +291,7 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-100 relative">
       <main className="flex-1 p-6 flex flex-col mb-20 space-y-6">
-        {/* Filtros */}
+        {/* Filtros (período + aplicar/limpar) */}
         <div className="bg-white rounded-xl shadow p-4 flex flex-col md:flex-row md:items-end gap-3">
           <div className="flex flex-col">
             <label className="text-xs text-gray-600">Data inicial</label>
@@ -332,31 +331,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Resumo do mês */}
-        <MonthSummary data={summary} />
-
-        {/* 💎 Card de Gamificação na HOME */}
-        <Link
-          href="/gamificacao"
-          className="group block bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500 rounded-2xl shadow-md p-6 text-white hover:shadow-lg transition-shadow"
-        >
-          <div className="flex items-center gap-4">
-            <div className="p-4 bg-white/15 rounded-2xl backdrop-blur-sm">
-              <FaTrophy className="w-8 h-8" />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-xl font-bold">Gamificação</h3>
-              <p className="text-sm opacity-90">
-                {legendaConquistas} • Toque para ver suas metas e conquistas
-              </p>
-            </div>
-            <div className="text-sm font-semibold bg-white/20 px-3 py-1 rounded-full">
-              Ver página
-            </div>
-          </div>
-        </Link>
-
-        {/* Cards de resumo (clique ativa filtro de tipo) */}
+        {/* 🔁 Cards com filtro por tipo — AGORA NO TOPO (substituem o antigo MonthSummary) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <button
             className={`bg-white shadow rounded-xl p-4 text-center border-2 ${
@@ -405,6 +380,28 @@ export default function HomePage() {
             <p className="text-sm font-semibold text-gray-700">{summary.ultimaIdeia}</p>
           </div>
         </div>
+
+        {/* 💎 Card de Gamificação na HOME — degradê compatível mobile */}
+        <Link
+          href="/gamificacao"
+          className="group block rounded-2xl shadow-md p-6 text-white hover:shadow-lg transition-shadow
+                     bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500"
+        >
+          <div className="flex items-center gap-4">
+            <div className="p-4 rounded-2xl bg-white/10">
+              <FaTrophy className="w-8 h-8" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-bold">Gamificação</h3>
+              <p className="text-sm opacity-90">
+                {legendaConquistas} • Toque para ver suas metas e conquistas
+              </p>
+            </div>
+            <div className="text-sm font-semibold bg-white/20 px-3 py-1 rounded-full">
+              Ver página
+            </div>
+          </div>
+        </Link>
 
         {/* Gráficos */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -489,6 +486,7 @@ export default function HomePage() {
     </div>
   );
 }
+
 
 
 

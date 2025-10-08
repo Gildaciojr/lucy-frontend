@@ -92,7 +92,13 @@ export default function Financas() {
   const [loadingFinancas, setLoadingFinancas] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+
+  // controle do menu de filtro rápido (um aberto por vez)
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+
+  // calendário manual
+  const [fromManual, setFromManual] = useState<string>("");
+  const [toManual, setToManual] = useState<string>("");
 
   const fetchFinancas = useCallback(async () => {
     try {
@@ -123,6 +129,7 @@ export default function Financas() {
     fetchFinancas().finally(() => setLoading(false));
   }, [fetchFinancas]);
 
+  // ======== Filtros rápidos (Hoje, Semana, Mês) =========
   const handleFilterClick = (
     tipo: "receita" | "despesa" | "all",
     mode: "today" | "week" | "month"
@@ -144,24 +151,47 @@ export default function Financas() {
       document
         .getElementById("lista-financas")
         ?.scrollIntoView({ behavior: "smooth" });
-    }, 200);
+    }, 50);
+  };
+
+  // ======== Calendário manual =========
+  const aplicarFiltroManual = () => {
+    if (!fromManual && !toManual) return;
+    const fromDate = fromManual ? new Date(fromManual) : new Date("1970-01-01");
+    const toDate = toManual ? new Date(toManual) : new Date("2999-12-31");
+
+    const filtrados = todasFinancas.filter((f) => {
+      const dataItem = new Date(f.data);
+      return dataItem >= fromDate && dataItem <= toDate;
+    });
+
+    setFinancasFiltradas(filtrados);
+    setTimeout(() => {
+      document
+        .getElementById("lista-financas")
+        ?.scrollIntoView({ behavior: "smooth" });
+    }, 50);
   };
 
   const limparFiltros = () => {
     setFinancasFiltradas(todasFinancas);
     setOpenMenu(null);
+    setFromManual("");
+    setToManual("");
     setTimeout(() => {
       document
         .getElementById("lista-financas")
         ?.scrollIntoView({ behavior: "smooth" });
-    }, 200);
+    }, 50);
   };
 
-  // Fecha o menu quando clicar fora
+  // Fecha o menu quando clicar fora — permitindo clique dentro do menu
   useEffect(() => {
     const closeMenu = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (!target.closest(".filter-button")) setOpenMenu(null);
+      if (!target.closest(".filter-button") && !target.closest(".filter-menu")) {
+        setOpenMenu(null);
+      }
     };
     document.addEventListener("click", closeMenu);
     return () => document.removeEventListener("click", closeMenu);
@@ -241,68 +271,115 @@ export default function Financas() {
         }}
       />
 
-      {/* 🔥 Filtros rápidos */}
+      {/* 🔥 Filtros rápidos + Calendário manual */}
       <div className="bg-white rounded-xl shadow p-4 mb-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
           <FaFilter /> Filtros rápidos
         </h3>
 
-        <div className="flex flex-wrap gap-3 justify-center md:justify-start">
-          {(["today", "week", "month"] as const).map((mode) => {
-            const icons: Record<string, React.ReactNode> = {
-              today: <FaCalendarDay />,
-              week: <FaCalendarWeek />,
-              month: <FaCalendarAlt />,
-            };
-            const labels: Record<string, string> = {
-              today: "Hoje",
-              week: "Semana",
-              month: "Mês",
-            };
+        <div className="flex flex-wrap gap-3 justify-center md:justify-between items-center">
+          {/* Botões de Hoje / Semana / Mês */}
+          <div className="flex flex-wrap gap-3">
+            {(["today", "week", "month"] as const).map((mode) => {
+              const icons: Record<string, React.ReactNode> = {
+                today: <FaCalendarDay />,
+                week: <FaCalendarWeek />,
+                month: <FaCalendarAlt />,
+              };
+              const labels: Record<string, string> = {
+                today: "Hoje",
+                week: "Semana",
+                month: "Mês",
+              };
 
-            return (
-              <div key={mode} className="relative">
-                <button
-                  onClick={() => setOpenMenu(openMenu === mode ? null : mode)}
-                  className="filter-button flex items-center gap-2 bg-purple-100 hover:bg-purple-200 text-purple-700 font-semibold px-4 py-2 rounded-lg shadow transition"
-                >
-                  {icons[mode]}
-                  {labels[mode]}
-                  <FaChevronDown
-                    className={`transition-transform ${
-                      openMenu === mode ? "rotate-180" : ""
-                    }`}
-                  />
-                </button>
+              return (
+                <div key={mode} className="relative">
+                  <button
+                    onClick={() => setOpenMenu(openMenu === mode ? null : mode)}
+                    className="filter-button flex items-center gap-2 bg-purple-100 hover:bg-purple-200 text-purple-700 font-semibold px-4 py-2 rounded-lg shadow transition"
+                    type="button"
+                  >
+                    {icons[mode]}
+                    {labels[mode]}
+                    <FaChevronDown
+                      className={`transition-transform ${
+                        openMenu === mode ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
 
-                {openMenu === mode && (
-                  <div className="absolute left-0 mt-2 bg-white border border-purple-100 rounded-lg shadow-md z-10 w-36">
-                    <button
-                      onClick={() => handleFilterClick("receita", mode)}
-                      className="px-4 py-2 hover:bg-purple-50 text-left w-full"
+                  {openMenu === mode && (
+                    <div
+                      className="filter-menu absolute left-0 mt-2 bg-white border border-purple-100 rounded-lg shadow-md z-10 w-36"
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      Receitas
-                    </button>
-                    <button
-                      onClick={() => handleFilterClick("despesa", mode)}
-                      className="px-4 py-2 hover:bg-purple-50 text-left w-full"
-                    >
-                      Despesas
-                    </button>
-                    <button
-                      onClick={() => handleFilterClick("all", mode)}
-                      className="px-4 py-2 hover:bg-purple-50 text-left w-full"
-                    >
-                      Tudo
-                    </button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                      <button
+                        onClick={() => handleFilterClick("receita", mode)}
+                        className="px-4 py-2 hover:bg-purple-50 text-left w-full"
+                        type="button"
+                      >
+                        Receitas
+                      </button>
+                      <button
+                        onClick={() => handleFilterClick("despesa", mode)}
+                        className="px-4 py-2 hover:bg-purple-50 text-left w-full"
+                        type="button"
+                      >
+                        Despesas
+                      </button>
+                      <button
+                        onClick={() => handleFilterClick("all", mode)}
+                        className="px-4 py-2 hover:bg-purple-50 text-left w-full"
+                        type="button"
+                      >
+                        Tudo
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Calendário manual (pequeno) */}
+          <div className="flex items-end gap-2">
+            <div className="flex flex-col">
+              <label className="text-xs text-gray-600">De</label>
+              <input
+                type="date"
+                value={fromManual}
+                onChange={(e) => setFromManual(e.target.value)}
+                className="border rounded-lg px-3 py-2"
+              />
+            </div>
+            <div className="flex flex-col">
+              <label className="text-xs text-gray-600">Até</label>
+              <input
+                type="date"
+                value={toManual}
+                onChange={(e) => setToManual(e.target.value)}
+                className="border rounded-lg px-3 py-2"
+              />
+            </div>
+            <button
+              onClick={aplicarFiltroManual}
+              className="px-3 py-2 rounded-lg bg-blue-600 text-white font-semibold"
+              type="button"
+            >
+              Aplicar
+            </button>
+            <button
+              onClick={limparFiltros}
+              className="px-3 py-2 rounded-lg bg-gray-200 text-gray-800 font-semibold"
+              type="button"
+            >
+              Limpar
+            </button>
+          </div>
         </div>
       </div>
 
+      {/* Form de inclusão de lançamentos (mantido) */}
       <FinancasForm onSave={fetchFinancas} />
 
       {/* 💰 Cards */}
@@ -327,7 +404,7 @@ export default function Financas() {
         />
       </div>
 
-      {/* Gráfico */}
+      {/* Gráfico — centralizado, sem legendas embaixo (tooltip apenas) */}
       <div className="bg-white rounded-xl shadow-md p-6 flex flex-col items-center">
         <h3 className="text-xl font-bold text-purple-700 mb-5 text-center tracking-wide">
           Distribuição por Categoria 💰
@@ -390,6 +467,7 @@ export default function Financas() {
           <button
             onClick={limparFiltros}
             className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg shadow transition"
+            type="button"
           >
             <FaUndo /> Limpar Filtros
           </button>
@@ -461,7 +539,7 @@ export default function Financas() {
                           )}
                         </td>
                         <td className="px-4 py-3 text-right font-semibold">
-                          R${" "}
+                          R{"$ "}
                           {Number.isNaN(valorNum)
                             ? "-"
                             : valorNum.toFixed(2).replace(".", ",")}
