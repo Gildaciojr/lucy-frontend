@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Navigation from "../components/Navigation";
-// import MonthSummary from "../components/MonthSummary"; // removido do topo conforme solicitado
 import { FaSpinner, FaWhatsapp, FaTrophy } from "react-icons/fa";
 import {
   ResponsiveContainer,
@@ -43,11 +42,16 @@ interface Conteudo {
   agendado: boolean;
   createdAt: string;
 }
-interface Gamificacao {
-  id: number;
-  badge: string;
-  dataConquista: string;
+
+/** Novo formato de gamificação via /gamificacao/summary */
+interface GamificacaoSummary {
+  totalPoints: number;
+  currentStreak: number;
+  longestStreak: number;
+  unlockedCount: number;
+  message?: string;
 }
+
 interface ChartItem {
   name: string;
   uso: number;
@@ -77,7 +81,8 @@ export default function HomePage() {
   const [financasRaw, setFinancasRaw] = useState<FinanceItem[]>([]);
   const [compromissos, setCompromissos] = useState<Compromisso[]>([]);
   const [conteudo, setConteudo] = useState<Conteudo[]>([]);
-  const [gamificacao, setGamificacao] = useState<Gamificacao[]>([]);
+  const [gamificacao, setGamificacao] = useState<GamificacaoSummary | null>(null);
+
   const [summary, setSummary] = useState<SummaryData>({
     totalReceitas: 0,
     totalDespesas: 0,
@@ -95,7 +100,7 @@ export default function HomePage() {
   const parseValor = (v: number | string) => {
     const n = Number(v);
     return Number.isNaN(n) ? 0 : n;
-  };
+    };
 
   const buildFinancasUrl = useCallback(() => {
     const qs = new URLSearchParams();
@@ -118,8 +123,7 @@ export default function HomePage() {
     (
       financasBase: FinanceItem[],
       compromissosData: Compromisso[],
-      conteudoData: Conteudo[],
-      gamifData: Gamificacao[]
+      conteudoData: Conteudo[]
     ) => {
       const financas = filterByTipo(financasBase);
 
@@ -154,12 +158,12 @@ export default function HomePage() {
               )[0].ideia
           : "Nenhuma ideia";
 
-      // Chart por módulo
+      // Chart por módulo (usa contagem de conquistas da summary)
       const chartData: ChartItem[] = [
         { name: "Finanças", uso: financas.length },
         { name: "Agenda", uso: compromissosData.length },
         { name: "Conteúdo", uso: conteudoData.length },
-        { name: "Gamificação", uso: gamifData.length },
+        { name: "Gamificação", uso: gamificacao?.unlockedCount ?? 0 },
       ];
 
       // 5 últimas movimentações (filtradas por tipo e período)
@@ -180,7 +184,7 @@ export default function HomePage() {
         financasRecentes,
       });
     },
-    [filterByTipo]
+    [filterByTipo, gamificacao]
   );
 
   // ----------------- carregamento -----------------
@@ -188,7 +192,7 @@ export default function HomePage() {
     const [comp, cont, gam] = await Promise.all([
       apiFetch<Compromisso[]>("/compromissos", { headers }),
       apiFetch<Conteudo[]>("/conteudo", { headers }),
-      apiFetch<Gamificacao[]>("/gamificacao", { headers }),
+      apiFetch<GamificacaoSummary>("/gamificacao/summary", { headers }),
     ]);
     setCompromissos(comp);
     setConteudo(cont);
@@ -225,7 +229,9 @@ export default function HomePage() {
         loadFinancas(headers),
       ]);
 
-      recomputeSummary(financasData, comp, cont, gam);
+      // seta a summary de gamificação e computa o resumo
+      setGamificacao(gam);
+      recomputeSummary(financasData, comp, cont);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro ao carregar o resumo.");
     } finally {
@@ -237,9 +243,9 @@ export default function HomePage() {
     initialLoad();
   }, [initialLoad]);
 
-  // quando o filtro de tipo mudar, recalcula o summary localmente
+  // quando algum item mudar, recalcula o summary localmente
   useEffect(() => {
-    recomputeSummary(financasRaw, compromissos, conteudo, gamificacao);
+    recomputeSummary(financasRaw, compromissos, conteudo);
   }, [tipoFilter, financasRaw, compromissos, conteudo, gamificacao, recomputeSummary]);
 
   // ----------------- ações UI -----------------
@@ -251,7 +257,7 @@ export default function HomePage() {
       const headers = { Authorization: `Bearer ${token}` };
 
       const financasData = await loadFinancas(headers);
-      recomputeSummary(financasData, compromissos, conteudo, gamificacao);
+      recomputeSummary(financasData, compromissos, conteudo);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro ao aplicar período.");
     }
@@ -279,8 +285,8 @@ export default function HomePage() {
 
   if (error) return <div className="text-center p-4 text-red-500">Erro: {error}</div>;
 
-  // Métricas simples de gamificação para o card
-  const totalConquistas = gamificacao.length;
+  // Métricas simples de gamificação para o card (corrigido para não dar undefined)
+  const totalConquistas = gamificacao?.unlockedCount ?? 0;
   const legendaConquistas =
     totalConquistas === 0
       ? "Sem conquistas ainda"
@@ -331,7 +337,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* 🔁 Cards com filtro por tipo — AGORA NO TOPO (substituem o antigo MonthSummary) */}
+        {/* 🔁 Cards com filtro por tipo — no topo */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <button
             className={`bg-white shadow rounded-xl p-4 text-center border-2 ${
@@ -381,7 +387,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* 💎 Card de Gamificação na HOME — degradê compatível mobile */}
+        {/* 💎 Card de Gamificação na HOME (corrigido) */}
         <Link
           href="/gamificacao"
           className="group block rounded-2xl shadow-md p-6 text-white hover:shadow-lg transition-shadow
@@ -486,6 +492,7 @@ export default function HomePage() {
     </div>
   );
 }
+
 
 
 

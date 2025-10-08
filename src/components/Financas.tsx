@@ -19,13 +19,8 @@ import {
   Pie,
   Cell,
   Tooltip,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
 } from "recharts";
 import FinancasForm from "./FinancasForm";
-import MonthSummary from "./MonthSummary";
 
 type Tipo = "receita" | "despesa";
 type Origem = "dashboard" | "whatsapp";
@@ -92,11 +87,7 @@ export default function Financas() {
   const [loadingFinancas, setLoadingFinancas] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
-
-  // controle do menu de filtro rápido (um aberto por vez)
   const [openMenu, setOpenMenu] = useState<string | null>(null);
-
-  // calendário manual
   const [fromManual, setFromManual] = useState<string>("");
   const [toManual, setToManual] = useState<string>("");
 
@@ -129,7 +120,6 @@ export default function Financas() {
     fetchFinancas().finally(() => setLoading(false));
   }, [fetchFinancas]);
 
-  // ======== Filtros rápidos (Hoje, Semana, Mês) =========
   const handleFilterClick = (
     tipo: "receita" | "despesa" | "all",
     mode: "today" | "week" | "month"
@@ -154,7 +144,6 @@ export default function Financas() {
     }, 50);
   };
 
-  // ======== Calendário manual =========
   const aplicarFiltroManual = () => {
     if (!fromManual && !toManual) return;
     const fromDate = fromManual ? new Date(fromManual) : new Date("1970-01-01");
@@ -185,7 +174,6 @@ export default function Financas() {
     }, 50);
   };
 
-  // Fecha o menu quando clicar fora — permitindo clique dentro do menu
   useEffect(() => {
     const closeMenu = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
@@ -200,14 +188,8 @@ export default function Financas() {
   const receitas = todasFinancas.filter((f) => f.tipo === "receita");
   const despesas = todasFinancas.filter((f) => f.tipo === "despesa");
 
-  const totalReceitas = receitas.reduce(
-    (sum, f) => sum + Number(f.valor || 0),
-    0
-  );
-  const totalDespesas = despesas.reduce(
-    (sum, f) => sum + Number(f.valor || 0),
-    0
-  );
+  const totalReceitas = receitas.reduce((sum, f) => sum + Number(f.valor || 0), 0);
+  const totalDespesas = despesas.reduce((sum, f) => sum + Number(f.valor || 0), 0);
   const saldo = totalReceitas - totalDespesas;
 
   const COLORS = ["#6d28d9", "#22c55e", "#facc15", "#ef4444", "#3b82f6", "#9333ea"];
@@ -221,24 +203,6 @@ export default function Financas() {
       else acc.push({ name: key, value: valor });
       return acc;
     }, [] as { name: string; value: number }[]);
-  }, [todasFinancas]);
-
-  const monthlyChartData = useMemo(() => {
-    const m = todasFinancas.reduce((acc, item) => {
-      const month = new Date(item.data).toLocaleString("default", {
-        month: "short",
-        year: "numeric",
-      });
-      if (!acc[month]) acc[month] = { receitas: 0, despesas: 0 };
-      if (item.tipo === "receita") acc[month].receitas += Number(item.valor || 0);
-      else acc[month].despesas += Number(item.valor || 0);
-      return acc;
-    }, {} as Record<string, { receitas: number; despesas: number }>);
-    return Object.keys(m).map((key) => ({
-      name: key,
-      receitas: m[key].receitas,
-      despesas: m[key].despesas,
-    }));
   }, [todasFinancas]);
 
   if (loading)
@@ -260,16 +224,6 @@ export default function Financas() {
       <h2 className="text-2xl font-bold text-gray-800 mb-6">
         Controle Financeiro
       </h2>
-
-      <MonthSummary
-        data={{
-          totalReceitas,
-          totalDespesas,
-          saldo,
-          proximoCompromisso: "",
-          ultimaIdeia: "",
-        }}
-      />
 
       {/* 🔥 Filtros rápidos + Calendário manual */}
       <div className="bg-white rounded-xl shadow p-4 mb-6">
@@ -302,9 +256,7 @@ export default function Financas() {
                     {icons[mode]}
                     {labels[mode]}
                     <FaChevronDown
-                      className={`transition-transform ${
-                        openMenu === mode ? "rotate-180" : ""
-                      }`}
+                      className={`transition-transform ${openMenu === mode ? "rotate-180" : ""}`}
                     />
                   </button>
 
@@ -341,7 +293,7 @@ export default function Financas() {
             })}
           </div>
 
-          {/* Calendário manual (pequeno) */}
+          {/* Calendário manual */}
           <div className="flex items-end gap-2">
             <div className="flex flex-col">
               <label className="text-xs text-gray-600">De</label>
@@ -379,10 +331,10 @@ export default function Financas() {
         </div>
       </div>
 
-      {/* Form de inclusão de lançamentos (mantido) */}
+      {/* Formulário de inclusão de lançamentos */}
       <FinancasForm onSave={fetchFinancas} />
 
-      {/* 💰 Cards */}
+      {/* 💰 Cards de resumo */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8 mt-6">
         <FinanceCard
           icon={<FaMoneyBillWave />}
@@ -404,7 +356,7 @@ export default function Financas() {
         />
       </div>
 
-      {/* Gráfico — centralizado, sem legendas embaixo (tooltip apenas) */}
+      {/* Gráfico */}
       <div className="bg-white rounded-xl shadow-md p-6 flex flex-col items-center">
         <h3 className="text-xl font-bold text-purple-700 mb-5 text-center tracking-wide">
           Distribuição por Categoria 💰
@@ -455,11 +407,8 @@ export default function Financas() {
         </ResponsiveContainer>
       </div>
 
-      {/* Lista */}
-      <div
-        id="lista-financas"
-        className="bg-white rounded-xl shadow-md p-6 mt-6"
-      >
+      {/* Lista de lançamentos */}
+      <div id="lista-financas" className="bg-white rounded-xl shadow-md p-6 mt-6">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold text-gray-800">
             Lançamentos Filtrados
@@ -484,30 +433,17 @@ export default function Financas() {
             <table className="min-w-full text-sm">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="text-left px-4 py-3 text-gray-600 font-semibold">
-                    Data
-                  </th>
-                  <th className="text-left px-4 py-3 text-gray-600 font-semibold">
-                    Categoria
-                  </th>
-                  <th className="text-left px-4 py-3 text-gray-600 font-semibold">
-                    Tipo
-                  </th>
-                  <th className="text-left px-4 py-3 text-gray-600 font-semibold">
-                    Origem
-                  </th>
-                  <th className="text-right px-4 py-3 text-gray-600 font-semibold">
-                    Valor
-                  </th>
+                  <th className="text-left px-4 py-3 text-gray-600 font-semibold">Data</th>
+                  <th className="text-left px-4 py-3 text-gray-600 font-semibold">Categoria</th>
+                  <th className="text-left px-4 py-3 text-gray-600 font-semibold">Tipo</th>
+                  <th className="text-left px-4 py-3 text-gray-600 font-semibold">Origem</th>
+                  <th className="text-right px-4 py-3 text-gray-600 font-semibold">Valor</th>
                 </tr>
               </thead>
               <tbody>
                 {financasFiltradas
                   .slice()
-                  .sort(
-                    (a, b) =>
-                      new Date(b.data).getTime() - new Date(a.data).getTime()
-                  )
+                  .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
                   .map((i) => {
                     const valorNum = Number(i.valor || 0);
                     return (
@@ -555,6 +491,7 @@ export default function Financas() {
     </div>
   );
 }
+
 
 
 
