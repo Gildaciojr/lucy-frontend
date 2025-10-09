@@ -192,7 +192,7 @@ export default function HomePage() {
     const [comp, cont, gam] = await Promise.all([
       apiFetch<Compromisso[]>("/compromissos", { headers }),
       apiFetch<Conteudo[]>("/conteudo", { headers }),
-      apiFetch<GamificacaoSummary>("/gamificacao", { headers }), // ✅ corrigido endpoint
+      apiFetch<GamificacaoSummary>("/gamificacao", { headers }), // opção 02
     ]);
     setCompromissos(comp);
     setConteudo(cont);
@@ -238,11 +238,13 @@ export default function HomePage() {
     }
   }, [loadStaticModules, loadFinancas, recomputeSummary]);
 
+  // 🚫 Evita loop infinito: roda apenas uma vez no mount
   useEffect(() => {
     initialLoad();
-  }, [initialLoad]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // quando algum item mudar, recalcula o summary localmente
+  // Recalcula summary localmente quando estados mudarem
   useEffect(() => {
     recomputeSummary(financasRaw, compromissos, conteudo);
   }, [tipoFilter, financasRaw, compromissos, conteudo, gamificacao, recomputeSummary]);
@@ -518,6 +520,7 @@ export default function HomePage() {
     </div>
   );
 }
+
 
 
 
