@@ -35,28 +35,6 @@ interface Financa {
   origem?: Origem;
 }
 
-interface FinanceCardProps {
-  icon: React.ReactNode;
-  title: string;
-  value: string;
-  color: string;
-}
-
-const FinanceCard: React.FC<FinanceCardProps> = ({
-  icon,
-  title,
-  value,
-  color,
-}) => (
-  <div className="flex items-center space-x-4 p-4 bg-white rounded-xl shadow-md">
-    <div className={`p-3 rounded-full text-white ${color}`}>{icon}</div>
-    <div>
-      <h3 className="text-sm font-semibold text-gray-500">{title}</h3>
-      <p className="text-xl font-bold text-gray-800">{value}</p>
-    </div>
-  </div>
-);
-
 const getDateRange = (mode: "today" | "week" | "month") => {
   const now = new Date();
   let from: string;
@@ -90,6 +68,7 @@ export default function Financas() {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [fromManual, setFromManual] = useState<string>("");
   const [toManual, setToManual] = useState<string>("");
+  const [tipoAtivo, setTipoAtivo] = useState<"receita" | "despesa" | "all">("all"); // ✅ novo estado
 
   const fetchFinancas = useCallback(async () => {
     try {
@@ -120,6 +99,19 @@ export default function Financas() {
     fetchFinancas().finally(() => setLoading(false));
   }, [fetchFinancas]);
 
+  const aplicarFiltroTipo = (tipo: "receita" | "despesa" | "all") => {
+    setTipoAtivo(tipo);
+    if (tipo === "all") {
+      setFinancasFiltradas(todasFinancas);
+      return;
+    }
+    const filtrados = todasFinancas.filter((f) => f.tipo === tipo);
+    setFinancasFiltradas(filtrados);
+    setTimeout(() => {
+      document.getElementById("lista-financas")?.scrollIntoView({ behavior: "smooth" });
+    }, 50);
+  };
+
   const handleFilterClick = (
     tipo: "receita" | "despesa" | "all",
     mode: "today" | "week" | "month"
@@ -135,12 +127,11 @@ export default function Financas() {
       return dentroDoPeriodo && tipoMatch;
     });
 
+    setTipoAtivo(tipo);
     setFinancasFiltradas(filtrados);
     setOpenMenu(null);
     setTimeout(() => {
-      document
-        .getElementById("lista-financas")
-        ?.scrollIntoView({ behavior: "smooth" });
+      document.getElementById("lista-financas")?.scrollIntoView({ behavior: "smooth" });
     }, 50);
   };
 
@@ -155,10 +146,9 @@ export default function Financas() {
     });
 
     setFinancasFiltradas(filtrados);
+    setTipoAtivo("all");
     setTimeout(() => {
-      document
-        .getElementById("lista-financas")
-        ?.scrollIntoView({ behavior: "smooth" });
+      document.getElementById("lista-financas")?.scrollIntoView({ behavior: "smooth" });
     }, 50);
   };
 
@@ -167,10 +157,9 @@ export default function Financas() {
     setOpenMenu(null);
     setFromManual("");
     setToManual("");
+    setTipoAtivo("all");
     setTimeout(() => {
-      document
-        .getElementById("lista-financas")
-        ?.scrollIntoView({ behavior: "smooth" });
+      document.getElementById("lista-financas")?.scrollIntoView({ behavior: "smooth" });
     }, 50);
   };
 
@@ -195,7 +184,7 @@ export default function Financas() {
   const COLORS = ["#6d28d9", "#22c55e", "#facc15", "#ef4444", "#3b82f6", "#9333ea"];
 
   const aggregatedData = useMemo(() => {
-    return todasFinancas.reduce((acc, item) => {
+    return financasFiltradas.reduce((acc, item) => {
       const key = `${item.categoria} (${item.tipo})`;
       const valor = Number(item.valor || 0);
       const found = acc.find((d) => d.name === key);
@@ -203,7 +192,7 @@ export default function Financas() {
       else acc.push({ name: key, value: valor });
       return acc;
     }, [] as { name: string; value: number }[]);
-  }, [todasFinancas]);
+  }, [financasFiltradas]);
 
   if (loading)
     return (
@@ -331,29 +320,71 @@ export default function Financas() {
         </div>
       </div>
 
-      {/* Formulário de inclusão de lançamentos */}
+      {/* Formulário */}
       <FinancasForm onSave={fetchFinancas} />
 
-      {/* 💰 Cards de resumo */}
+      {/* 💰 Cards de resumo interativos */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8 mt-6">
-        <FinanceCard
-          icon={<FaMoneyBillWave />}
-          title="Total Receitas"
-          value={`R$ ${totalReceitas.toFixed(2).replace(".", ",")}`}
-          color="bg-green-500"
-        />
-        <FinanceCard
-          icon={<FaArrowDown />}
-          title="Total Despesas"
-          value={`R$ ${totalDespesas.toFixed(2).replace(".", ",")}`}
-          color="bg-red-500"
-        />
-        <FinanceCard
-          icon={<FaBalanceScale />}
-          title="Saldo"
-          value={`R$ ${saldo.toFixed(2).replace(".", ",")}`}
-          color={saldo >= 0 ? "bg-blue-500" : "bg-orange-500"}
-        />
+        <button
+          onClick={() => aplicarFiltroTipo("receita")}
+          className={`flex items-center space-x-4 p-4 rounded-xl shadow-md border-2 transition-all ${
+            tipoAtivo === "receita"
+              ? "border-green-500 bg-green-50"
+              : "border-transparent bg-white"
+          }`}
+        >
+          <div className="p-3 rounded-full text-white bg-green-500">
+            <FaMoneyBillWave />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-gray-500">Total Receitas</h3>
+            <p className="text-xl font-bold text-gray-800">
+              R$ {totalReceitas.toFixed(2).replace(".", ",")}
+            </p>
+          </div>
+        </button>
+
+        <button
+          onClick={() => aplicarFiltroTipo("despesa")}
+          className={`flex items-center space-x-4 p-4 rounded-xl shadow-md border-2 transition-all ${
+            tipoAtivo === "despesa"
+              ? "border-red-500 bg-red-50"
+              : "border-transparent bg-white"
+          }`}
+        >
+          <div className="p-3 rounded-full text-white bg-red-500">
+            <FaArrowDown />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-gray-500">Total Despesas</h3>
+            <p className="text-xl font-bold text-gray-800">
+              R$ {totalDespesas.toFixed(2).replace(".", ",")}
+            </p>
+          </div>
+        </button>
+
+        <button
+          onClick={() => aplicarFiltroTipo("all")}
+          className={`flex items-center space-x-4 p-4 rounded-xl shadow-md border-2 transition-all ${
+            tipoAtivo === "all"
+              ? "border-purple-500 bg-purple-50"
+              : "border-transparent bg-white"
+          }`}
+        >
+          <div
+            className={`p-3 rounded-full text-white ${
+              saldo >= 0 ? "bg-blue-500" : "bg-orange-500"
+            }`}
+          >
+            <FaBalanceScale />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-gray-500">Saldo</h3>
+            <p className="text-xl font-bold text-gray-800">
+              R$ {saldo.toFixed(2).replace(".", ",")}
+            </p>
+          </div>
+        </button>
       </div>
 
       {/* Gráfico */}
@@ -407,7 +438,7 @@ export default function Financas() {
         </ResponsiveContainer>
       </div>
 
-      {/* Lista de lançamentos */}
+      {/* Lista */}
       <div id="lista-financas" className="bg-white rounded-xl shadow-md p-6 mt-6">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold text-gray-800">
@@ -491,6 +522,7 @@ export default function Financas() {
     </div>
   );
 }
+
 
 
 
