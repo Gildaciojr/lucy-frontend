@@ -10,7 +10,6 @@ import {
   FaCalendarDay,
   FaCalendarWeek,
   FaCalendarAlt,
-  FaChevronDown,
   FaUndo,
 } from "react-icons/fa";
 import {
@@ -39,6 +38,7 @@ const getDateRange = (mode: "today" | "week" | "month") => {
   const now = new Date();
   let from: string;
   let to: string;
+
   switch (mode) {
     case "today":
       from = to = now.toISOString().split("T")[0];
@@ -65,10 +65,10 @@ export default function Financas() {
   const [loadingFinancas, setLoadingFinancas] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
-  const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [fromManual, setFromManual] = useState<string>("");
   const [toManual, setToManual] = useState<string>("");
-  const [tipoAtivo, setTipoAtivo] = useState<"receita" | "despesa" | "all">("all"); // ✅ novo estado
+  const [tipoAtivo, setTipoAtivo] = useState<"receita" | "despesa" | "all">("all");
+  const [periodoAtivo, setPeriodoAtivo] = useState<"today" | "week" | "month" | null>(null);
 
   const fetchFinancas = useCallback(async () => {
     try {
@@ -99,6 +99,24 @@ export default function Financas() {
     fetchFinancas().finally(() => setLoading(false));
   }, [fetchFinancas]);
 
+  const aplicarFiltroPeriodo = (mode: "today" | "week" | "month") => {
+    const { from, to } = getDateRange(mode);
+    const fromDate = new Date(from);
+    const toDate = new Date(to);
+
+    const filtrados = todasFinancas.filter((f) => {
+      const dataItem = new Date(f.data);
+      return dataItem >= fromDate && dataItem <= toDate;
+    });
+
+    setPeriodoAtivo(mode);
+    setFinancasFiltradas(filtrados);
+    setTipoAtivo("all");
+    setTimeout(() => {
+      document.getElementById("lista-financas")?.scrollIntoView({ behavior: "smooth" });
+    }, 80);
+  };
+
   const aplicarFiltroTipo = (tipo: "receita" | "despesa" | "all") => {
     setTipoAtivo(tipo);
     if (tipo === "all") {
@@ -109,30 +127,7 @@ export default function Financas() {
     setFinancasFiltradas(filtrados);
     setTimeout(() => {
       document.getElementById("lista-financas")?.scrollIntoView({ behavior: "smooth" });
-    }, 50);
-  };
-
-  const handleFilterClick = (
-    tipo: "receita" | "despesa" | "all",
-    mode: "today" | "week" | "month"
-  ) => {
-    const { from, to } = getDateRange(mode);
-    const fromDate = new Date(from);
-    const toDate = new Date(to);
-
-    const filtrados = todasFinancas.filter((f) => {
-      const dataItem = new Date(f.data);
-      const dentroDoPeriodo = dataItem >= fromDate && dataItem <= toDate;
-      const tipoMatch = tipo === "all" ? true : f.tipo === tipo;
-      return dentroDoPeriodo && tipoMatch;
-    });
-
-    setTipoAtivo(tipo);
-    setFinancasFiltradas(filtrados);
-    setOpenMenu(null);
-    setTimeout(() => {
-      document.getElementById("lista-financas")?.scrollIntoView({ behavior: "smooth" });
-    }, 50);
+    }, 80);
   };
 
   const aplicarFiltroManual = () => {
@@ -146,36 +141,23 @@ export default function Financas() {
     });
 
     setFinancasFiltradas(filtrados);
+    setPeriodoAtivo(null);
     setTipoAtivo("all");
     setTimeout(() => {
       document.getElementById("lista-financas")?.scrollIntoView({ behavior: "smooth" });
-    }, 50);
+    }, 80);
   };
 
   const limparFiltros = () => {
     setFinancasFiltradas(todasFinancas);
-    setOpenMenu(null);
     setFromManual("");
     setToManual("");
     setTipoAtivo("all");
-    setTimeout(() => {
-      document.getElementById("lista-financas")?.scrollIntoView({ behavior: "smooth" });
-    }, 50);
+    setPeriodoAtivo(null);
   };
 
-  useEffect(() => {
-    const closeMenu = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest(".filter-button") && !target.closest(".filter-menu")) {
-        setOpenMenu(null);
-      }
-    };
-    document.addEventListener("click", closeMenu);
-    return () => document.removeEventListener("click", closeMenu);
-  }, []);
-
-  const receitas = todasFinancas.filter((f) => f.tipo === "receita");
-  const despesas = todasFinancas.filter((f) => f.tipo === "despesa");
+  const receitas = financasFiltradas.filter((f) => f.tipo === "receita");
+  const despesas = financasFiltradas.filter((f) => f.tipo === "despesa");
 
   const totalReceitas = receitas.reduce((sum, f) => sum + Number(f.valor || 0), 0);
   const totalDespesas = despesas.reduce((sum, f) => sum + Number(f.valor || 0), 0);
@@ -210,184 +192,155 @@ export default function Financas() {
 
   return (
     <div className="p-6 bg-gray-50 rounded-lg shadow-inner">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">
-        Controle Financeiro
-      </h2>
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">Controle Financeiro</h2>
 
-      {/* 🔥 Filtros rápidos + Calendário manual */}
+      {/* 🔥 Filtros rápidos */}
       <div className="bg-white rounded-xl shadow p-4 mb-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
           <FaFilter /> Filtros rápidos
         </h3>
 
-        <div className="flex flex-wrap gap-3 justify-center md:justify-between items-center">
-          {/* Botões de Hoje / Semana / Mês */}
-          <div className="flex flex-wrap gap-3">
-            {(["today", "week", "month"] as const).map((mode) => {
-              const icons: Record<string, React.ReactNode> = {
-                today: <FaCalendarDay />,
-                week: <FaCalendarWeek />,
-                month: <FaCalendarAlt />,
-              };
-              const labels: Record<string, string> = {
-                today: "Hoje",
-                week: "Semana",
-                month: "Mês",
-              };
+        <div className="flex flex-wrap gap-3 justify-center md:justify-start items-center">
+          <button
+            onClick={() => aplicarFiltroPeriodo("today")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg shadow font-semibold transition ${
+              periodoAtivo === "today"
+                ? "bg-purple-600 text-white"
+                : "bg-purple-100 text-purple-700 hover:bg-purple-200"
+            }`}
+          >
+            <FaCalendarDay /> Hoje
+          </button>
 
-              return (
-                <div key={mode} className="relative">
-                  <button
-                    onClick={() => setOpenMenu(openMenu === mode ? null : mode)}
-                    className="filter-button flex items-center gap-2 bg-purple-100 hover:bg-purple-200 text-purple-700 font-semibold px-4 py-2 rounded-lg shadow transition"
-                    type="button"
-                  >
-                    {icons[mode]}
-                    {labels[mode]}
-                    <FaChevronDown
-                      className={`transition-transform ${openMenu === mode ? "rotate-180" : ""}`}
-                    />
-                  </button>
+          <button
+            onClick={() => aplicarFiltroPeriodo("week")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg shadow font-semibold transition ${
+              periodoAtivo === "week"
+                ? "bg-purple-600 text-white"
+                : "bg-purple-100 text-purple-700 hover:bg-purple-200"
+            }`}
+          >
+            <FaCalendarWeek /> Semana
+          </button>
 
-                  {openMenu === mode && (
-                    <div
-                      className="filter-menu absolute left-0 mt-2 bg-white border border-purple-100 rounded-lg shadow-md z-10 w-36"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <button
-                        onClick={() => handleFilterClick("receita", mode)}
-                        className="px-4 py-2 hover:bg-purple-50 text-left w-full"
-                        type="button"
-                      >
-                        Receitas
-                      </button>
-                      <button
-                        onClick={() => handleFilterClick("despesa", mode)}
-                        className="px-4 py-2 hover:bg-purple-50 text-left w-full"
-                        type="button"
-                      >
-                        Despesas
-                      </button>
-                      <button
-                        onClick={() => handleFilterClick("all", mode)}
-                        className="px-4 py-2 hover:bg-purple-50 text-left w-full"
-                        type="button"
-                      >
-                        Tudo
-                      </button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Calendário manual */}
-          <div className="flex items-end gap-2">
-            <div className="flex flex-col">
-              <label className="text-xs text-gray-600">De</label>
-              <input
-                type="date"
-                value={fromManual}
-                onChange={(e) => setFromManual(e.target.value)}
-                className="border rounded-lg px-3 py-2"
-              />
-            </div>
-            <div className="flex flex-col">
-              <label className="text-xs text-gray-600">Até</label>
-              <input
-                type="date"
-                value={toManual}
-                onChange={(e) => setToManual(e.target.value)}
-                className="border rounded-lg px-3 py-2"
-              />
-            </div>
-            <button
-              onClick={aplicarFiltroManual}
-              className="px-3 py-2 rounded-lg bg-blue-600 text-white font-semibold"
-              type="button"
-            >
-              Aplicar
-            </button>
-            <button
-              onClick={limparFiltros}
-              className="px-3 py-2 rounded-lg bg-gray-200 text-gray-800 font-semibold"
-              type="button"
-            >
-              Limpar
-            </button>
-          </div>
+          <button
+            onClick={() => aplicarFiltroPeriodo("month")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg shadow font-semibold transition ${
+              periodoAtivo === "month"
+                ? "bg-purple-600 text-white"
+                : "bg-purple-100 text-purple-700 hover:bg-purple-200"
+            }`}
+          >
+            <FaCalendarAlt /> Mês
+          </button>
         </div>
+      </div>
+
+      {/* 📆 Filtro manual */}
+      <div className="bg-white rounded-xl shadow p-4 mb-6 flex flex-wrap gap-3 items-end justify-start">
+        <div className="flex flex-col">
+          <label className="text-xs text-gray-600">De</label>
+          <input
+            type="date"
+            value={fromManual}
+            onChange={(e) => setFromManual(e.target.value)}
+            className="border rounded-lg px-3 py-2"
+          />
+        </div>
+        <div className="flex flex-col">
+          <label className="text-xs text-gray-600">Até</label>
+          <input
+            type="date"
+            value={toManual}
+            onChange={(e) => setToManual(e.target.value)}
+            className="border rounded-lg px-3 py-2"
+          />
+        </div>
+        <button
+          onClick={aplicarFiltroManual}
+          className="px-3 py-2 rounded-lg bg-blue-600 text-white font-semibold"
+        >
+          Aplicar
+        </button>
+        <button
+          onClick={limparFiltros}
+          className="px-3 py-2 rounded-lg bg-gray-200 text-gray-800 font-semibold"
+        >
+          Limpar
+        </button>
       </div>
 
       {/* Formulário */}
       <FinancasForm onSave={fetchFinancas} />
 
-      {/* 💰 Cards de resumo interativos */}
+      {/* 💰 Cards que atualizam com filtros */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8 mt-6">
-        <button
-          onClick={() => aplicarFiltroTipo("receita")}
-          className={`flex items-center space-x-4 p-4 rounded-xl shadow-md border-2 transition-all ${
-            tipoAtivo === "receita"
-              ? "border-green-500 bg-green-50"
-              : "border-transparent bg-white"
-          }`}
-        >
-          <div className="p-3 rounded-full text-white bg-green-500">
-            <FaMoneyBillWave />
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-gray-500">Total Receitas</h3>
-            <p className="text-xl font-bold text-gray-800">
-              R$ {totalReceitas.toFixed(2).replace(".", ",")}
-            </p>
-          </div>
-        </button>
-
-        <button
-          onClick={() => aplicarFiltroTipo("despesa")}
-          className={`flex items-center space-x-4 p-4 rounded-xl shadow-md border-2 transition-all ${
-            tipoAtivo === "despesa"
-              ? "border-red-500 bg-red-50"
-              : "border-transparent bg-white"
-          }`}
-        >
-          <div className="p-3 rounded-full text-white bg-red-500">
-            <FaArrowDown />
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-gray-500">Total Despesas</h3>
-            <p className="text-xl font-bold text-gray-800">
-              R$ {totalDespesas.toFixed(2).replace(".", ",")}
-            </p>
-          </div>
-        </button>
-
-        <button
-          onClick={() => aplicarFiltroTipo("all")}
-          className={`flex items-center space-x-4 p-4 rounded-xl shadow-md border-2 transition-all ${
-            tipoAtivo === "all"
-              ? "border-purple-500 bg-purple-50"
-              : "border-transparent bg-white"
-          }`}
-        >
+        <div className="cursor-pointer" onClick={() => aplicarFiltroTipo("receita")}>
           <div
-            className={`p-3 rounded-full text-white ${
-              saldo >= 0 ? "bg-blue-500" : "bg-orange-500"
+            className={`flex items-center space-x-4 p-4 rounded-xl shadow-md border-2 transition-all ${
+              tipoAtivo === "receita"
+                ? "border-green-500 bg-green-50"
+                : "border-transparent bg-white"
             }`}
           >
-            <FaBalanceScale />
+            <div className="p-3 rounded-full text-white bg-green-500">
+              <FaMoneyBillWave />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-gray-500">Total Receitas</h3>
+              <p className="text-xl font-bold text-gray-800">
+                R$ {totalReceitas.toFixed(2).replace(".", ",")}
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-sm font-semibold text-gray-500">Saldo</h3>
-            <p className="text-xl font-bold text-gray-800">
-              R$ {saldo.toFixed(2).replace(".", ",")}
-            </p>
+        </div>
+
+        <div className="cursor-pointer" onClick={() => aplicarFiltroTipo("despesa")}>
+          <div
+            className={`flex items-center space-x-4 p-4 rounded-xl shadow-md border-2 transition-all ${
+              tipoAtivo === "despesa"
+                ? "border-red-500 bg-red-50"
+                : "border-transparent bg-white"
+            }`}
+          >
+            <div className="p-3 rounded-full text-white bg-red-500">
+              <FaArrowDown />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-gray-500">Total Despesas</h3>
+              <p className="text-xl font-bold text-gray-800">
+                R$ {totalDespesas.toFixed(2).replace(".", ",")}
+              </p>
+            </div>
           </div>
-        </button>
+        </div>
+
+        <div className="cursor-pointer" onClick={() => aplicarFiltroTipo("all")}>
+          <div
+            className={`flex items-center space-x-4 p-4 rounded-xl shadow-md border-2 transition-all ${
+              tipoAtivo === "all"
+                ? "border-purple-500 bg-purple-50"
+                : "border-transparent bg-white"
+            }`}
+          >
+            <div
+              className={`p-3 rounded-full text-white ${
+                saldo >= 0 ? "bg-blue-500" : "bg-orange-500"
+              }`}
+            >
+              <FaBalanceScale />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-gray-500">Saldo</h3>
+              <p className="text-xl font-bold text-gray-800">
+                R$ {saldo.toFixed(2).replace(".", ",")}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Gráfico */}
+      {/* Gráfico e tabela permanecem iguais */}
       <div className="bg-white rounded-xl shadow-md p-6 flex flex-col items-center">
         <h3 className="text-xl font-bold text-purple-700 mb-5 text-center tracking-wide">
           Distribuição por Categoria 💰
@@ -438,12 +391,10 @@ export default function Financas() {
         </ResponsiveContainer>
       </div>
 
-      {/* Lista */}
+      {/* Lista de lançamentos */}
       <div id="lista-financas" className="bg-white rounded-xl shadow-md p-6 mt-6">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-gray-800">
-            Lançamentos Filtrados
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-800">Lançamentos Filtrados</h3>
           <button
             onClick={limparFiltros}
             className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg shadow transition"
@@ -479,9 +430,7 @@ export default function Financas() {
                     const valorNum = Number(i.valor || 0);
                     return (
                       <tr key={`${i.id}-${i.data}`} className="border-t">
-                        <td className="px-4 py-3">
-                          {new Date(i.data).toLocaleDateString("pt-BR")}
-                        </td>
+                        <td className="px-4 py-3">{new Date(i.data).toLocaleDateString("pt-BR")}</td>
                         <td className="px-4 py-3">{i.categoria || "-"}</td>
                         <td className="px-4 py-3 capitalize">
                           {i.tipo === "receita" ? (
@@ -522,6 +471,7 @@ export default function Financas() {
     </div>
   );
 }
+
 
 
 
