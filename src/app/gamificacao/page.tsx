@@ -40,7 +40,7 @@ type ActionType =
 
 interface ActionLog {
   id: number;
-  action: ActionType; // <- corrigido
+  action: ActionType;
   points: number;
   createdAt: string;
   meta?: Record<string, unknown> | null;
@@ -84,9 +84,13 @@ export default function GamificacaoPage() {
   const [loading, setLoading] = useState(true);
   const [animatedPoints, setAnimatedPoints] = useState(0);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [title, setTitle] = useState("");
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [targetCommits, setTargetCommits] = useState<string>("");
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [targetSavings, setTargetSavings] = useState<string>("");
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [targetCustom, setTargetCustom] = useState("");
 
   const loadAll = async () => {
@@ -253,7 +257,7 @@ export default function GamificacaoPage() {
           </div>
         </motion.div>
 
-        {/* Barra de progresso por pontos */}
+        {/* Barra de progresso */}
         <div className="bg-white p-5 rounded-2xl shadow border border-purple-100">
           <h2 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
             <FaMedal className="text-yellow-500" /> Progresso até 10.000 pts
@@ -271,7 +275,7 @@ export default function GamificacaoPage() {
           </p>
         </div>
 
-        {/* Conquistas (badges coloridas) */}
+        {/* Conquistas */}
         <div className="bg-white rounded-2xl shadow p-6 border border-purple-100">
           <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
             <FaMedal className="text-purple-600" /> Conquistas
@@ -330,7 +334,7 @@ export default function GamificacaoPage() {
           </div>
         </div>
 
-        {/* Últimas ações (legível e com status) */}
+        {/* Últimas ações */}
         <div className="bg-white rounded-2xl shadow p-6 border border-purple-100">
           <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
             <FaChartLine className="text-purple-600" /> Últimas ações
@@ -369,3 +373,4 @@ export default function GamificacaoPage() {
     </div>
   );
 }
+
