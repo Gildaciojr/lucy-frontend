@@ -261,19 +261,40 @@ export default function ReportsPage() {
         </p>
       </div>
 
-      {/* 🔹 Filtro de Mês */}
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-3 bg-white p-4 rounded-xl shadow">
-        <label className="text-gray-700 font-semibold">Selecione o mês:</label>
-        <input
-          type="month"
-          value={mesSelecionado}
-          onChange={(e) => {
-            setMesSelecionado(e.target.value);
-            fetchFinancas(e.target.value);
-          }}
-          className="border border-gray-300 rounded-lg px-3 py-2"
-        />
+{/* 🔹 Seletor de mês aprimorado */}
+<div className="flex flex-col items-center justify-center bg-white p-6 rounded-2xl shadow-lg border border-purple-100 transition hover:shadow-xl">
+  <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+    <div className="flex items-center gap-3">
+      <div className="bg-purple-100 p-3 rounded-full shadow-inner">
+        <FaMoneyBillWave className="text-purple-600 text-2xl" />
       </div>
+      <div>
+        <h3 className="text-lg font-bold text-gray-800">Selecione o mês</h3>
+        <p className="text-sm text-gray-500">
+          Gere um relatório financeiro personalizado
+        </p>
+      </div>
+    </div>
+
+    <div className="flex flex-col sm:flex-row items-center gap-3 mt-4 sm:mt-0">
+      <input
+        type="month"
+        value={mesSelecionado}
+        onChange={(e) => setMesSelecionado(e.target.value)}
+        className="border-2 border-purple-300 rounded-lg px-4 py-2 focus:outline-none focus:border-purple-600 focus:ring-2 focus:ring-purple-200 transition text-gray-700 font-medium"
+      />
+
+      <button
+        onClick={() => fetchFinancas(mesSelecionado)}
+        className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg shadow-md flex items-center gap-2 transition active:scale-95"
+      >
+        <FaDownload />
+        Gerar Relatório
+      </button>
+    </div>
+  </div>
+</div>
+
 
       {/* 🔹 Botões */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
