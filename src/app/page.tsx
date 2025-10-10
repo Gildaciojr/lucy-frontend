@@ -158,15 +158,14 @@ export default function HomePage() {
               )[0].ideia
           : "Nenhuma ideia";
 
-      // Chart por módulo (usa contagem de conquistas da summary)
+      // ✅ Chart por módulo (sem Gamificação)
       const chartData: ChartItem[] = [
         { name: "Finanças", uso: financas.length },
         { name: "Agenda", uso: compromissosData.length },
         { name: "Conteúdo", uso: conteudoData.length },
-        { name: "Gamificação", uso: gamificacao?.unlockedCount ?? 0 },
       ];
 
-      // 5 últimas movimentações (filtradas por tipo e período)
+      // 5 últimas movimentações
       const financasRecentes = financas
         .slice()
         .sort(
@@ -184,7 +183,7 @@ export default function HomePage() {
         financasRecentes,
       });
     },
-    [filterByTipo, gamificacao]
+    [filterByTipo]
   );
 
   // ----------------- carregamento -----------------
@@ -192,7 +191,7 @@ export default function HomePage() {
     const [comp, cont, gam] = await Promise.all([
       apiFetch<Compromisso[]>("/compromissos", { headers }),
       apiFetch<Conteudo[]>("/conteudo", { headers }),
-      apiFetch<GamificacaoSummary>("/gamificacao", { headers }), // opção 02
+      apiFetch<GamificacaoSummary>("/gamificacao", { headers }),
     ]);
     setCompromissos(comp);
     setConteudo(cont);
@@ -238,7 +237,6 @@ export default function HomePage() {
     }
   }, [loadStaticModules, loadFinancas, recomputeSummary]);
 
-  // 🚫 Evita loop infinito: roda apenas uma vez no mount
   useEffect(() => {
     initialLoad();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -247,7 +245,7 @@ export default function HomePage() {
   // Recalcula summary localmente quando estados mudarem
   useEffect(() => {
     recomputeSummary(financasRaw, compromissos, conteudo);
-  }, [tipoFilter, financasRaw, compromissos, conteudo, gamificacao, recomputeSummary]);
+  }, [tipoFilter, financasRaw, compromissos, conteudo, recomputeSummary]);
 
   // ----------------- ações UI -----------------
   const onApplyPeriod = async () => {
@@ -435,7 +433,7 @@ export default function HomePage() {
 
           <div className="bg-white rounded-xl shadow-md p-4">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">
-              Distribuição por módulo
+              Áreas da Lucy que você mais aproveita 💜
             </h3>
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
@@ -520,6 +518,7 @@ export default function HomePage() {
     </div>
   );
 }
+
 
 
 

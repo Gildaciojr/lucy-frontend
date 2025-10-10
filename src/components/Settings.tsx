@@ -159,25 +159,28 @@ export default function Settings() {
         <h4 className="text-lg font-semibold text-gray-700 mb-2">
           Como você avalia nossa plataforma?
         </h4>
-        <div className="flex justify-between space-x-2">
+
+        {/* Grade responsiva para mobile */}
+        <div className="grid grid-cols-6 sm:grid-cols-11 gap-2">
           {[...Array(11).keys()].map((rating) => (
             <button
               key={rating}
               type="button"
               onClick={() => setFeedbackRating(rating)}
-              className={`p-2 rounded-full font-bold transition-colors duration-200 ${
+              className={`h-10 rounded-lg font-bold transition-colors duration-200 ${
                 feedbackRating === rating
-                  ? "bg-blue-500 text-white shadow-md"
-                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  ? "bg-blue-600 text-white shadow-md"
+                  : "bg-gray-200 text-gray-800 hover:bg-gray-300"
               }`}
             >
               {rating}
             </button>
           ))}
         </div>
+
         <form
           onSubmit={handleFeedbackSubmit}
-          className="flex flex-col space-y-4"
+          className="flex flex-col space-y-4 mt-3"
         >
           <textarea
             value={feedback}
@@ -219,6 +222,7 @@ export default function Settings() {
     </div>
   );
 }
+
 
 
 

@@ -60,6 +60,7 @@ const getDateRange = (mode: "today" | "week" | "month") => {
 
 export default function Financas() {
   const [todasFinancas, setTodasFinancas] = useState<Financa[]>([]);
+  const [basePeriodo, setBasePeriodo] = useState<Financa[]>([]); // <- resultado do período/manual
   const [financasFiltradas, setFinancasFiltradas] = useState<Financa[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingFinancas, setLoadingFinancas] = useState(false);
@@ -86,6 +87,8 @@ export default function Financas() {
       if (!response.ok) throw new Error("Erro ao buscar finanças.");
       const data: Financa[] = await response.json();
       setTodasFinancas(data);
+      // estado inicial: tudo
+      setBasePeriodo(data);
       setFinancasFiltradas(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro desconhecido.");
@@ -99,19 +102,33 @@ export default function Financas() {
     fetchFinancas().finally(() => setLoading(false));
   }, [fetchFinancas]);
 
+  // Aplica tipo sobre a base do período/manual
+  const aplicarTipoSobreBase = useCallback(
+    (tipo: "receita" | "despesa" | "all", base: Financa[]) => {
+      if (tipo === "all") return base;
+      return base.filter((f) => f.tipo === tipo);
+    },
+    []
+  );
+
   const aplicarFiltroPeriodo = (mode: "today" | "week" | "month") => {
     const { from, to } = getDateRange(mode);
     const fromDate = new Date(from);
     const toDate = new Date(to);
 
-    const filtrados = todasFinancas.filter((f) => {
+    const base = todasFinancas.filter((f) => {
       const dataItem = new Date(f.data);
       return dataItem >= fromDate && dataItem <= toDate;
     });
 
     setPeriodoAtivo(mode);
-    setFinancasFiltradas(filtrados);
-    setTipoAtivo("all");
+    setFromManual("");
+    setToManual("");
+    setBasePeriodo(base);
+
+    const result = aplicarTipoSobreBase(tipoAtivo, base);
+    setFinancasFiltradas(result);
+
     setTimeout(() => {
       document.getElementById("lista-financas")?.scrollIntoView({ behavior: "smooth" });
     }, 80);
@@ -119,12 +136,8 @@ export default function Financas() {
 
   const aplicarFiltroTipo = (tipo: "receita" | "despesa" | "all") => {
     setTipoAtivo(tipo);
-    if (tipo === "all") {
-      setFinancasFiltradas(todasFinancas);
-      return;
-    }
-    const filtrados = todasFinancas.filter((f) => f.tipo === tipo);
-    setFinancasFiltradas(filtrados);
+    const result = aplicarTipoSobreBase(tipo, basePeriodo);
+    setFinancasFiltradas(result);
     setTimeout(() => {
       document.getElementById("lista-financas")?.scrollIntoView({ behavior: "smooth" });
     }, 80);
@@ -135,20 +148,25 @@ export default function Financas() {
     const fromDate = fromManual ? new Date(fromManual) : new Date("1970-01-01");
     const toDate = toManual ? new Date(toManual) : new Date("2999-12-31");
 
-    const filtrados = todasFinancas.filter((f) => {
+    const base = todasFinancas.filter((f) => {
       const dataItem = new Date(f.data);
       return dataItem >= fromDate && dataItem <= toDate;
     });
 
-    setFinancasFiltradas(filtrados);
+    setBasePeriodo(base);
     setPeriodoAtivo(null);
+
+    const result = aplicarTipoSobreBase("all", base);
     setTipoAtivo("all");
+    setFinancasFiltradas(result);
+
     setTimeout(() => {
       document.getElementById("lista-financas")?.scrollIntoView({ behavior: "smooth" });
     }, 80);
   };
 
   const limparFiltros = () => {
+    setBasePeriodo(todasFinancas);
     setFinancasFiltradas(todasFinancas);
     setFromManual("");
     setToManual("");
@@ -340,7 +358,7 @@ export default function Financas() {
         </div>
       </div>
 
-      {/* Gráfico e tabela permanecem iguais */}
+      {/* Gráfico e tabela permanecem iguais (mas refletem financasFiltradas) */}
       <div className="bg-white rounded-xl shadow-md p-6 flex flex-col items-center">
         <h3 className="text-xl font-bold text-purple-700 mb-5 text-center tracking-wide">
           Distribuição por Categoria 💰
@@ -471,6 +489,7 @@ export default function Financas() {
     </div>
   );
 }
+
 
 
 
