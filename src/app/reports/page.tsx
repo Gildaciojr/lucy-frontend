@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import {
@@ -16,49 +16,131 @@ interface Financa {
   categoria: string;
   valor: string;
   data: string;
+  tipo?: "receita" | "despesa"; // ✅ Adicionado para resolver o erro
 }
 
 export default function ReportsPage() {
   const [financas, setFinancas] = useState<Financa[]>([]);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState<string>("Usuário");
+  const [mesSelecionado, setMesSelecionado] = useState<string>("");
 
-  useEffect(() => {
-    const token = localStorage.getItem("auth_token");
-    const userId = localStorage.getItem("user_id");
-    if (!userId || !token) return;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+  const userId =
+    typeof window !== "undefined" ? localStorage.getItem("user_id") : null;
 
-    const fetchData = async () => {
+  // ✅ useCallback evita warning do React
+  const fetchFinancas = useCallback(
+    async (mes?: string) => {
+      if (!token) return;
+      setLoading(true);
+
+      let url = `${process.env.NEXT_PUBLIC_API_URL}/financas`;
+      if (mes) {
+        const [ano, mesNum] = mes.split("-");
+        const from = `${ano}-${mesNum}-01`;
+        const lastDay = new Date(Number(ano), Number(mesNum), 0).getDate();
+        const to = `${ano}-${mesNum}-${lastDay}`;
+        url += `?from=${from}&to=${to}`;
+      }
+
       try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/financas`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        const res = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         const data = await res.json();
         setFinancas(data);
 
-        const userRes = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/users/${userId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        const userData = await userRes.json();
-        setUserName(userData.name || "Usuário");
-      } catch (err) {
-        console.error("Erro ao buscar dados:", err);
+        if (userId) {
+          const userRes = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/users/${userId}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          const userData = await userRes.json();
+          setUserName(userData.name || "Usuário");
+        }
+      } catch {
+        console.error("Erro ao buscar dados financeiros");
       } finally {
         setLoading(false);
       }
-    };
+    },
+    [token, userId]
+  );
 
-    fetchData();
-  }, []);
+  useEffect(() => {
+    fetchFinancas();
+  }, [fetchFinancas]);
 
   const buildPdf = () => {
     const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.setTextColor(108, 43, 217);
-    doc.text(`Relatório Financeiro - ${userName}`, 14, 20);
 
+    // 💜 Cabeçalho Lucy Finance
+    doc.setFillColor(245, 240, 255);
+    doc.rect(0, 0, 210, 30, "F");
+    doc.setTextColor(108, 43, 217);
+    doc.setFontSize(22);
+    doc.setFont("helvetica", "bold");
+    doc.text("Lucy Finance 💜", 14, 20);
+
+    // 🟣 (Opcional) Logo Lucy
+    try {
+      const logo = "/assets/logo-lucy.png";
+      doc.addImage(logo, "PNG", 160, 5, 35, 20);
+    } catch {
+      console.warn("Logo não encontrada (adicione em public/assets/logo-lucy.png)");
+    }
+
+    doc.setFontSize(12);
+    doc.setTextColor(80);
+    doc.text(`Relatório Financeiro de ${userName}`, 14, 32);
+
+    if (mesSelecionado) {
+      doc.text(
+        `Período: ${new Date(mesSelecionado + "-01").toLocaleDateString(
+          "pt-BR",
+          { month: "long", year: "numeric" }
+        )}`,
+        14,
+        38
+      );
+    }
+
+    // Linha divisória
+    doc.setDrawColor(108, 43, 217);
+    doc.line(14, 42, 196, 42);
+
+    // 🔢 Totais
+    const totalReceitas = financas
+      .filter((f) => f.tipo === "receita")
+      .reduce((acc, f) => acc + parseFloat(f.valor), 0);
+
+    const totalDespesas = financas
+      .filter((f) => f.tipo === "despesa")
+      .reduce((acc, f) => acc + parseFloat(f.valor), 0);
+
+    const saldo = totalReceitas - totalDespesas;
+
+    doc.setFontSize(11);
+    doc.setTextColor(0);
+    doc.text(
+      `Total de Receitas: R$ ${totalReceitas.toFixed(2).replace(".", ",")}`,
+      14,
+      50
+    );
+    doc.text(
+      `Total de Despesas: R$ ${totalDespesas.toFixed(2).replace(".", ",")}`,
+      14,
+      56
+    );
+    doc.text(
+      `Saldo: R$ ${saldo.toFixed(2).replace(".", ",")}`,
+      14,
+      62
+    );
+
+    // 📊 Tabela
     const body = financas.map((f) => [
       f.categoria,
       `R$ ${parseFloat(f.valor).toFixed(2).replace(".", ",")}`,
@@ -68,11 +150,23 @@ export default function ReportsPage() {
     autoTable(doc, {
       head: [["Categoria", "Valor", "Data"]],
       body,
-      startY: 30,
+      startY: 70,
       styles: { fontSize: 10, halign: "center", valign: "middle" },
-      headStyles: { fillColor: [108, 43, 217], textColor: 255, halign: "center" },
+      headStyles: {
+        fillColor: [108, 43, 217],
+        textColor: 255,
+        halign: "center",
+      },
       alternateRowStyles: { fillColor: [245, 240, 255] },
     });
+
+    // 🖋 Rodapé (sem any)
+    const finalY =
+      (doc as unknown as { lastAutoTable?: { finalY?: number } }).lastAutoTable
+        ?.finalY ?? 270;
+    doc.setFontSize(10);
+    doc.setTextColor(130);
+    doc.text("Relatório gerado automaticamente pela Lucy 💜", 14, finalY + 10);
 
     return doc;
   };
@@ -167,6 +261,21 @@ export default function ReportsPage() {
         </p>
       </div>
 
+      {/* 🔹 Filtro de Mês */}
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-3 bg-white p-4 rounded-xl shadow">
+        <label className="text-gray-700 font-semibold">Selecione o mês:</label>
+        <input
+          type="month"
+          value={mesSelecionado}
+          onChange={(e) => {
+            setMesSelecionado(e.target.value);
+            fetchFinancas(e.target.value);
+          }}
+          className="border border-gray-300 rounded-lg px-3 py-2"
+        />
+      </div>
+
+      {/* 🔹 Botões */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <button
           onClick={handleDownload}
@@ -202,13 +311,4 @@ export default function ReportsPage() {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
 
