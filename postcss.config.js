@@ -1,10 +1,7 @@
-// ✅ Compatível com "type": "module" (Next.js 15 + Node 22)
-import tailwindcss from "tailwindcss";
-import autoprefixer from "autoprefixer";
-
-export default {
+// ✅ postcss.config.js — formato estável e compatível com Tailwind v3 + Next 15
+module.exports = {
   plugins: {
-    tailwindcss,
-    autoprefixer,
+    tailwindcss: {},
+    autoprefixer: {},
   },
 };
