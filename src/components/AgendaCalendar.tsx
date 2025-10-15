@@ -7,12 +7,13 @@ import {
   Views,
 } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
-import { ptBR } from "date-fns/locale/pt-BR"; // ✅ corrigido
+import { ptBR } from "date-fns/locale"; // ✅ correção da importação
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "@/styles/agenda-calendar.css"; // 🎨 tema Lucy
 
-// 📅 Localização para o calendário
+// 📅 Localização do calendário
 const locales = { "pt-BR": ptBR };
+
 const localizer = dateFnsLocalizer({
   format,
   parse,
@@ -30,7 +31,6 @@ interface CompromissoItem {
   origem: "dashboard" | "whatsapp";
 }
 
-// 🔹 Tipo de evento para o calendário
 interface CalendarEvent {
   id: number;
   title: string;
@@ -45,7 +45,6 @@ export default function AgendaCalendar({
 }: {
   compromissos: CompromissoItem[];
 }) {
-  // Se não houver compromissos
   if (!compromissos?.length)
     return (
       <div className="text-center p-6 text-gray-500">
@@ -53,7 +52,6 @@ export default function AgendaCalendar({
       </div>
     );
 
-  // Converte compromissos para eventos
   const events: CalendarEvent[] = compromissos.map((item) => ({
     id: item.id,
     title: item.titulo,
@@ -89,6 +87,7 @@ export default function AgendaCalendar({
       <div className="rounded-lg overflow-hidden border border-gray-200">
         <Calendar
           localizer={localizer}
+          culture="pt-BR" // 👈 força o idioma
           events={events}
           startAccessor="start"
           endAccessor="end"
@@ -96,12 +95,18 @@ export default function AgendaCalendar({
           views={[Views.MONTH, Views.WEEK, Views.DAY]}
           popup
           messages={{
+            allDay: "Dia inteiro",
+            previous: "Anterior",
+            next: "Próximo",
+            today: "Hoje",
             month: "Mês",
             week: "Semana",
             day: "Dia",
-            today: "Hoje",
-            previous: "Anterior",
-            next: "Próximo",
+            agenda: "Agenda",
+            date: "Data",
+            time: "Hora",
+            event: "Evento",
+            showMore: (count: number) => `+${count} evento(s)`, // ✅ tipo explícito
             noEventsInRange: "Sem compromissos neste período.",
           }}
           style={{ height: "70vh" }}
@@ -126,5 +131,4 @@ export default function AgendaCalendar({
     </div>
   );
 }
-
 

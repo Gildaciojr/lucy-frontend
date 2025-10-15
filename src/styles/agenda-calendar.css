@@ -163,4 +163,47 @@
 .rbc-row-segment {
   margin: 1px 0;
 }
+/* 📱 Ajustes extras de responsividade para celulares menores */
+@media (max-width: 640px) {
+  .rbc-calendar {
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 6px rgba(109, 40, 217, 0.1);
+  }
+
+  .rbc-toolbar {
+    padding: 0.5rem;
+    align-items: center;
+    text-align: center;
+  }
+
+  .rbc-toolbar-label {
+    font-size: 0.9rem;
+  }
+
+  .rbc-btn-group button {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.4rem;
+  }
+
+  .rbc-header {
+    font-size: 0.75rem;
+    padding: 0.25rem 0;
+  }
+
+  .rbc-event {
+    font-size: 0.75rem;
+    padding: 1px 4px;
+  }
+
+  /* altura reduzida para não forçar rolagem em telas pequenas */
+  .rbc-month-view {
+    min-height: 50vh;
+  }
+
+  /* melhora a separação entre linhas de semanas */
+  .rbc-row-content {
+    padding: 0.1rem;
+  }
+}
+
 

@@ -19,16 +19,15 @@ import {
 } from "recharts";
 import { apiFetch } from "@/lib/api";
 
-/** Itens de finanças já vêm unificados (dashboard + whatsapp) do endpoint /financas */
+/** Tipagens */
 interface FinanceItem {
   id: number;
   categoria: string;
   valor: number | string;
-  data: string; // ISO
+  data: string;
   tipo: "receita" | "despesa";
   origem: "dashboard" | "whatsapp";
 }
-
 interface Compromisso {
   id: number;
   titulo: string;
@@ -42,8 +41,6 @@ interface Conteudo {
   agendado: boolean;
   createdAt: string;
 }
-
-/** Novo formato de gamificação via /gamificacao */
 interface GamificacaoSummary {
   totalPoints: number;
   currentStreak: number;
@@ -51,7 +48,6 @@ interface GamificacaoSummary {
   unlockedCount: number;
   message?: string;
 }
-
 interface ChartItem {
   name: string;
   uso: number;
@@ -66,23 +62,18 @@ interface SummaryData {
   chartData: ChartItem[];
   financasRecentes: FinanceItem[];
 }
-
 type TipoFilter = "all" | "receita" | "despesa";
 
 const COLORS = ["#6d28d9", "#22c55e", "#facc15", "#ef4444"];
 
 export default function HomePage() {
-  // ----------------- filtros -----------------
-  const [from, setFrom] = useState<string>(""); // YYYY-MM-DD
+  const [from, setFrom] = useState<string>("");
   const [to, setTo] = useState<string>("");
   const [tipoFilter, setTipoFilter] = useState<TipoFilter>("all");
-
-  // ----------------- estados -----------------
   const [financasRaw, setFinancasRaw] = useState<FinanceItem[]>([]);
   const [compromissos, setCompromissos] = useState<Compromisso[]>([]);
   const [conteudo, setConteudo] = useState<Conteudo[]>([]);
   const [gamificacao, setGamificacao] = useState<GamificacaoSummary | null>(null);
-
   const [summary, setSummary] = useState<SummaryData>({
     totalReceitas: 0,
     totalDespesas: 0,
@@ -96,11 +87,7 @@ export default function HomePage() {
   const [loadingFinancas, setLoadingFinancas] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // ----------------- helpers -----------------
-  const parseValor = (v: number | string) => {
-    const n = Number(v);
-    return Number.isNaN(n) ? 0 : n;
-  };
+  const parseValor = (v: number | string) => (Number.isNaN(Number(v)) ? 0 : Number(v));
 
   const buildFinancasUrl = useCallback(() => {
     const qs = new URLSearchParams();
@@ -109,24 +96,15 @@ export default function HomePage() {
     return `/financas${qs.toString() ? `?${qs.toString()}` : ""}`;
   }, [from, to]);
 
-  // aplica filtro de tipo local (cliente)
   const filterByTipo = useCallback(
-    (items: FinanceItem[]): FinanceItem[] => {
-      if (tipoFilter === "all") return items;
-      return items.filter((f) => f.tipo === tipoFilter);
-    },
+    (items: FinanceItem[]): FinanceItem[] =>
+      tipoFilter === "all" ? items : items.filter((f) => f.tipo === tipoFilter),
     [tipoFilter]
   );
 
-  // computa summary a partir de dados carregados + filtro de tipo
   const recomputeSummary = useCallback(
-    (
-      financasBase: FinanceItem[],
-      compromissosData: Compromisso[],
-      conteudoData: Conteudo[]
-    ) => {
+    (financasBase: FinanceItem[], compromissosData: Compromisso[], conteudoData: Conteudo[]) => {
       const financas = filterByTipo(financasBase);
-
       let totalReceitas = 0;
       let totalDespesas = 0;
       financas.forEach((f) => {
@@ -135,39 +113,23 @@ export default function HomePage() {
         else totalReceitas += Math.abs(valorNum);
       });
       const saldo = totalReceitas - totalDespesas;
-
       const proximoCompromisso =
         compromissosData.length > 0
-          ? compromissosData
-              .slice()
-              .sort(
-                (a, b) => new Date(a.data).getTime() - new Date(b.data).getTime()
-              )[0].titulo
+          ? compromissosData.sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())[0].titulo
           : "Nenhum agendado";
-
       const ultimaIdeia =
         conteudoData.length > 0
-          ? conteudoData
-              .slice()
-              .sort(
-                (a, b) =>
-                  new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-              )[0].ideia
+          ? conteudoData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0].ideia
           : "Nenhuma ideia";
-
       const chartData: ChartItem[] = [
         { name: "Finanças", uso: financas.length },
         { name: "Agenda", uso: compromissosData.length },
         { name: "Conteúdo", uso: conteudoData.length },
       ];
-
       const financasRecentes = financas
         .slice()
-        .sort(
-          (a, b) => new Date(b.data).getTime() - new Date(a.data).getTime()
-        )
+        .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
         .slice(0, 5);
-
       setSummary({
         totalReceitas,
         totalDespesas,
@@ -181,7 +143,6 @@ export default function HomePage() {
     [filterByTipo]
   );
 
-  // ----------------- carregamento -----------------
   const loadStaticModules = useCallback(async (headers: Record<string, string>) => {
     const [comp, cont, gam] = await Promise.all([
       apiFetch<Compromisso[]>("/compromissos", { headers }),
@@ -216,12 +177,10 @@ export default function HomePage() {
       const token = localStorage.getItem("auth_token");
       if (!token) throw new Error("Usuário não autenticado.");
       const headers = { Authorization: `Bearer ${token}` };
-
       const [{ comp, cont, gam }, financasData] = await Promise.all([
         loadStaticModules(headers),
         loadFinancas(headers),
       ]);
-
       setGamificacao(gam);
       recomputeSummary(financasData, comp, cont);
     } catch (err: unknown) {
@@ -239,30 +198,8 @@ export default function HomePage() {
     recomputeSummary(financasRaw, compromissos, conteudo);
   }, [tipoFilter, financasRaw, compromissos, conteudo, recomputeSummary]);
 
-  const onApplyPeriod = async () => {
-    try {
-      setError(null);
-      const token = localStorage.getItem("auth_token");
-      if (!token) throw new Error("Usuário não autenticado.");
-      const headers = { Authorization: `Bearer ${token}` };
-
-      const financasData = await loadFinancas(headers);
-      recomputeSummary(financasData, compromissos, conteudo);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Erro ao aplicar período.");
-    }
-  };
-
-  const onClearFilters = () => {
-    setFrom("");
-    setTo("");
-    setTipoFilter("all");
-    initialLoad();
-  };
-
-  const toggleTipo = (t: Exclude<TipoFilter, "all">) => {
+  const toggleTipo = (t: Exclude<TipoFilter, "all">) =>
     setTipoFilter((prev) => (prev === t ? "all" : t));
-  };
 
   if (loading)
     return (
@@ -272,8 +209,7 @@ export default function HomePage() {
       </div>
     );
 
-  if (error)
-    return <div className="text-center p-4 text-red-500">Erro: {error}</div>;
+  if (error) return <div className="text-center p-4 text-red-500">Erro: {error}</div>;
 
   const totalConquistas = gamificacao?.unlockedCount ?? 0;
   const legendaConquistas =
@@ -285,137 +221,80 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100 relative">
-      <main className="flex-1 p-6 flex flex-col mb-20 space-y-6">
-        {/* Filtros */}
-        <div className="bg-white rounded-xl shadow p-4 flex flex-col md:flex-row md:items-end gap-3">
-          <div className="flex flex-col">
-            <label className="text-xs text-gray-600">Data inicial</label>
-            <input
-              type="date"
-              value={from}
-              onChange={(e) => setFrom(e.target.value)}
-              className="border rounded-lg px-3 py-2"
-            />
-          </div>
-          <div className="flex flex-col">
-            <label className="text-xs text-gray-600">Data final</label>
-            <input
-              type="date"
-              value={to}
-              onChange={(e) => setTo(e.target.value)}
-              className="border rounded-lg px-3 py-2"
-            />
-          </div>
-
-          <div className="flex-1" />
-
-          <div className="flex gap-2">
+      <main className="flex-1 p-4 sm:p-6 flex flex-col mb-20 space-y-6">
+        {/* Cards principais (reduzidos e responsivos) */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+          {[
+            {
+              label: "Receitas",
+              value: `R$ ${summary.totalReceitas.toFixed(2)}`,
+              color: "green",
+              active: tipoFilter === "receita",
+              action: () => toggleTipo("receita"),
+            },
+            {
+              label: "Despesas",
+              value: `R$ ${summary.totalDespesas.toFixed(2)}`,
+              color: "red",
+              active: tipoFilter === "despesa",
+              action: () => toggleTipo("despesa"),
+            },
+            {
+              label: "Saldo",
+              value: `R$ ${summary.saldo.toFixed(2)}`,
+              color: summary.saldo >= 0 ? "blue" : "orange",
+            },
+            {
+              label: "Próximo Compromisso",
+              value: summary.proximoCompromisso,
+              color: "purple",
+            },
+            {
+              label: "Última Ideia",
+              value: summary.ultimaIdeia,
+              color: "pink",
+            },
+          ].map((card) => (
             <button
-              onClick={onApplyPeriod}
-              disabled={loadingFinancas}
-              className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold disabled:opacity-50"
+              key={card.label}
+              onClick={card.action}
+              className={`group relative rounded-xl bg-white shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 ${
+                card.active ? `ring-2 ring-${card.color}-400` : ""
+              }`}
             >
-              {loadingFinancas ? "Aplicando..." : "Aplicar período"}
+              <div
+                className={`absolute inset-0 bg-gradient-to-r from-${card.color}-50 to-${card.color}-100 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl`}
+              />
+              <div className="relative z-10 p-3 sm:p-4 text-center">
+                <h4 className="text-[0.7rem] sm:text-xs font-semibold text-gray-500">
+                  {card.label}
+                </h4>
+                <p
+                  className={`text-base sm:text-lg font-bold mt-1 text-${card.color}-600 truncate`}
+                >
+                  {card.value}
+                </p>
+              </div>
             </button>
-            <button
-              onClick={onClearFilters}
-              className="px-4 py-2 rounded-lg bg-gray-200 text-gray-800 font-semibold"
-            >
-              Limpar filtros
-            </button>
-          </div>
+          ))}
         </div>
 
-        {/* Cards financeiros e resumo — estilo Lucy moderno */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-          {/* Receitas */}
-          <button
-            onClick={() => toggleTipo("receita")}
-            className={`group relative overflow-hidden rounded-2xl bg-white shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 ${
-              tipoFilter === "receita" ? "ring-2 ring-green-400" : ""
-            }`}
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-green-50 to-green-100 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="relative z-10 p-4 text-center">
-              <h4 className="text-xs font-semibold text-gray-500">Receitas</h4>
-              <p className="text-xl sm:text-2xl font-bold text-green-600 mt-1">
-                R$ {summary.totalReceitas.toFixed(2)}
-              </p>
-            </div>
-          </button>
-
-          {/* Despesas */}
-          <button
-            onClick={() => toggleTipo("despesa")}
-            className={`group relative overflow-hidden rounded-2xl bg-white shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 ${
-              tipoFilter === "despesa" ? "ring-2 ring-red-400" : ""
-            }`}
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-red-50 to-red-100 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="relative z-10 p-4 text-center">
-              <h4 className="text-xs font-semibold text-gray-500">Despesas</h4>
-              <p className="text-xl sm:text-2xl font-bold text-red-600 mt-1">
-                R$ {summary.totalDespesas.toFixed(2)}
-              </p>
-            </div>
-          </button>
-
-          {/* Saldo */}
-          <div className="group relative overflow-hidden rounded-2xl bg-white shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
-            <div className="absolute inset-0 bg-gradient-to-r from-indigo-50 to-indigo-100 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="relative z-10 p-4 text-center">
-              <h4 className="text-xs font-semibold text-gray-500">Saldo</h4>
-              <p
-                className={`text-xl sm:text-2xl font-bold mt-1 ${
-                  summary.saldo >= 0 ? "text-green-600" : "text-red-600"
-                }`}
-              >
-                R$ {summary.saldo.toFixed(2)}
-              </p>
-            </div>
-          </div>
-
-          {/* Próximo compromisso */}
-          <div className="group relative overflow-hidden rounded-2xl bg-white shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-50 to-purple-100 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="relative z-10 p-4 text-center">
-              <h4 className="text-xs font-semibold text-gray-500">
-                Próximo Compromisso
-              </h4>
-              <p className="text-sm sm:text-base font-semibold text-gray-800 mt-1">
-                {summary.proximoCompromisso}
-              </p>
-            </div>
-          </div>
-
-          {/* Última Ideia */}
-          <div className="group relative overflow-hidden rounded-2xl bg-white shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
-            <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-50 to-pink-100 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="relative z-10 p-4 text-center">
-              <h4 className="text-xs font-semibold text-gray-500">Última Ideia</h4>
-              <p className="text-sm sm:text-base font-semibold text-gray-800 mt-1">
-                {summary.ultimaIdeia}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* 💎 Card de Gamificação */}
+        {/* Gamificação */}
         <Link
           href="/gamificacao"
-          className="group block rounded-2xl shadow-md p-6 text-white hover:shadow-lg transition-shadow bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500"
+          className="group block rounded-xl shadow-md p-5 text-white hover:shadow-lg transition-shadow bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500"
         >
-          <div className="flex items-center gap-4">
-            <div className="p-4 rounded-2xl bg-white/10">
-              <FaTrophy className="w-8 h-8" />
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-xl bg-white/10">
+              <FaTrophy className="w-6 h-6 sm:w-8 sm:h-8" />
             </div>
             <div className="flex-1">
-              <h3 className="text-xl font-bold">Gamificação</h3>
-              <p className="text-sm opacity-90">
+              <h3 className="text-lg sm:text-xl font-bold">Gamificação</h3>
+              <p className="text-xs sm:text-sm opacity-90">
                 {legendaConquistas} • Toque para ver suas metas e conquistas
               </p>
             </div>
-            <div className="text-sm font-semibold bg-white/20 px-3 py-1 rounded-full">
+            <div className="text-xs sm:text-sm font-semibold bg-white/20 px-3 py-1 rounded-full">
               Ver página
             </div>
           </div>
