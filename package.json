@@ -11,11 +11,15 @@
     "format": "prettier --write \"{src,app,components}/**/*.{js,ts,jsx,tsx,mdx,css}\""
   },
   "dependencies": {
+    "@radix-ui/react-dropdown-menu": "^2.1.16",
     "axios": "^1.12.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.23.24",
     "jspdf": "^3.0.3",
     "jspdf-autotable": "^5.0.2",
+    "lucide-react": "^0.545.0",
     "next": "^15.5.2",
     "react": "^19.1.0",
     "react-big-calendar": "^1.19.4",
@@ -23,7 +27,9 @@
     "react-datepicker": "^8.7.0",
     "react-dom": "^19.1.0",
     "react-icons": "^5.5.0",
-    "recharts": "^3.2.1"
+    "recharts": "^3.2.1",
+    "tailwind-merge": "^3.3.1",
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

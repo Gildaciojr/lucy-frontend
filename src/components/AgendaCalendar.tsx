@@ -1,178 +1,165 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import {
-  Calendar,
-  dateFnsLocalizer,
-  Views,
-} from "react-big-calendar";
+import React, { useMemo, useState } from "react";
+import { Calendar, dateFnsLocalizer, Views } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import "@/styles/agenda-calendar.css";
+import { FaPlus, FaCalendarAlt } from "react-icons/fa";
 
-/* 🔹 Tipagem dos compromissos do backend */
-interface CompromissoItem {
-  id: number;
-  titulo: string;
-  data: string;
-  concluido: boolean;
-  origem: "dashboard" | "whatsapp";
-}
-
-/* 🔹 Tipo de evento usado no calendário */
+/** Tipagem do evento */
 interface CustomCalendarEvent {
   id: number;
   title: string;
   start: Date;
   end: Date;
-  origem: "dashboard" | "whatsapp";
-  concluido: boolean;
+  allDay?: boolean;
+  description?: string;
 }
 
-/* 📅 Localização (Português do Brasil) */
-const locales = { "pt-BR": ptBR };
+/** Localização pt-BR */
+const locales = {
+  "pt-BR": ptBR,
+};
+
 const localizer = dateFnsLocalizer({
   format,
   parse,
-  startOfWeek: () => startOfWeek(new Date(), { weekStartsOn: 0 }),
+  startOfWeek,
   getDay,
   locales,
 });
 
-export default function AgendaCalendar({ compromissos }: { compromissos: CompromissoItem[] }) {
-  const [isMobile, setIsMobile] = useState(false);
+interface Props {
+  events: CustomCalendarEvent[];
+  onAddEvent?: () => void;
+}
 
-  // ✅ Detecta se o usuário está no celular
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
+/** Componente principal */
+export default function AgendaCalendar({ events, onAddEvent }: Props) {
+  // 🔧 Mudança aqui: usar tipo 'string' para compatibilidade total
+  const [view, setView] = useState<string>(Views.MONTH);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+
+  /** Responsividade */
+  const isMobile = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth <= 768;
   }, []);
 
-  if (!compromissos?.length)
-    return (
-      <div className="text-center p-6 text-gray-500">
-        Nenhum compromisso encontrado.
-      </div>
-    );
+  /** Estilo visual dos eventos */
+  const eventStyleGetter = (
+    event: CustomCalendarEvent,
+    _start: Date,
+    _end: Date,
+    isSelected: boolean
+  ) => {
+    const baseColor = event.title.toLowerCase().includes("reunião")
+      ? "#8b5cf6"
+      : event.title.toLowerCase().includes("prazo")
+        ? "#f59e0b"
+        : "#22c55e";
 
-  // 🔄 Converte compromissos para eventos do calendário
-  const events: CustomCalendarEvent[] = compromissos.map((item) => ({
-    id: item.id,
-    title: item.titulo,
-    start: new Date(item.data),
-    end: new Date(item.data),
-    origem: item.origem,
-    concluido: item.concluido,
-  }));
+    return {
+      style: {
+        backgroundColor: baseColor,
+        borderRadius: "8px",
+        opacity: isSelected ? 0.95 : 0.85,
+        color: "#fff",
+        border: "none",
+        display: "block",
+        padding: "4px 8px",
+        fontSize: isMobile ? "0.7rem" : "0.85rem",
+      },
+    };
+  };
+
+  /** Destaque do dia atual */
+  const dayPropGetter = (date: Date) => {
+    const today = new Date();
+    if (
+      date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear()
+    ) {
+      return {
+        style: {
+          backgroundColor: "rgba(109,40,217,0.07)",
+          border: "1px solid rgba(109,40,217,0.3)",
+        },
+      };
+    }
+    return {};
+  };
 
   return (
-    <div className="bg-white rounded-xl shadow-md p-3 md:p-6 mb-8">
-      <h3 className="text-lg md:text-xl font-semibold text-gray-800 mb-4">
-        Calendário de Compromissos
-      </h3>
-
-      {/* 🟣 Legenda de cores */}
-      <div className="flex flex-wrap gap-3 mb-4 text-sm text-gray-600">
-        <div className="flex items-center gap-1">
-          <span className="inline-block w-3 h-3 rounded-full bg-blue-500"></span>
-          <span>Dashboard</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="inline-block w-3 h-3 rounded-full bg-purple-500"></span>
-          <span>WhatsApp (Lucy)</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="inline-block w-3 h-3 rounded-full bg-green-500"></span>
-          <span>Concluído</span>
-        </div>
+    <div className="w-full bg-white rounded-xl shadow-md p-4 border border-gray-100">
+      {/* Cabeçalho */}
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+          <FaCalendarAlt className="text-purple-600" />
+          Agenda
+        </h2>
+        {onAddEvent && (
+          <button
+            onClick={onAddEvent}
+            className="flex items-center gap-2 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold rounded-lg shadow transition"
+          >
+            <FaPlus className="text-sm" /> Novo evento
+          </button>
+        )}
       </div>
 
-      {/* 📱 Mobile: modo lista */}
-      {isMobile ? (
-        <div className="space-y-3">
-          {events.map((event) => (
-            <div
-              key={event.id}
-              className="flex items-center justify-between border border-gray-200 rounded-lg p-3 shadow-sm hover:shadow-md transition-all bg-gradient-to-r from-indigo-50 to-purple-50"
-            >
+      {/* Calendário */}
+      <div
+        className={`${
+          isMobile ? "max-h-[70vh] overflow-y-auto" : "h-[75vh]"
+        } rounded-lg border border-purple-100`}
+      >
+        <Calendar
+          localizer={localizer}
+          events={events.map((event) => ({
+            ...event,
+            start: new Date(event.start),
+            end: new Date(event.end),
+          }))}
+          startAccessor="start"
+          endAccessor="end"
+          style={{ minHeight: isMobile ? "65vh" : "75vh" }}
+          popup
+          views={["month", "agenda"]}
+          view={isMobile ? Views.MONTH : view}
+          onView={(v: string) => setView(v)} // ✅ Tipagem explícita
+          date={selectedDate}
+          onNavigate={(date: Date) => setSelectedDate(date)}
+          messages={{
+            month: "Mês",
+            week: "Semana",
+            day: "Dia",
+            today: "Hoje",
+            previous: "Anterior",
+            next: "Próximo",
+            agenda: "Agenda",
+            showMore: (total: number) => `+${total} mais`,
+          }}
+          culture="pt-BR"
+          eventPropGetter={eventStyleGetter}
+          dayPropGetter={dayPropGetter}
+          components={{
+            event: ({ event }: { event: CustomCalendarEvent }) => (
               <div>
-                <p className="font-semibold text-gray-800 text-sm">
-                  {event.title}
-                </p>
-                <p className="text-xs text-gray-500">
-                  {format(event.start, "dd/MM/yyyy, EEEE", { locale: ptBR })}
-                </p>
+                <strong>{event.title}</strong>
+                {event.description && (
+                  <div className="text-[0.7rem] text-gray-100">
+                    {event.description}
+                  </div>
+                )}
               </div>
-              <span
-                className={`px-2 py-1 text-xs font-semibold rounded-full text-white ${
-                  event.origem === "whatsapp"
-                    ? "bg-purple-500"
-                    : event.concluido
-                    ? "bg-green-500"
-                    : "bg-blue-500"
-                }`}
-              >
-                {event.origem === "whatsapp"
-                  ? "Lucy"
-                  : event.concluido
-                  ? "Feito"
-                  : "Pendente"}
-              </span>
-            </div>
-          ))}
-        </div>
-      ) : (
-        // 💻 Desktop: calendário completo
-        <div className="rounded-lg overflow-hidden border border-gray-200">
-          <Calendar
-            localizer={localizer}
-            events={events}
-            startAccessor="start"
-            endAccessor="end"
-            defaultView={Views.MONTH}
-            views={[Views.MONTH, Views.WEEK, Views.DAY]}
-            popup
-            messages={{
-              month: "Mês",
-              week: "Semana",
-              day: "Dia",
-              today: "Hoje",
-              previous: "Anterior",
-              next: "Próximo",
-              noEventsInRange: "Sem compromissos neste período.",
-            }}
-            style={{ height: "70vh" }}
-            eventPropGetter={(event: CustomCalendarEvent) => {
-              let background = "";
-              if (event.origem === "whatsapp") {
-                background = "linear-gradient(to right, #8b5cf6, #7e22ce)";
-              } else if (event.concluido) {
-                background = "linear-gradient(to right, #22c55e, #16a34a)";
-              } else {
-                background = "linear-gradient(to right, #3b82f6, #2563eb)";
-              }
-
-              return {
-                style: {
-                  background,
-                  borderRadius: "8px",
-                  color: "white",
-                  border: "none",
-                  transition: "transform 0.2s ease, box-shadow 0.2s ease",
-                },
-                className:
-                  "hover:shadow-lg hover:scale-[1.03] cursor-pointer transition-transform",
-              };
-            }}
-          />
-        </div>
-      )}
+            ),
+          }}
+        />
+      </div>
     </div>
   );
 }
-
-
 

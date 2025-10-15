@@ -10,7 +10,7 @@ import React, {
 } from "react";
 import Link from "next/link";
 import Navigation from "../components/Navigation";
-import { FaSpinner, FaWhatsapp, FaTrophy } from "react-icons/fa";
+import { FaSpinner, FaWhatsapp, FaTrophy, FaCalendarAlt } from "react-icons/fa";
 import {
   ResponsiveContainer,
   LineChart,
@@ -25,14 +25,11 @@ import {
   Cell,
 } from "recharts";
 import { apiFetch } from "@/lib/api";
-
-// 🗓️ DatePicker (pt-BR)
 import ReactDatePicker, { registerLocale } from "react-datepicker";
 import { ptBR as dfnsPtBR } from "date-fns/locale";
 import "react-datepicker/dist/react-datepicker.css";
 registerLocale("pt-BR", dfnsPtBR);
 
-/** Tipagens */
 interface FinanceItem {
   id: number;
   categoria: string;
@@ -79,11 +76,9 @@ type TipoFilter = "all" | "receita" | "despesa";
 
 const COLORS = ["#6d28d9", "#22c55e", "#facc15", "#ef4444"];
 
-/** Helpers */
 const pad2 = (n: number) => String(n).padStart(2, "0");
 const toYMD = (d: Date) =>
   `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
-
 const formatFullPtBR = (d: Date) =>
   d.toLocaleDateString("pt-BR", {
     weekday: "long",
@@ -91,10 +86,8 @@ const formatFullPtBR = (d: Date) =>
     month: "long",
     year: "numeric",
   });
-
 const endOfCurrentMonth = () =>
   new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
-
 const formatShortPtBR = (d: Date) =>
   d.toLocaleDateString("pt-BR", {
     day: "2-digit",
@@ -102,7 +95,6 @@ const formatShortPtBR = (d: Date) =>
     year: "numeric",
   });
 
-/** Custom input estilizado para o DatePicker */
 const DatePill = forwardRef(
   (
     {
@@ -118,16 +110,17 @@ const DatePill = forwardRef(
       type="button"
       onClick={onClick}
       title={title}
-      className="px-3 py-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs sm:text-sm font-medium shadow-sm transition-colors"
+      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-medium shadow-sm transition-colors"
     >
-      {label ? `${label} ${value}` : value}
+      <FaCalendarAlt className="text-indigo-600" />
+      {label && <span>{label}</span>}
+      <span>{value}</span>
     </button>
   )
 );
 DatePill.displayName = "DatePill";
 
 export default function HomePage() {
-  // 🔁 Estados existentes
   const [tipoFilter, setTipoFilter] = useState<TipoFilter>("all");
   const [financasRaw, setFinancasRaw] = useState<FinanceItem[]>([]);
   const [compromissos, setCompromissos] = useState<Compromisso[]>([]);
@@ -147,12 +140,8 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [loadingFinancas, setLoadingFinancas] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // 🗓️ NOVO: datas com DatePicker (auto-filtragem)
   const [fromDate, setFromDate] = useState<Date | null>(null);
   const [toDate, setToDate] = useState<Date | null>(null);
-
-  // controle para evitar chamada dupla no primeiro render
   const initialLoadedRef = useRef(false);
 
   const parseValor = (v: number | string) =>
@@ -234,102 +223,45 @@ export default function HomePage() {
     [filterByTipo]
   );
 
-  const loadStaticModules = useCallback(
-    async (headers: Record<string, string>) => {
-      const [comp, cont, gam]: [Compromisso[], Conteudo[], GamificacaoSummary] =
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("auth_token");
+      if (!token) throw new Error("Usuário não autenticado.");
+      const headers = { Authorization: `Bearer ${token}` };
+      const [financasData, compromissosData, conteudoData, gamificacaoData] =
         await Promise.all([
+          apiFetch<FinanceItem[]>(buildFinancasUrl(), { headers }),
           apiFetch<Compromisso[]>("/compromissos", { headers }),
           apiFetch<Conteudo[]>("/conteudo", { headers }),
           apiFetch<GamificacaoSummary>("/gamificacao", { headers }),
         ]);
-
-      setCompromissos(comp);
-      setConteudo(cont);
-      setGamificacao(gam);
-      return { comp, cont, gam };
-    },
-    []
-  );
-
-  const loadFinancas = useCallback(
-    async (headers: Record<string, string>) => {
-      setLoadingFinancas(true);
-      try {
-        const url = buildFinancasUrl();
-        const financasData = await apiFetch<FinanceItem[]>(url, { headers });
-        setFinancasRaw(financasData);
-        return financasData;
-      } finally {
-        setLoadingFinancas(false);
-      }
-    },
-    [buildFinancasUrl]
-  );
-
-  const initialLoad = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const token = localStorage.getItem("auth_token");
-      if (!token) throw new Error("Usuário não autenticado.");
-      const headers = { Authorization: `Bearer ${token}` };
-
-      const [{ comp, cont, gam }, financasData] = await Promise.all([
-        loadStaticModules(headers),
-        loadFinancas(headers),
-      ]);
-
-      setGamificacao(gam);
-      recomputeSummary(financasData, comp, cont);
+      setFinancasRaw(financasData);
+      setCompromissos(compromissosData);
+      setConteudo(conteudoData);
+      setGamificacao(gamificacaoData);
+      recomputeSummary(financasData, compromissosData, conteudoData);
       initialLoadedRef.current = true;
     } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : "Erro ao carregar o resumo."
-      );
+      setError(err instanceof Error ? err.message : "Erro ao carregar dados.");
     } finally {
       setLoading(false);
     }
-  }, [loadStaticModules, loadFinancas, recomputeSummary]);
+  }, [buildFinancasUrl, recomputeSummary]);
 
   useEffect(() => {
-    initialLoad();
-  }, [initialLoad]);
+    loadData();
+  }, [loadData]);
 
-  // Recalcula ao trocar filtros de tipo/local
   useEffect(() => {
-    recomputeSummary(financasRaw, compromissos, conteudo);
-  }, [tipoFilter, financasRaw, compromissos, conteudo, recomputeSummary]);
-
-  // 🔁 Auto-filtragem sempre que o usuário selecionar datas (DatePicker)
-  useEffect(() => {
-    const autoLoad = async () => {
-      if (!initialLoadedRef.current) return;
-      try {
-        const token = localStorage.getItem("auth_token");
-        if (!token) return;
-        const headers = { Authorization: `Bearer ${token}` };
-        const financasData = await loadFinancas(headers);
-        // mantém os módulos em memória; só recomputa
-        recomputeSummary(financasData, compromissos, conteudo);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    autoLoad();
-  }, [
-    fromDate,
-    toDate,
-    loadFinancas,
-    recomputeSummary,
-    compromissos,
-    conteudo,
-  ]);
+    if (initialLoadedRef.current) loadData();
+  }, [fromDate, toDate, loadData]);
 
   const onClearFilters = () => {
     setFromDate(null);
     setToDate(null);
     setTipoFilter("all");
-    initialLoad();
+    loadData();
   };
 
   const toggleTipo = (t: Exclude<TipoFilter, "all">) =>
@@ -343,26 +275,21 @@ export default function HomePage() {
       </div>
     );
 
-  if (error)
-    return <div className="text-center p-4 text-red-500">Erro: {error}</div>;
-
+  const hoje = new Date();
+  const dataHojeLabel = formatFullPtBR(hoje);
+  const finalMesLabel = formatShortPtBR(endOfCurrentMonth());
   const totalConquistas = gamificacao?.unlockedCount ?? 0;
   const legendaConquistas =
     totalConquistas === 0
       ? "Sem conquistas ainda"
       : totalConquistas === 1
-        ? "1 conquista"
-        : `${totalConquistas} conquistas`;
-
-  // Datas do cabeçalho/filtro visual
-  const hoje = new Date();
-  const dataHojeLabel = formatFullPtBR(hoje);
-  const finalMesLabel = formatShortPtBR(endOfCurrentMonth());
+      ? "1 conquista"
+      : `${totalConquistas} conquistas`;
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100 relative">
       <main className="flex-1 p-4 sm:p-6 flex flex-col mb-20 space-y-6">
-        {/* Cards principais — menores e com animação suave */}
+        {/* 🟣 Cards menores e interativos */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
           {[
             {
@@ -420,23 +347,28 @@ export default function HomePage() {
           ))}
         </div>
 
-        {/* Barra de filtros — datas clicáveis com calendário embutido */}
+        {/* 🔹 Barra de Filtro “De / Até” */}
         <div className="bg-white rounded-xl shadow-md p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <h3 className="text-base sm:text-lg font-semibold text-indigo-700 flex items-center gap-2">
+            <FaCalendarAlt className="text-indigo-600" />
+            Filtro
+          </h3>
+
           <div className="flex flex-col sm:flex-row gap-3 items-center">
-            {/* Data inicial (clicável) */}
             <ReactDatePicker
               selected={fromDate}
               onChange={(date) => setFromDate(date)}
               selectsStart
               startDate={fromDate}
               endDate={toDate || undefined}
-              maxDate={toDate || undefined}
               locale="pt-BR"
-              dateFormat="eeee, dd 'de' MMMM 'de' yyyy"
+              dateFormat="dd/MM/yyyy"
               customInput={
                 <DatePill
-                  label="📅"
-                  value={fromDate ? formatFullPtBR(fromDate) : dataHojeLabel}
+                  label="De"
+                  value={
+                    fromDate ? formatShortPtBR(fromDate) : dataHojeLabel
+                  }
                   title="Selecionar data inicial"
                 />
               }
@@ -444,9 +376,6 @@ export default function HomePage() {
               showPopperArrow={false}
             />
 
-            <span className="text-sm text-gray-500">→</span>
-
-            {/* Data final (clicável) */}
             <ReactDatePicker
               selected={toDate}
               onChange={(date) => setToDate(date)}
@@ -458,9 +387,8 @@ export default function HomePage() {
               dateFormat="dd/MM/yyyy"
               customInput={
                 <DatePill
-                  value={
-                    toDate ? formatShortPtBR(toDate) : `Até ${finalMesLabel}`
-                  }
+                  label="Até"
+                  value={toDate ? formatShortPtBR(toDate) : finalMesLabel}
                   title="Selecionar data final"
                 />
               }
@@ -469,21 +397,18 @@ export default function HomePage() {
             />
           </div>
 
-          {/* Ação de limpar (mantive somente o limpar, sem “Pesquisar”) */}
-          <div className="flex items-center">
-            <button
-              onClick={onClearFilters}
-              className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs sm:text-sm font-medium transition-colors"
-              type="button"
-              disabled={loadingFinancas}
-              title="Limpar período"
-            >
-              Limpar
-            </button>
-          </div>
+          <button
+            onClick={onClearFilters}
+            className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium transition-colors"
+            type="button"
+            disabled={loadingFinancas}
+            title="Limpar período"
+          >
+            Limpar
+          </button>
         </div>
 
-        {/* Card de Gamificação */}
+        {/* 🏆 Gamificação */}
         <Link
           href="/gamificacao"
           className="group block rounded-xl shadow-md p-5 text-white hover:shadow-lg transition-shadow bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500"
@@ -603,7 +528,6 @@ export default function HomePage() {
 
       <Navigation />
 
-      {/* Botão flutuante WhatsApp */}
       <a
         href="https://wa.me/message/JQ6SLHBNNAAHG1"
         target="_blank"
@@ -615,3 +539,4 @@ export default function HomePage() {
     </div>
   );
 }
+

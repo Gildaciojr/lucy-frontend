@@ -28,7 +28,13 @@ interface CardProps {
   isActive: boolean;
 }
 
-const Card: React.FC<CardProps> = ({ icon, title, value, onClick, isActive }) => {
+const Card: React.FC<CardProps> = ({
+  icon,
+  title,
+  value,
+  onClick,
+  isActive,
+}) => {
   return (
     <div
       className={`flex items-center space-x-4 p-4 bg-white rounded-xl shadow-md cursor-pointer transition-transform transform hover:scale-105 ${
@@ -51,7 +57,9 @@ export default function Agenda() {
   const [compromissos, setCompromissos] = useState<CompromissoItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [viewDetails, setViewDetails] = useState<null | "concluidos" | "pendentes">(null);
+  const [viewDetails, setViewDetails] = useState<
+    null | "concluidos" | "pendentes"
+  >(null);
 
   const fetchCompromissos = async () => {
     setLoading(true);
@@ -82,10 +90,13 @@ export default function Agenda() {
     const token = localStorage.getItem("auth_token");
     if (!token) return;
 
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compromissos/${id}/concluir`, {
-      method: "PUT",
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/compromissos/${id}/concluir`,
+      {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
 
     fetchCompromissos();
   };
@@ -94,10 +105,13 @@ export default function Agenda() {
     const token = localStorage.getItem("auth_token");
     if (!token) return;
 
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/compromissos/${id}/reabrir`, {
-      method: "PUT",
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/compromissos/${id}/reabrir`,
+      {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
 
     fetchCompromissos();
   };
@@ -198,7 +212,18 @@ export default function Agenda() {
       </h2>
 
       {/* 🗓️ Novo calendário moderno (não quebra o fluxo atual) */}
-      <AgendaCalendar compromissos={compromissos} />
+      <AgendaCalendar
+        events={compromissos.map((c) => ({
+          id: c.id,
+          title: c.titulo,
+          start: new Date(c.data),
+          end: new Date(c.data),
+          description:
+            c.origem === "whatsapp"
+              ? "Criado via WhatsApp"
+              : "Criado no Dashboard",
+        }))}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <Card
@@ -230,11 +255,3 @@ export default function Agenda() {
     </div>
   );
 }
-
-
-
-
-
-
-
-
