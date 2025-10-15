@@ -8,7 +8,7 @@ import {
   FaChevronLeft,
   FaTrash,
 } from "react-icons/fa";
-import ConteudoForm from "./ConteudoForm";
+// ❌ import ConteudoForm removido
 
 interface Conteudo {
   id: number;
@@ -239,9 +239,7 @@ export default function Conteudo() {
         />
       </div>
 
-      <div className="mt-8">
-        <ConteudoForm onSave={fetchConteudos} />
-      </div>
+      {/* ❌ Bloco de criação de nova ideia removido */}
 
       <div className="bg-white rounded-xl shadow-md p-6 mt-8">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
@@ -265,6 +263,7 @@ export default function Conteudo() {
     </div>
   );
 }
+
 
 
 

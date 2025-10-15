@@ -11,6 +11,7 @@ import {
   FaCalendarWeek,
   FaCalendarAlt,
   FaUndo,
+  FaTags,
 } from "react-icons/fa";
 import {
   ResponsiveContainer,
@@ -60,7 +61,7 @@ const getDateRange = (mode: "today" | "week" | "month") => {
 
 export default function Financas() {
   const [todasFinancas, setTodasFinancas] = useState<Financa[]>([]);
-  const [basePeriodo, setBasePeriodo] = useState<Financa[]>([]); // <- resultado do período/manual
+  const [basePeriodo, setBasePeriodo] = useState<Financa[]>([]);
   const [financasFiltradas, setFinancasFiltradas] = useState<Financa[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingFinancas, setLoadingFinancas] = useState(false);
@@ -70,6 +71,7 @@ export default function Financas() {
   const [toManual, setToManual] = useState<string>("");
   const [tipoAtivo, setTipoAtivo] = useState<"receita" | "despesa" | "all">("all");
   const [periodoAtivo, setPeriodoAtivo] = useState<"today" | "week" | "month" | null>(null);
+  const [categoriaAtiva, setCategoriaAtiva] = useState<string | null>(null);
 
   const fetchFinancas = useCallback(async () => {
     try {
@@ -87,7 +89,6 @@ export default function Financas() {
       if (!response.ok) throw new Error("Erro ao buscar finanças.");
       const data: Financa[] = await response.json();
       setTodasFinancas(data);
-      // estado inicial: tudo
       setBasePeriodo(data);
       setFinancasFiltradas(data);
     } catch (err) {
@@ -102,7 +103,6 @@ export default function Financas() {
     fetchFinancas().finally(() => setLoading(false));
   }, [fetchFinancas]);
 
-  // Aplica tipo sobre a base do período/manual
   const aplicarTipoSobreBase = useCallback(
     (tipo: "receita" | "despesa" | "all", base: Financa[]) => {
       if (tipo === "all") return base;
@@ -128,16 +128,27 @@ export default function Financas() {
 
     const result = aplicarTipoSobreBase(tipoAtivo, base);
     setFinancasFiltradas(result);
-
-    setTimeout(() => {
-      document.getElementById("lista-financas")?.scrollIntoView({ behavior: "smooth" });
-    }, 80);
+    setCategoriaAtiva(null);
   };
 
   const aplicarFiltroTipo = (tipo: "receita" | "despesa" | "all") => {
     setTipoAtivo(tipo);
     const result = aplicarTipoSobreBase(tipo, basePeriodo);
     setFinancasFiltradas(result);
+    setCategoriaAtiva(null);
+  };
+
+  const aplicarFiltroCategoria = (categoria: string | null) => {
+    setCategoriaAtiva(categoria);
+    if (!categoria) {
+      setFinancasFiltradas(basePeriodo);
+      return;
+    }
+
+    const filtradas = basePeriodo.filter(
+      (f) => f.categoria.toLowerCase() === categoria.toLowerCase()
+    );
+    setFinancasFiltradas(filtradas);
     setTimeout(() => {
       document.getElementById("lista-financas")?.scrollIntoView({ behavior: "smooth" });
     }, 80);
@@ -159,10 +170,7 @@ export default function Financas() {
     const result = aplicarTipoSobreBase("all", base);
     setTipoAtivo("all");
     setFinancasFiltradas(result);
-
-    setTimeout(() => {
-      document.getElementById("lista-financas")?.scrollIntoView({ behavior: "smooth" });
-    }, 80);
+    setCategoriaAtiva(null);
   };
 
   const limparFiltros = () => {
@@ -172,6 +180,7 @@ export default function Financas() {
     setToManual("");
     setTipoAtivo("all");
     setPeriodoAtivo(null);
+    setCategoriaAtiva(null);
   };
 
   const receitas = financasFiltradas.filter((f) => f.tipo === "receita");
@@ -182,6 +191,11 @@ export default function Financas() {
   const saldo = totalReceitas - totalDespesas;
 
   const COLORS = ["#6d28d9", "#22c55e", "#facc15", "#ef4444", "#3b82f6", "#9333ea"];
+
+  const categoriasUnicas = useMemo(() => {
+    const lista = Array.from(new Set(todasFinancas.map((f) => f.categoria))).sort();
+    return lista;
+  }, [todasFinancas]);
 
   const aggregatedData = useMemo(() => {
     return financasFiltradas.reduce((acc, item) => {
@@ -212,8 +226,11 @@ export default function Financas() {
     <div className="p-6 bg-gray-50 rounded-lg shadow-inner">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">Controle Financeiro</h2>
 
+      {/* 📋 Formulário primeiro */}
+      <FinancasForm onSave={fetchFinancas} />
+
       {/* 🔥 Filtros rápidos */}
-      <div className="bg-white rounded-xl shadow p-4 mb-6">
+      <div className="bg-white rounded-xl shadow p-4 mb-6 mt-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
           <FaFilter /> Filtros rápidos
         </h3>
@@ -254,6 +271,40 @@ export default function Financas() {
         </div>
       </div>
 
+      {/* 🏷️ Filtros por categoria */}
+      <div className="bg-white rounded-xl shadow p-4 mb-6">
+        <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+          <FaTags /> Filtros por Categoria
+        </h3>
+
+        <div className="flex flex-wrap gap-3 justify-center md:justify-start items-center">
+          <button
+            onClick={() => aplicarFiltroCategoria(null)}
+            className={`px-4 py-2 rounded-lg shadow font-semibold transition ${
+              !categoriaAtiva
+                ? "bg-purple-600 text-white"
+                : "bg-purple-100 text-purple-700 hover:bg-purple-200"
+            }`}
+          >
+            Todas
+          </button>
+
+          {categoriasUnicas.map((categoria) => (
+            <button
+              key={categoria}
+              onClick={() => aplicarFiltroCategoria(categoria)}
+              className={`px-4 py-2 rounded-lg shadow font-semibold transition ${
+                categoriaAtiva === categoria
+                  ? "bg-purple-600 text-white"
+                  : "bg-purple-100 text-purple-700 hover:bg-purple-200"
+              }`}
+            >
+              {categoria}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* 📆 Filtro manual */}
       <div className="bg-white rounded-xl shadow p-4 mb-6 flex flex-wrap gap-3 items-end justify-start">
         <div className="flex flex-col">
@@ -288,10 +339,7 @@ export default function Financas() {
         </button>
       </div>
 
-      {/* Formulário */}
-      <FinancasForm onSave={fetchFinancas} />
-
-      {/* 💰 Cards que atualizam com filtros */}
+      {/* 💰 Cards financeiros */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8 mt-6">
         <div className="cursor-pointer" onClick={() => aplicarFiltroTipo("receita")}>
           <div
@@ -358,7 +406,7 @@ export default function Financas() {
         </div>
       </div>
 
-      {/* Gráfico e tabela permanecem iguais (mas refletem financasFiltradas) */}
+      {/* 📊 Gráfico */}
       <div className="bg-white rounded-xl shadow-md p-6 flex flex-col items-center">
         <h3 className="text-xl font-bold text-purple-700 mb-5 text-center tracking-wide">
           Distribuição por Categoria 💰
@@ -409,7 +457,7 @@ export default function Financas() {
         </ResponsiveContainer>
       </div>
 
-      {/* Lista de lançamentos */}
+      {/* 🧾 Lista de lançamentos */}
       <div id="lista-financas" className="bg-white rounded-xl shadow-md p-6 mt-6">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold text-gray-800">Lançamentos Filtrados</h3>
@@ -489,6 +537,7 @@ export default function Financas() {
     </div>
   );
 }
+
 
 
 

@@ -260,7 +260,7 @@ export default function GamificacaoPage() {
         {/* Barra de progresso */}
         <div className="bg-white p-5 rounded-2xl shadow border border-purple-100">
           <h2 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
-            <FaMedal className="text-yellow-500" /> Progresso até 10.000 pts
+            <FaMedal className="text-yellow-500" /> Progresso
           </h2>
           <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
             <motion.div
@@ -271,7 +271,7 @@ export default function GamificacaoPage() {
             />
           </div>
           <p className="text-xs text-gray-500 mt-2">
-            {Math.round(progressPercent)}% de 10.000 pts
+            {Math.round(progressPercent)}%
           </p>
         </div>
 

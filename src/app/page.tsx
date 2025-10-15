@@ -127,7 +127,6 @@ export default function HomePage() {
     ) => {
       const financas = filterByTipo(financasBase);
 
-      // Totais
       let totalReceitas = 0;
       let totalDespesas = 0;
       financas.forEach((f) => {
@@ -137,7 +136,6 @@ export default function HomePage() {
       });
       const saldo = totalReceitas - totalDespesas;
 
-      // Próximo compromisso
       const proximoCompromisso =
         compromissosData.length > 0
           ? compromissosData
@@ -147,7 +145,6 @@ export default function HomePage() {
               )[0].titulo
           : "Nenhum agendado";
 
-      // Última ideia
       const ultimaIdeia =
         conteudoData.length > 0
           ? conteudoData
@@ -158,14 +155,12 @@ export default function HomePage() {
               )[0].ideia
           : "Nenhuma ideia";
 
-      // ✅ Chart por módulo (sem Gamificação)
       const chartData: ChartItem[] = [
         { name: "Finanças", uso: financas.length },
         { name: "Agenda", uso: compromissosData.length },
         { name: "Conteúdo", uso: conteudoData.length },
       ];
 
-      // 5 últimas movimentações
       const financasRecentes = financas
         .slice()
         .sort(
@@ -218,7 +213,6 @@ export default function HomePage() {
     try {
       setLoading(true);
       setError(null);
-
       const token = localStorage.getItem("auth_token");
       if (!token) throw new Error("Usuário não autenticado.");
       const headers = { Authorization: `Bearer ${token}` };
@@ -239,15 +233,12 @@ export default function HomePage() {
 
   useEffect(() => {
     initialLoad();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [initialLoad]);
 
-  // Recalcula summary localmente quando estados mudarem
   useEffect(() => {
     recomputeSummary(financasRaw, compromissos, conteudo);
   }, [tipoFilter, financasRaw, compromissos, conteudo, recomputeSummary]);
 
-  // ----------------- ações UI -----------------
   const onApplyPeriod = async () => {
     try {
       setError(null);
@@ -273,7 +264,6 @@ export default function HomePage() {
     setTipoFilter((prev) => (prev === t ? "all" : t));
   };
 
-  // ----------------- UI -----------------
   if (loading)
     return (
       <div className="text-center p-4 flex items-center justify-center space-x-2">
@@ -282,7 +272,8 @@ export default function HomePage() {
       </div>
     );
 
-  if (error) return <div className="text-center p-4 text-red-500">Erro: {error}</div>;
+  if (error)
+    return <div className="text-center p-4 text-red-500">Erro: {error}</div>;
 
   const totalConquistas = gamificacao?.unlockedCount ?? 0;
   const legendaConquistas =
@@ -335,55 +326,77 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Cards financeiros e resumo */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        {/* Cards financeiros e resumo — estilo Lucy moderno */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+          {/* Receitas */}
           <button
-            className={`bg-white shadow rounded-xl p-4 text-center border-2 ${
-              tipoFilter === "receita" ? "border-green-500" : "border-transparent"
-            }`}
             onClick={() => toggleTipo("receita")}
-          >
-            <h4 className="text-sm text-gray-500">Receitas</h4>
-            <p className="text-xl font-bold text-green-600">
-              R$ {summary.totalReceitas.toFixed(2)}
-            </p>
-          </button>
-
-          <button
-            className={`bg-white shadow rounded-xl p-4 text-center border-2 ${
-              tipoFilter === "despesa" ? "border-red-500" : "border-transparent"
+            className={`group relative overflow-hidden rounded-2xl bg-white shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 ${
+              tipoFilter === "receita" ? "ring-2 ring-green-400" : ""
             }`}
-            onClick={() => toggleTipo("despesa")}
           >
-            <h4 className="text-sm text-gray-500">Despesas</h4>
-            <p className="text-xl font-bold text-red-600">
-              R$ {summary.totalDespesas.toFixed(2)}
-            </p>
+            <div className="absolute inset-0 bg-gradient-to-r from-green-50 to-green-100 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="relative z-10 p-4 text-center">
+              <h4 className="text-xs font-semibold text-gray-500">Receitas</h4>
+              <p className="text-xl sm:text-2xl font-bold text-green-600 mt-1">
+                R$ {summary.totalReceitas.toFixed(2)}
+              </p>
+            </div>
           </button>
 
-          <div className="bg-white shadow rounded-xl p-4 text-center">
-            <h4 className="text-sm text-gray-500">Saldo</h4>
-            <p
-              className={`text-xl font-bold ${
-                summary.saldo >= 0 ? "text-green-600" : "text-red-600"
-              }`}
-            >
-              R$ {summary.saldo.toFixed(2)}
-            </p>
+          {/* Despesas */}
+          <button
+            onClick={() => toggleTipo("despesa")}
+            className={`group relative overflow-hidden rounded-2xl bg-white shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 ${
+              tipoFilter === "despesa" ? "ring-2 ring-red-400" : ""
+            }`}
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-red-50 to-red-100 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="relative z-10 p-4 text-center">
+              <h4 className="text-xs font-semibold text-gray-500">Despesas</h4>
+              <p className="text-xl sm:text-2xl font-bold text-red-600 mt-1">
+                R$ {summary.totalDespesas.toFixed(2)}
+              </p>
+            </div>
+          </button>
+
+          {/* Saldo */}
+          <div className="group relative overflow-hidden rounded-2xl bg-white shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+            <div className="absolute inset-0 bg-gradient-to-r from-indigo-50 to-indigo-100 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="relative z-10 p-4 text-center">
+              <h4 className="text-xs font-semibold text-gray-500">Saldo</h4>
+              <p
+                className={`text-xl sm:text-2xl font-bold mt-1 ${
+                  summary.saldo >= 0 ? "text-green-600" : "text-red-600"
+                }`}
+              >
+                R$ {summary.saldo.toFixed(2)}
+              </p>
+            </div>
           </div>
 
-          <div className="bg-white shadow rounded-xl p-4 text-center">
-            <h4 className="text-sm text-gray-500">Próximo Compromisso</h4>
-            <p className="text-sm font-semibold text-gray-700">
-              {summary.proximoCompromisso}
-            </p>
+          {/* Próximo compromisso */}
+          <div className="group relative overflow-hidden rounded-2xl bg-white shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-50 to-purple-100 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="relative z-10 p-4 text-center">
+              <h4 className="text-xs font-semibold text-gray-500">
+                Próximo Compromisso
+              </h4>
+              <p className="text-sm sm:text-base font-semibold text-gray-800 mt-1">
+                {summary.proximoCompromisso}
+              </p>
+            </div>
           </div>
 
-          <div className="bg-white shadow rounded-xl p-4 text-center">
-            <h4 className="text-sm text-gray-500">Última Ideia</h4>
-            <p className="text-sm font-semibold text-gray-700">
-              {summary.ultimaIdeia}
-            </p>
+          {/* Última Ideia */}
+          <div className="group relative overflow-hidden rounded-2xl bg-white shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+            <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-50 to-pink-100 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="relative z-10 p-4 text-center">
+              <h4 className="text-xs font-semibold text-gray-500">Última Ideia</h4>
+              <p className="text-sm sm:text-base font-semibold text-gray-800 mt-1">
+                {summary.ultimaIdeia}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -518,6 +531,7 @@ export default function HomePage() {
     </div>
   );
 }
+
 
 
 

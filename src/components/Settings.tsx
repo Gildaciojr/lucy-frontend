@@ -215,7 +215,7 @@ export default function Settings() {
             rel="noopener noreferrer"
             className="p-3 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition-colors text-center"
           >
-            Gostaria de melhorar seu plano? Fale conosco.
+            Precisa de ajuda? Fale conosco.
           </a>
         </div>
       </SettingsCard>

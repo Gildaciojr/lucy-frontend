@@ -9,6 +9,7 @@ import {
   FaUndo,
 } from "react-icons/fa";
 import AgendaForm from "./AgendaForm";
+import AgendaCalendar from "./AgendaCalendar"; // 🆕 import do novo calendário
 
 interface CompromissoItem {
   id: number;
@@ -196,6 +197,9 @@ export default function Agenda() {
         Agenda de Compromissos
       </h2>
 
+      {/* 🗓️ Novo calendário moderno (não quebra o fluxo atual) */}
+      <AgendaCalendar compromissos={compromissos} />
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <Card
           icon={<FaCheckCircle />}
@@ -226,6 +230,7 @@ export default function Agenda() {
     </div>
   );
 }
+
 
 
 
