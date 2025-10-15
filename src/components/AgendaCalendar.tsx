@@ -5,6 +5,7 @@ import { Calendar, dateFnsLocalizer, Views } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import "react-big-calendar/lib/css/react-big-calendar.css";
+import "@/styles/agenda-calendar.css";
 import { FaPlus, FaCalendarAlt } from "react-icons/fa";
 
 /** Tipagem do evento */
@@ -37,7 +38,6 @@ interface Props {
 
 /** Componente principal */
 export default function AgendaCalendar({ events, onAddEvent }: Props) {
-  // 🔧 Mudança aqui: usar tipo 'string' para compatibilidade total
   const [view, setView] = useState<string>(Views.MONTH);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
@@ -57,8 +57,8 @@ export default function AgendaCalendar({ events, onAddEvent }: Props) {
     const baseColor = event.title.toLowerCase().includes("reunião")
       ? "#8b5cf6"
       : event.title.toLowerCase().includes("prazo")
-        ? "#f59e0b"
-        : "#22c55e";
+      ? "#f59e0b"
+      : "#22c55e";
 
     return {
       style: {
@@ -93,9 +93,9 @@ export default function AgendaCalendar({ events, onAddEvent }: Props) {
   };
 
   return (
-    <div className="w-full bg-white rounded-xl shadow-md p-4 border border-gray-100">
+    <div className="w-full bg-white rounded-xl shadow-md border border-gray-100 p-4">
       {/* Cabeçalho */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
           <FaCalendarAlt className="text-purple-600" />
           Agenda
@@ -112,54 +112,62 @@ export default function AgendaCalendar({ events, onAddEvent }: Props) {
 
       {/* Calendário */}
       <div
-        className={`${
-          isMobile ? "max-h-[70vh] overflow-y-auto" : "h-[75vh]"
-        } rounded-lg border border-purple-100`}
+        className={`
+          w-full
+          bg-white
+          rounded-xl
+          border border-purple-100
+          overflow-hidden
+          ${isMobile ? "h-[85vh] overflow-x-auto" : "h-[80vh]"}
+        `}
       >
-        <Calendar
-          localizer={localizer}
-          events={events.map((event) => ({
-            ...event,
-            start: new Date(event.start),
-            end: new Date(event.end),
-          }))}
-          startAccessor="start"
-          endAccessor="end"
-          style={{ minHeight: isMobile ? "65vh" : "75vh" }}
-          popup
-          views={["month", "agenda"]}
-          view={isMobile ? Views.MONTH : view}
-          onView={(v: string) => setView(v)} // ✅ Tipagem explícita
-          date={selectedDate}
-          onNavigate={(date: Date) => setSelectedDate(date)}
-          messages={{
-            month: "Mês",
-            week: "Semana",
-            day: "Dia",
-            today: "Hoje",
-            previous: "Anterior",
-            next: "Próximo",
-            agenda: "Agenda",
-            showMore: (total: number) => `+${total} mais`,
-          }}
-          culture="pt-BR"
-          eventPropGetter={eventStyleGetter}
-          dayPropGetter={dayPropGetter}
-          components={{
-            event: ({ event }: { event: CustomCalendarEvent }) => (
-              <div>
-                <strong>{event.title}</strong>
-                {event.description && (
-                  <div className="text-[0.7rem] text-gray-100">
-                    {event.description}
-                  </div>
-                )}
-              </div>
-            ),
-          }}
-        />
+        <div className={`${isMobile ? "min-w-[750px]" : "w-full"} h-full`}>
+          <Calendar
+            localizer={localizer}
+            events={events.map((event) => ({
+              ...event,
+              start: new Date(event.start),
+              end: new Date(event.end),
+            }))}
+            startAccessor="start"
+            endAccessor="end"
+            style={{ height: "100%", width: "100%" }}
+            popup
+            views={["month", "agenda"]}
+            view={isMobile ? Views.MONTH : view}
+            onView={(v: string) => setView(v)}
+            date={selectedDate}
+            onNavigate={(date: Date) => setSelectedDate(date)}
+            messages={{
+              month: "Mês",
+              week: "Semana",
+              day: "Dia",
+              today: "Hoje",
+              previous: "Anterior",
+              next: "Próximo",
+              agenda: "Agenda",
+              showMore: (total: number) => `+${total} mais`,
+            }}
+            culture="pt-BR"
+            eventPropGetter={eventStyleGetter}
+            dayPropGetter={dayPropGetter}
+            components={{
+              event: ({ event }: { event: CustomCalendarEvent }) => (
+                <div>
+                  <strong>{event.title}</strong>
+                  {event.description && (
+                    <div className="text-[0.7rem] text-gray-100">
+                      {event.description}
+                    </div>
+                  )}
+                </div>
+              ),
+            }}
+          />
+        </div>
       </div>
     </div>
   );
 }
+
 

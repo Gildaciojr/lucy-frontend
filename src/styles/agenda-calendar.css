@@ -246,5 +246,23 @@
   transition: all 0.25s ease-in-out;
 }
 
+/* ⚙️ Ajuste de container principal */
+.rbc-calendar {
+  max-height: 100%;
+  height: 100%;
+}
+
+/* Evita sobreposição e corta corretamente */
+.rbc-month-view {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Melhor espaçamento interno em dispositivos móveis */
+@media (max-width: 768px) {
+  .rbc-calendar {
+    min-width: 700px;
+  }
+}
 
 
