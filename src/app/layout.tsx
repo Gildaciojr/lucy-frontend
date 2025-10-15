@@ -9,6 +9,9 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Lucy - Seu Painel de Controle",
   description: "Dashboard de organização e gestão pessoal.",
+  icons: {
+    icon: "/images/logo-lucy-icon.png", // ✅ favicon Lucy
+  },
 };
 
 export default function RootLayout({
@@ -19,12 +22,13 @@ export default function RootLayout({
   return (
     <html lang="pt">
       <body className={inter.className}>
-        <Header /> {/* ✅ Fica só aqui */}
+        <Header />
         <ClientLayoutWrapper>{children}</ClientLayoutWrapper>
       </body>
     </html>
   );
 }
+
 
 
 
