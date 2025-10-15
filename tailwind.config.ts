@@ -1,6 +1,7 @@
-// tailwind.config.js — compatível com Tailwind v4 e sem avisos do ESLint
+import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
 
-const tailwindConfig = {
+const config: Config = {
   darkMode: ["class"],
   content: [
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -8,6 +9,9 @@ const tailwindConfig = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        inter: ["Inter", "sans-serif"],
+      },
       colors: {
         lucy: {
           purple: "#7c3aed",
@@ -18,14 +22,10 @@ const tailwindConfig = {
       borderRadius: {
         xl: "0.75rem",
       },
-      fontFamily: {
-        inter: ["Inter", "sans-serif"],
-      },
     },
   },
-  plugins: {
-    "tailwindcss-animate": {},
-  },
+  plugins: [tailwindcssAnimate],
 };
 
-export default tailwindConfig;
+export default config;
+

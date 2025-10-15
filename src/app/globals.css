@@ -1,7 +1,10 @@
-@import "tailwindcss/preflight";
-@import "tailwindcss/utilities";
+/* @tailwindcss utilities support for VSCode */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/* 🌈 Tema Lucy (Tailwind v4 compatível) */
+
+/* 🌈 Tema Lucy */
 :root {
   --background: #f9f8ff;
   --foreground: #1f1d2b;
@@ -10,19 +13,12 @@
   --accent: #c4b5fd;
   --card: #ffffff;
   --border: #e9d5ff;
-  --radius: 0.75rem;
 }
 
 body {
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: "Inter", system-ui, sans-serif;
+  @apply bg-[var(--background)] text-[var(--foreground)] font-inter;
 }
 
-/* Dark mode opcional */
-.dark {
-  --background: #1f1d2b;
-  --foreground: #f9f8ff;
-  --card: #2d2b3a;
-  --border: #4c1d95;
+.card {
+  @apply bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-md;
 }
