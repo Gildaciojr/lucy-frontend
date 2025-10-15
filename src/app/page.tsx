@@ -198,6 +198,26 @@ export default function HomePage() {
     recomputeSummary(financasRaw, compromissos, conteudo);
   }, [tipoFilter, financasRaw, compromissos, conteudo, recomputeSummary]);
 
+  const onApplyPeriod = async () => {
+    try {
+      setError(null);
+      const token = localStorage.getItem("auth_token");
+      if (!token) throw new Error("Usuário não autenticado.");
+      const headers = { Authorization: `Bearer ${token}` };
+      const financasData = await loadFinancas(headers);
+      recomputeSummary(financasData, compromissos, conteudo);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro ao aplicar período.");
+    }
+  };
+
+  const onClearFilters = () => {
+    setFrom("");
+    setTo("");
+    setTipoFilter("all");
+    initialLoad();
+  };
+
   const toggleTipo = (t: Exclude<TipoFilter, "all">) =>
     setTipoFilter((prev) => (prev === t ? "all" : t));
 
@@ -219,10 +239,18 @@ export default function HomePage() {
       ? "1 conquista"
       : `${totalConquistas} conquistas`;
 
+  const dataHoje = new Date().toLocaleDateString("pt-BR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  const dataFinalMes = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toLocaleDateString("pt-BR");
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-100 relative">
       <main className="flex-1 p-4 sm:p-6 flex flex-col mb-20 space-y-6">
-        {/* Cards principais (reduzidos e responsivos) */}
+        {/* Cards principais com animação */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
           {[
             {
@@ -258,19 +286,19 @@ export default function HomePage() {
             <button
               key={card.label}
               onClick={card.action}
-              className={`group relative rounded-xl bg-white shadow-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 ${
+              className={`group relative rounded-xl bg-white shadow-md hover:shadow-lg transform transition-all duration-500 hover:-translate-y-1 hover:scale-[1.04] ${
                 card.active ? `ring-2 ring-${card.color}-400` : ""
               }`}
             >
               <div
-                className={`absolute inset-0 bg-gradient-to-r from-${card.color}-50 to-${card.color}-100 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl`}
+                className={`absolute inset-0 bg-gradient-to-br from-${card.color}-100 via-white to-${card.color}-50 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-xl`}
               />
               <div className="relative z-10 p-3 sm:p-4 text-center">
                 <h4 className="text-[0.7rem] sm:text-xs font-semibold text-gray-500">
                   {card.label}
                 </h4>
                 <p
-                  className={`text-base sm:text-lg font-bold mt-1 text-${card.color}-600 truncate`}
+                  className={`text-base sm:text-lg font-bold mt-1 text-${card.color}-600 group-hover:text-${card.color}-700 transition-colors duration-300`}
                 >
                   {card.value}
                 </p>
@@ -279,7 +307,53 @@ export default function HomePage() {
           ))}
         </div>
 
-        {/* Gamificação */}
+        {/* Barra de filtros */}
+        <div className="bg-white rounded-xl shadow-md p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row gap-3 items-center">
+            <div className="text-sm text-gray-700 font-medium">
+              📅 {dataHoje}
+            </div>
+            <div className="text-sm text-gray-500">
+              Até {dataFinalMes}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <div>
+              <label className="text-xs text-gray-600">Início</label>
+              <input
+                type="date"
+                value={from}
+                onChange={(e) => setFrom(e.target.value)}
+                className="border rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-600">Fim</label>
+              <input
+                type="date"
+                value={to}
+                onChange={(e) => setTo(e.target.value)}
+                className="border rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
+            <button
+              onClick={onApplyPeriod}
+              disabled={loadingFinancas}
+              className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold disabled:opacity-50 hover:bg-indigo-700 transition-colors"
+            >
+              {loadingFinancas ? "Carregando..." : "Pesquisar"}
+            </button>
+            <button
+              onClick={onClearFilters}
+              className="px-4 py-2 rounded-lg bg-gray-200 text-gray-800 text-sm font-semibold hover:bg-gray-300"
+            >
+              Limpar
+            </button>
+          </div>
+        </div>
+
+        {/* Card de Gamificação */}
         <Link
           href="/gamificacao"
           className="group block rounded-xl shadow-md p-5 text-white hover:shadow-lg transition-shadow bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500"
