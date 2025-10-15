@@ -1,12 +1,11 @@
 // next.config.js
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true
+  reactStrictMode: true,
+  outputFileTracingRoot: __dirname, // ✅ remove warning de workspace root
 };
 
-export default nextConfig;
-
+module.exports = nextConfig;
 
 
 

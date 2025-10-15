@@ -1,8 +1,6 @@
-/* @tailwindcss utilities support for VSCode */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
 
 /* 🌈 Tema Lucy */
 :root {

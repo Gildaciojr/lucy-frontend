@@ -1,15 +1,19 @@
 {
   "compilerOptions": {
     /* 🚀 Correção principal */
-    "jsx": "react-jsx",
-
+    "jsx": "preserve",
     /* 🧠 Compatibilidade moderna */
     "target": "ESNext",
-    "lib": ["dom", "dom.iterable", "esnext"],
-
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     /* 🧩 Suporte a React types (corrige JSX.Element e outros) */
-    "types": ["react", "react-dom"],
-
+    "types": [
+      "react",
+      "react-dom"
+    ],
     /* 🔧 Configurações de build */
     "allowJs": true,
     "skipLibCheck": true,
@@ -21,28 +25,33 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "incremental": true,
-
     /* 🧭 Importações absolutas */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": [
+        "src/*"
+      ]
     },
-
     /* 💡 Plugins */
     "plugins": [
-      { "name": "next" }
+      {
+        "name": "next"
+      }
     ],
-
     /* 🗂️ TypeRoots personalizados */
-    "typeRoots": ["./src/types", "./node_modules/@types"]
+    "typeRoots": [
+      "./src/types",
+      "./node_modules/@types"
+    ]
   },
   "include": [
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    "tailwind.config.js"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules"
+  ]
 }
-
-
