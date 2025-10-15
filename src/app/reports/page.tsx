@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState, forwardRef, Ref } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import {
@@ -10,6 +10,10 @@ import {
   FaEnvelope,
   FaCalendarAlt,
 } from "react-icons/fa";
+import ReactDatePicker, { registerLocale } from "react-datepicker";
+import { ptBR as dfnsPtBR } from "date-fns/locale";
+import "react-datepicker/dist/react-datepicker.css";
+registerLocale("pt-BR", dfnsPtBR);
 
 interface Financa {
   id: number;
@@ -19,55 +23,53 @@ interface Financa {
   tipo: "receita" | "despesa";
 }
 
-type MonthStr = string;
 type PDF = InstanceType<typeof jsPDF>;
 
-function monthStartEnd(ym: MonthStr): { from: string; to: string } {
-  const [y, m] = ym.split("-").map((n) => parseInt(n, 10));
-  const start = new Date(y, m - 1, 1);
-  const end = new Date(y, m, 0);
-  const toIso = (d: Date) => d.toISOString().split("T")[0];
-  return { from: toIso(start), to: toIso(end) };
-}
-
-function rangeFromToMonth(from?: MonthStr, to?: MonthStr): {
-  from?: string;
-  to?: string;
-} {
-  if (from && !to) return monthStartEnd(from);
-  if (!from && to) return monthStartEnd(to);
-  if (from && to) {
-    const s = monthStartEnd(from).from;
-    const e = monthStartEnd(to).to;
-    return { from: s, to: e };
-  }
-  return {};
-}
+/** Input estilizado para DatePicker */
+const DatePill = forwardRef(
+  (
+    { label, value, onClick }: { label?: string; value: string; onClick?: () => void },
+    ref: Ref<HTMLButtonElement>
+  ) => (
+    <button
+      ref={ref}
+      onClick={onClick}
+      className="px-3 py-2 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 text-sm font-medium shadow-sm transition-colors"
+      type="button"
+    >
+      {label ? `${label} ${value}` : value}
+    </button>
+  )
+);
+DatePill.displayName = "DatePill";
 
 export default function ReportsPage() {
   const [financas, setFinancas] = useState<Financa[]>([]);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState<string>("Usuário");
-  const [mesDe, setMesDe] = useState<MonthStr>("");
-  const [mesAte, setMesAte] = useState<MonthStr>("");
+  const [fromDate, setFromDate] = useState<Date | null>(null);
+  const [toDate, setToDate] = useState<Date | null>(null);
 
   const token =
     typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
   const userId =
     typeof window !== "undefined" ? localStorage.getItem("user_id") : null;
 
+  const toYMD = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+      d.getDate()
+    ).padStart(2, "0")}`;
+
   const fetchFinancas = useCallback(
-    async (mDe?: MonthStr, mAte?: MonthStr) => {
+    async (from?: Date | null, to?: Date | null) => {
       if (!token) return;
       const params: string[] = [];
-      const { from, to } = rangeFromToMonth(mDe, mAte);
-      if (from) params.push(`from=${from}`);
-      if (to) params.push(`to=${to}`);
+      if (from) params.push(`from=${toYMD(from)}`);
+      if (to) params.push(`to=${toYMD(to)}`);
       const qs = params.length ? `?${params.join("&")}` : "";
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/financas${qs}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/financas${qs}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!res.ok) throw new Error("Erro ao buscar finanças.");
       const data: Financa[] = await res.json();
       setFinancas(data);
@@ -100,6 +102,18 @@ export default function ReportsPage() {
     load();
   }, [fetchFinancas, fetchUserName]);
 
+  // 🔁 Atualiza automaticamente ao escolher datas
+  useEffect(() => {
+    const autoUpdate = async () => {
+      try {
+        await fetchFinancas(fromDate, toDate);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    if (fromDate || toDate) autoUpdate();
+  }, [fromDate, toDate, fetchFinancas]);
+
   const { totalReceitas, totalDespesas } = useMemo(() => {
     let r = 0;
     let d = 0;
@@ -112,18 +126,19 @@ export default function ReportsPage() {
   }, [financas]);
 
   const periodoLabel = useMemo(() => {
-    const fmt = (ym: MonthStr) => {
-      if (!ym) return "";
-      const [y, m] = ym.split("-");
-      return `${m}/${y}`;
-    };
-    if (!mesDe && !mesAte) return "Todos os lançamentos";
-    if (mesDe && !mesAte) return `Período: ${fmt(mesDe)}`;
-    if (!mesDe && mesAte) return `Período: ${fmt(mesAte)}`;
-    return `Período: ${fmt(mesDe)} a ${fmt(mesAte)}`;
-  }, [mesDe, mesAte]);
+    if (!fromDate && !toDate) return "Todos os lançamentos";
+    const fmt = (d: Date) =>
+      d.toLocaleDateString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
+    if (fromDate && !toDate) return `Período: ${fmt(fromDate)}`;
+    if (!fromDate && toDate) return `Período: até ${fmt(toDate)}`;
+    return `Período: ${fmt(fromDate!)} a ${fmt(toDate!)}`;
+  }, [fromDate, toDate]);
 
-  // PDF HEADER / FOOTER
+  // ===== PDF =====
   const drawLucyHeader = (doc: PDF) => {
     doc.setFillColor(109, 40, 217);
     doc.rect(0, 0, doc.internal.pageSize.getWidth(), 18, "F");
@@ -198,16 +213,11 @@ export default function ReportsPage() {
   };
 
   const pdfFilename = (suffix = "") =>
-    `relatorio-financeiro-${userName}${
-      suffix ? `-${suffix}` : ""
-    }.pdf`;
+    `relatorio-financeiro-${userName}${suffix ? `-${suffix}` : ""}.pdf`;
 
   const getPdfBlob = () => buildPdf().output("blob");
 
-  const downloadPdf = () => {
-    const doc = buildPdf();
-    doc.save(pdfFilename());
-  };
+  const downloadPdf = () => buildPdf().save(pdfFilename());
 
   const trySharePdf = async (title: string, text: string) => {
     try {
@@ -227,24 +237,8 @@ export default function ReportsPage() {
     }
   };
 
-  const handleGenerate = async () => {
-    try {
-      setLoading(true);
-      await fetchFinancas(mesDe || undefined, mesAte || undefined);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDownload = () => downloadPdf();
-
   const handleSendEmail = async () => {
-    const shared = await trySharePdf(
-      "Relatório Financeiro",
-      `Relatório financeiro de ${userName}`
-    );
+    const shared = await trySharePdf("Relatório Financeiro", `Relatório financeiro de ${userName}`);
     if (!shared) {
       downloadPdf();
       const assunto = encodeURIComponent("Relatório Financeiro");
@@ -256,10 +250,7 @@ export default function ReportsPage() {
   };
 
   const handleSendWhatsApp = async () => {
-    const shared = await trySharePdf(
-      "Relatório Financeiro",
-      `Relatório financeiro de ${userName}`
-    );
+    const shared = await trySharePdf("Relatório Financeiro", `Relatório financeiro de ${userName}`);
     if (!shared) {
       downloadPdf();
       const texto = encodeURIComponent(
@@ -280,7 +271,7 @@ export default function ReportsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 via-purple-100 to-white p-4 sm:p-6">
       <div className="max-w-5xl mx-auto space-y-8">
-        {/* Título padronizado */}
+        {/* Cabeçalho */}
         <div className="bg-purple-200 rounded-2xl shadow-md border border-purple-100 p-5 flex flex-col items-center justify-center">
           <h1 className="text-3xl font-bold text-purple-700 flex items-center gap-3">
             <FaCalendarAlt className="text-purple-600 text-3xl" />
@@ -291,42 +282,53 @@ export default function ReportsPage() {
           </p>
         </div>
 
-        {/* Filtro de período */}
+        {/* Filtro com DatePicker */}
         <div className="flex flex-col items-center justify-center bg-white p-6 rounded-2xl shadow-md border border-purple-100">
-          <div className="w-full max-w-3xl flex flex-col sm:flex-row items-center gap-4">
-            <div className="flex-1 w-full">
-              <label className="text-sm font-semibold text-gray-700 block mb-1">
-                De (mês)
-              </label>
-              <input
-                type="month"
-                value={mesDe}
-                onChange={(e) => setMesDe(e.target.value)}
-                className="w-full border-2 border-purple-300 rounded-lg px-4 py-2 focus:outline-none focus:border-purple-600 focus:ring-2 focus:ring-purple-200 transition text-gray-700 font-medium"
-              />
-            </div>
-            <div className="text-gray-400 font-semibold select-none">até</div>
-            <div className="flex-1 w-full">
-              <label className="text-sm font-semibold text-gray-700 block mb-1">
-                Até (mês)
-              </label>
-              <input
-                type="month"
-                value={mesAte}
-                onChange={(e) => setMesAte(e.target.value)}
-                className="w-full border-2 border-purple-300 rounded-lg px-4 py-2 focus:outline-none focus:border-purple-600 focus:ring-2 focus:ring-purple-200 transition text-gray-700 font-medium"
-              />
-            </div>
-            <button
-              onClick={handleGenerate}
-              className="mt-2 sm:mt-6 px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg shadow-md transition active:scale-95"
-            >
-              Gerar
-            </button>
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <ReactDatePicker
+              selected={fromDate}
+              onChange={(date) => setFromDate(date)}
+              selectsStart
+              startDate={fromDate}
+              endDate={toDate || undefined}
+              locale="pt-BR"
+              dateFormat="dd/MM/yyyy"
+              customInput={
+                <DatePill
+                  label="📅 De:"
+                  value={
+                    fromDate
+                      ? fromDate.toLocaleDateString("pt-BR")
+                      : "Escolher data inicial"
+                  }
+                />
+              }
+            />
+            <span className="text-gray-400 font-semibold select-none">→</span>
+            <ReactDatePicker
+              selected={toDate}
+              onChange={(date) => setToDate(date)}
+              selectsEnd
+              startDate={fromDate || undefined}
+              endDate={toDate}
+              minDate={fromDate || undefined}
+              locale="pt-BR"
+              dateFormat="dd/MM/yyyy"
+              customInput={
+                <DatePill
+                  label="Até:"
+                  value={
+                    toDate
+                      ? toDate.toLocaleDateString("pt-BR")
+                      : "Escolher data final"
+                  }
+                />
+              }
+            />
           </div>
           <p className="text-sm text-gray-500 mt-3 text-center">
-            Dica: Preencha só <b>“De”</b> para um mês específico. Preencha{" "}
-            <b>“De”</b> e <b>“Até”</b> para um intervalo.
+            Escolha qualquer data de início e fim — o relatório é gerado
+            automaticamente 💜
           </p>
         </div>
 
@@ -349,7 +351,7 @@ export default function ReportsPage() {
         {/* Ações */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <button
-            onClick={handleDownload}
+            onClick={downloadPdf}
             className="flex flex-col items-center justify-center gap-3 p-6 bg-purple-600 text-white rounded-xl shadow-lg hover:bg-purple-700 transition"
           >
             <FaDownload className="text-4xl" />
@@ -383,6 +385,7 @@ export default function ReportsPage() {
     </div>
   );
 }
+
 
 
 

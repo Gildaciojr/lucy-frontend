@@ -1,6 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  forwardRef,
+  Ref,
+  useRef,
+} from "react";
 import Link from "next/link";
 import Navigation from "../components/Navigation";
 import { FaSpinner, FaWhatsapp, FaTrophy } from "react-icons/fa";
@@ -18,6 +25,12 @@ import {
   Cell,
 } from "recharts";
 import { apiFetch } from "@/lib/api";
+
+// 🗓️ DatePicker (pt-BR)
+import ReactDatePicker, { registerLocale } from "react-datepicker";
+import { ptBR as dfnsPtBR } from "date-fns/locale";
+import "react-datepicker/dist/react-datepicker.css";
+registerLocale("pt-BR", dfnsPtBR);
 
 /** Tipagens */
 interface FinanceItem {
@@ -66,14 +79,62 @@ type TipoFilter = "all" | "receita" | "despesa";
 
 const COLORS = ["#6d28d9", "#22c55e", "#facc15", "#ef4444"];
 
+/** Helpers */
+const pad2 = (n: number) => String(n).padStart(2, "0");
+const toYMD = (d: Date) =>
+  `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+
+const formatFullPtBR = (d: Date) =>
+  d.toLocaleDateString("pt-BR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+const endOfCurrentMonth = () =>
+  new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
+
+const formatShortPtBR = (d: Date) =>
+  d.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+
+/** Custom input estilizado para o DatePicker */
+const DatePill = forwardRef(
+  (
+    {
+      label,
+      value,
+      onClick,
+      title,
+    }: { label?: string; value: string; onClick?: () => void; title?: string },
+    ref: Ref<HTMLButtonElement>
+  ) => (
+    <button
+      ref={ref}
+      type="button"
+      onClick={onClick}
+      title={title}
+      className="px-3 py-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs sm:text-sm font-medium shadow-sm transition-colors"
+    >
+      {label ? `${label} ${value}` : value}
+    </button>
+  )
+);
+DatePill.displayName = "DatePill";
+
 export default function HomePage() {
-  const [from, setFrom] = useState<string>("");
-  const [to, setTo] = useState<string>("");
+  // 🔁 Estados existentes
   const [tipoFilter, setTipoFilter] = useState<TipoFilter>("all");
   const [financasRaw, setFinancasRaw] = useState<FinanceItem[]>([]);
   const [compromissos, setCompromissos] = useState<Compromisso[]>([]);
   const [conteudo, setConteudo] = useState<Conteudo[]>([]);
-  const [gamificacao, setGamificacao] = useState<GamificacaoSummary | null>(null);
+  const [gamificacao, setGamificacao] = useState<GamificacaoSummary | null>(
+    null
+  );
   const [summary, setSummary] = useState<SummaryData>({
     totalReceitas: 0,
     totalDespesas: 0,
@@ -87,14 +148,22 @@ export default function HomePage() {
   const [loadingFinancas, setLoadingFinancas] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const parseValor = (v: number | string) => (Number.isNaN(Number(v)) ? 0 : Number(v));
+  // 🗓️ NOVO: datas com DatePicker (auto-filtragem)
+  const [fromDate, setFromDate] = useState<Date | null>(null);
+  const [toDate, setToDate] = useState<Date | null>(null);
+
+  // controle para evitar chamada dupla no primeiro render
+  const initialLoadedRef = useRef(false);
+
+  const parseValor = (v: number | string) =>
+    Number.isNaN(Number(v)) ? 0 : Number(v);
 
   const buildFinancasUrl = useCallback(() => {
     const qs = new URLSearchParams();
-    if (from) qs.set("from", from);
-    if (to) qs.set("to", to);
+    if (fromDate) qs.set("from", toYMD(fromDate));
+    if (toDate) qs.set("to", toYMD(toDate));
     return `/financas${qs.toString() ? `?${qs.toString()}` : ""}`;
-  }, [from, to]);
+  }, [fromDate, toDate]);
 
   const filterByTipo = useCallback(
     (items: FinanceItem[]): FinanceItem[] =>
@@ -103,33 +172,55 @@ export default function HomePage() {
   );
 
   const recomputeSummary = useCallback(
-    (financasBase: FinanceItem[], compromissosData: Compromisso[], conteudoData: Conteudo[]) => {
+    (
+      financasBase: FinanceItem[],
+      compromissosData: Compromisso[],
+      conteudoData: Conteudo[]
+    ) => {
       const financas = filterByTipo(financasBase);
       let totalReceitas = 0;
       let totalDespesas = 0;
+
       financas.forEach((f) => {
         const valorNum = parseValor(f.valor);
         if (f.tipo === "despesa") totalDespesas += Math.abs(valorNum);
         else totalReceitas += Math.abs(valorNum);
       });
+
       const saldo = totalReceitas - totalDespesas;
+
       const proximoCompromisso =
         compromissosData.length > 0
-          ? compromissosData.sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())[0].titulo
+          ? compromissosData
+              .slice()
+              .sort(
+                (a, b) =>
+                  new Date(a.data).getTime() - new Date(b.data).getTime()
+              )[0].titulo
           : "Nenhum agendado";
+
       const ultimaIdeia =
         conteudoData.length > 0
-          ? conteudoData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0].ideia
+          ? conteudoData
+              .slice()
+              .sort(
+                (a, b) =>
+                  new Date(b.createdAt).getTime() -
+                  new Date(a.createdAt).getTime()
+              )[0].ideia
           : "Nenhuma ideia";
+
       const chartData: ChartItem[] = [
         { name: "Finanças", uso: financas.length },
         { name: "Agenda", uso: compromissosData.length },
         { name: "Conteúdo", uso: conteudoData.length },
       ];
+
       const financasRecentes = financas
         .slice()
         .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
         .slice(0, 5);
+
       setSummary({
         totalReceitas,
         totalDespesas,
@@ -143,17 +234,22 @@ export default function HomePage() {
     [filterByTipo]
   );
 
-  const loadStaticModules = useCallback(async (headers: Record<string, string>) => {
-    const [comp, cont, gam] = await Promise.all([
-      apiFetch<Compromisso[]>("/compromissos", { headers }),
-      apiFetch<Conteudo[]>("/conteudo", { headers }),
-      apiFetch<GamificacaoSummary>("/gamificacao", { headers }),
-    ]);
-    setCompromissos(comp);
-    setConteudo(cont);
-    setGamificacao(gam);
-    return { comp, cont, gam };
-  }, []);
+  const loadStaticModules = useCallback(
+    async (headers: Record<string, string>) => {
+      const [comp, cont, gam]: [Compromisso[], Conteudo[], GamificacaoSummary] =
+        await Promise.all([
+          apiFetch<Compromisso[]>("/compromissos", { headers }),
+          apiFetch<Conteudo[]>("/conteudo", { headers }),
+          apiFetch<GamificacaoSummary>("/gamificacao", { headers }),
+        ]);
+
+      setCompromissos(comp);
+      setConteudo(cont);
+      setGamificacao(gam);
+      return { comp, cont, gam };
+    },
+    []
+  );
 
   const loadFinancas = useCallback(
     async (headers: Record<string, string>) => {
@@ -177,14 +273,19 @@ export default function HomePage() {
       const token = localStorage.getItem("auth_token");
       if (!token) throw new Error("Usuário não autenticado.");
       const headers = { Authorization: `Bearer ${token}` };
+
       const [{ comp, cont, gam }, financasData] = await Promise.all([
         loadStaticModules(headers),
         loadFinancas(headers),
       ]);
+
       setGamificacao(gam);
       recomputeSummary(financasData, comp, cont);
+      initialLoadedRef.current = true;
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Erro ao carregar o resumo.");
+      setError(
+        err instanceof Error ? err.message : "Erro ao carregar o resumo."
+      );
     } finally {
       setLoading(false);
     }
@@ -194,26 +295,39 @@ export default function HomePage() {
     initialLoad();
   }, [initialLoad]);
 
+  // Recalcula ao trocar filtros de tipo/local
   useEffect(() => {
     recomputeSummary(financasRaw, compromissos, conteudo);
   }, [tipoFilter, financasRaw, compromissos, conteudo, recomputeSummary]);
 
-  const onApplyPeriod = async () => {
-    try {
-      setError(null);
-      const token = localStorage.getItem("auth_token");
-      if (!token) throw new Error("Usuário não autenticado.");
-      const headers = { Authorization: `Bearer ${token}` };
-      const financasData = await loadFinancas(headers);
-      recomputeSummary(financasData, compromissos, conteudo);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Erro ao aplicar período.");
-    }
-  };
+  // 🔁 Auto-filtragem sempre que o usuário selecionar datas (DatePicker)
+  useEffect(() => {
+    const autoLoad = async () => {
+      if (!initialLoadedRef.current) return;
+      try {
+        const token = localStorage.getItem("auth_token");
+        if (!token) return;
+        const headers = { Authorization: `Bearer ${token}` };
+        const financasData = await loadFinancas(headers);
+        // mantém os módulos em memória; só recomputa
+        recomputeSummary(financasData, compromissos, conteudo);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    autoLoad();
+  }, [
+    fromDate,
+    toDate,
+    loadFinancas,
+    recomputeSummary,
+    compromissos,
+    conteudo,
+  ]);
 
   const onClearFilters = () => {
-    setFrom("");
-    setTo("");
+    setFromDate(null);
+    setToDate(null);
     setTipoFilter("all");
     initialLoad();
   };
@@ -229,28 +343,26 @@ export default function HomePage() {
       </div>
     );
 
-  if (error) return <div className="text-center p-4 text-red-500">Erro: {error}</div>;
+  if (error)
+    return <div className="text-center p-4 text-red-500">Erro: {error}</div>;
 
   const totalConquistas = gamificacao?.unlockedCount ?? 0;
   const legendaConquistas =
     totalConquistas === 0
       ? "Sem conquistas ainda"
       : totalConquistas === 1
-      ? "1 conquista"
-      : `${totalConquistas} conquistas`;
+        ? "1 conquista"
+        : `${totalConquistas} conquistas`;
 
-  const dataHoje = new Date().toLocaleDateString("pt-BR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-  const dataFinalMes = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toLocaleDateString("pt-BR");
+  // Datas do cabeçalho/filtro visual
+  const hoje = new Date();
+  const dataHojeLabel = formatFullPtBR(hoje);
+  const finalMesLabel = formatShortPtBR(endOfCurrentMonth());
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100 relative">
       <main className="flex-1 p-4 sm:p-6 flex flex-col mb-20 space-y-6">
-        {/* Cards principais com animação */}
+        {/* Cards principais — menores e com animação suave */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
           {[
             {
@@ -286,19 +398,20 @@ export default function HomePage() {
             <button
               key={card.label}
               onClick={card.action}
-              className={`group relative rounded-xl bg-white shadow-md hover:shadow-lg transform transition-all duration-500 hover:-translate-y-1 hover:scale-[1.04] ${
+              className={`group relative overflow-hidden rounded-xl bg-white shadow-sm hover:shadow-md transform transition-all duration-400 hover:-translate-y-0.5 ${
                 card.active ? `ring-2 ring-${card.color}-400` : ""
               }`}
             >
               <div
-                className={`absolute inset-0 bg-gradient-to-br from-${card.color}-100 via-white to-${card.color}-50 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-xl`}
+                className={`absolute inset-0 bg-gradient-to-br from-${card.color}-50 via-white to-${card.color}-100 opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
               />
-              <div className="relative z-10 p-3 sm:p-4 text-center">
-                <h4 className="text-[0.7rem] sm:text-xs font-semibold text-gray-500">
+              <div className="relative z-10 px-3 py-3 sm:px-4 sm:py-4 text-center">
+                <h4 className="text-[0.65rem] sm:text-xs font-semibold text-gray-500">
                   {card.label}
                 </h4>
                 <p
-                  className={`text-base sm:text-lg font-bold mt-1 text-${card.color}-600 group-hover:text-${card.color}-700 transition-colors duration-300`}
+                  className={`text-sm sm:text-base font-extrabold mt-1 text-${card.color}-600 group-hover:text-${card.color}-700 transition-colors duration-300 truncate`}
+                  title={card.value}
                 >
                   {card.value}
                 </p>
@@ -307,46 +420,63 @@ export default function HomePage() {
           ))}
         </div>
 
-        {/* Barra de filtros */}
-        <div className="bg-white rounded-xl shadow-md p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+        {/* Barra de filtros — datas clicáveis com calendário embutido */}
+        <div className="bg-white rounded-xl shadow-md p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex flex-col sm:flex-row gap-3 items-center">
-            <div className="text-sm text-gray-700 font-medium">
-              📅 {dataHoje}
-            </div>
-            <div className="text-sm text-gray-500">
-              Até {dataFinalMes}
-            </div>
+            {/* Data inicial (clicável) */}
+            <ReactDatePicker
+              selected={fromDate}
+              onChange={(date) => setFromDate(date)}
+              selectsStart
+              startDate={fromDate}
+              endDate={toDate || undefined}
+              maxDate={toDate || undefined}
+              locale="pt-BR"
+              dateFormat="eeee, dd 'de' MMMM 'de' yyyy"
+              customInput={
+                <DatePill
+                  label="📅"
+                  value={fromDate ? formatFullPtBR(fromDate) : dataHojeLabel}
+                  title="Selecionar data inicial"
+                />
+              }
+              popperPlacement="bottom-start"
+              showPopperArrow={false}
+            />
+
+            <span className="text-sm text-gray-500">→</span>
+
+            {/* Data final (clicável) */}
+            <ReactDatePicker
+              selected={toDate}
+              onChange={(date) => setToDate(date)}
+              selectsEnd
+              startDate={fromDate || undefined}
+              endDate={toDate}
+              minDate={fromDate || undefined}
+              locale="pt-BR"
+              dateFormat="dd/MM/yyyy"
+              customInput={
+                <DatePill
+                  value={
+                    toDate ? formatShortPtBR(toDate) : `Até ${finalMesLabel}`
+                  }
+                  title="Selecionar data final"
+                />
+              }
+              popperPlacement="bottom-end"
+              showPopperArrow={false}
+            />
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <div>
-              <label className="text-xs text-gray-600">Início</label>
-              <input
-                type="date"
-                value={from}
-                onChange={(e) => setFrom(e.target.value)}
-                className="border rounded-lg px-3 py-2 text-sm"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-gray-600">Fim</label>
-              <input
-                type="date"
-                value={to}
-                onChange={(e) => setTo(e.target.value)}
-                className="border rounded-lg px-3 py-2 text-sm"
-              />
-            </div>
-            <button
-              onClick={onApplyPeriod}
-              disabled={loadingFinancas}
-              className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold disabled:opacity-50 hover:bg-indigo-700 transition-colors"
-            >
-              {loadingFinancas ? "Carregando..." : "Pesquisar"}
-            </button>
+          {/* Ação de limpar (mantive somente o limpar, sem “Pesquisar”) */}
+          <div className="flex items-center">
             <button
               onClick={onClearFilters}
-              className="px-4 py-2 rounded-lg bg-gray-200 text-gray-800 text-sm font-semibold hover:bg-gray-300"
+              className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs sm:text-sm font-medium transition-colors"
+              type="button"
+              disabled={loadingFinancas}
+              title="Limpar período"
             >
               Limpar
             </button>
@@ -452,7 +582,8 @@ export default function HomePage() {
                               : "text-green-600"
                           }`}
                         >
-                          R$ {Number.isNaN(valorNum) ? "-" : valorNum.toFixed(2)}
+                          R${" "}
+                          {Number.isNaN(valorNum) ? "-" : valorNum.toFixed(2)}
                         </td>
                         <td className="px-4 py-2">
                           {new Date(f.data).toLocaleDateString("pt-BR")}
@@ -484,31 +615,3 @@ export default function HomePage() {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
