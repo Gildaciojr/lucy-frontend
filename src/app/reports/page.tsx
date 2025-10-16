@@ -273,11 +273,11 @@ export default function ReportsPage() {
       <div className="max-w-5xl mx-auto space-y-8">
         {/* Cabeçalho */}
         <div className="bg-purple-200 rounded-2xl shadow-md border border-purple-100 p-5 flex flex-col items-center justify-center">
-          <h1 className="text-3xl font-bold text-purple-700 flex items-center gap-3">
-            <FaCalendarAlt className="text-purple-600 text-3xl" />
+          <h1 className="text-3xl font-bold text-purple-500 flex items-center gap-3">
+            <FaCalendarAlt className="text-purple-500 text-3xl" />
             Relatórios
           </h1>
-          <p className="text-purple-400 mt-2 text-center">
+          <p className="text-black mt-2 text-center">
             Exporte e compartilhe suas finanças com segurança.
           </p>
         </div>

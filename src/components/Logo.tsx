@@ -7,12 +7,12 @@ import Link from "next/link";
 export default function Logo() {
   return (
     <Link href="/" className="flex items-center justify-center">
-      <div className="flex items-center justify-center px-3 py-2 bg-white rounded-lg shadow-md border border-purple-200 hover:shadow-lg transition">
+      <div className="flex items-center justify-center px-2 py-1 bg-white rounded-lg shadow-sm border border-purple-200">
         <Image
-          src="/images/logo-lucy.png" // ✅ imagem salva em /public/images/
+          src="/images/logo-lucy.png"
           alt="Lucy Logo"
-          width={120} // ajuste conforme o tamanho real da logo
-          height={40}
+          width={90} // 🔽 menor, tamanho ideal de logo
+          height={30}
           className="object-contain"
           priority
         />
@@ -20,5 +20,6 @@ export default function Logo() {
     </Link>
   );
 }
+
 
 
