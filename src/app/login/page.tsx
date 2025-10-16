@@ -48,7 +48,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-purple-500 p-4">
+    <div className="flex items-center justify-center min-h-screen bg-purple-400 p-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 text-center">
         {/* ✅ Logo Lucy centralizada */}
         <div className="flex justify-center mb-4">

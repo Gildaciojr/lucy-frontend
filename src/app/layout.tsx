@@ -14,20 +14,18 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt">
       <body className={inter.className}>
-        <Header />
+        {/* ✅ só mostra o Header se NÃO for a página de login */}
+        {typeof window !== "undefined" && !window.location.pathname.startsWith("/login") && <Header />}
         <ClientLayoutWrapper>{children}</ClientLayoutWrapper>
       </body>
     </html>
   );
 }
+
 
 
 

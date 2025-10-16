@@ -11,7 +11,7 @@ export default function Logo() {
         <Image
           src="/images/logo-lucy.png"
           alt="Lucy Logo"
-          width={90} // 🔽 menor, tamanho ideal de logo
+          width={80} // 🔽 menor, tamanho ideal de logo
           height={30}
           className="object-contain"
           priority

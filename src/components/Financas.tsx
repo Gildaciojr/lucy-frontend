@@ -6,10 +6,6 @@ import {
   FaArrowDown,
   FaBalanceScale,
   FaSpinner,
-  FaFilter,
-  FaCalendarDay,
-  FaCalendarWeek,
-  FaCalendarAlt,
   FaUndo,
   FaTags,
   FaChevronDown,
@@ -81,6 +77,12 @@ export default function Financas() {
   const [categoriaAtiva, setCategoriaAtiva] = useState<string | null>(null);
   const [menuAberto, setMenuAberto] = useState(false);
 
+  // 🟣 Inicializa o campo "De" com a data atual automaticamente
+  useEffect(() => {
+    const hoje = new Date().toISOString().split("T")[0];
+    setFromManual(hoje);
+  }, []);
+
   const fetchFinancas = useCallback(async () => {
     try {
       setLoadingFinancas(true);
@@ -133,8 +135,8 @@ export default function Financas() {
     });
 
     setPeriodoAtivo(mode);
-    setFromManual("");
-    setToManual("");
+    setFromManual(from);
+    setToManual(to);
     setBasePeriodo(base);
 
     const result = aplicarTipoSobreBase(tipoAtivo, base);
@@ -161,7 +163,7 @@ export default function Financas() {
     setFinancasFiltradas(filtradas);
   };
 
-  const aplicarFiltroManual = () => {
+  const aplicarFiltroManual = useCallback(() => {
     if (!fromManual && !toManual) return;
     const fromDate = fromManual ? new Date(fromManual) : new Date("1970-01-01");
     const toDate = toManual ? new Date(toManual) : new Date("2999-12-31");
@@ -177,12 +179,18 @@ export default function Financas() {
     setTipoAtivo("all");
     setFinancasFiltradas(result);
     setCategoriaAtiva(null);
-  };
+  }, [fromManual, toManual, todasFinancas, aplicarTipoSobreBase]);
+
+  // Atualiza automaticamente quando as datas mudam manualmente
+  useEffect(() => {
+    aplicarFiltroManual();
+  }, [fromManual, toManual]);
 
   const limparFiltros = () => {
     setBasePeriodo(todasFinancas);
     setFinancasFiltradas(todasFinancas);
-    setFromManual("");
+    const hoje = new Date().toISOString().split("T")[0];
+    setFromManual(hoje);
     setToManual("");
     setTipoAtivo("all");
     setPeriodoAtivo(null);
@@ -251,7 +259,14 @@ export default function Financas() {
 
         <DropdownMenu open={menuAberto} onOpenChange={setMenuAberto}>
           <DropdownMenuTrigger asChild>
-            <button className="px-4 py-2 rounded-lg bg-purple-100 text-purple-700 font-semibold flex items-center gap-2 hover:bg-purple-200 transition">
+            <button
+              className={`px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition
+                ${
+                  categoriaAtiva
+                    ? "bg-purple-100 text-purple-700 hover:bg-purple-200"
+                    : "bg-gray-100 text-gray-800 hover:bg-gray-200"
+                }`}
+            >
               {categoriaAtiva ? categoriaAtiva : "Todas"}
               <FaChevronDown className="w-4 h-4 opacity-70" />
             </button>
@@ -260,7 +275,10 @@ export default function Financas() {
           <DropdownMenuContent align="start" className="w-56">
             <DropdownMenuLabel>Selecionar Categoria</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => aplicarFiltroCategoria(null)}>
+            <DropdownMenuItem
+              className="hover:bg-purple-100 text-purple-700 font-semibold"
+              onClick={() => aplicarFiltroCategoria(null)}
+            >
               Todas
             </DropdownMenuItem>
             {categoriasUnicas.map((categoria) => (
@@ -275,7 +293,7 @@ export default function Financas() {
         </DropdownMenu>
       </div>
 
-      {/* 📆 Filtro manual */}
+      {/* 📆 Filtro manual + botões rápidos */}
       <div className="bg-white rounded-xl shadow p-4 mb-6 flex flex-wrap gap-3 items-end justify-start">
         <div className="flex flex-col">
           <label className="text-xs text-gray-600">De</label>
@@ -286,6 +304,7 @@ export default function Financas() {
             className="border rounded-lg px-3 py-2"
           />
         </div>
+
         <div className="flex flex-col">
           <label className="text-xs text-gray-600">Até</label>
           <input
@@ -295,15 +314,46 @@ export default function Financas() {
             className="border rounded-lg px-3 py-2"
           />
         </div>
-        <button
-          onClick={aplicarFiltroManual}
-          className="px-3 py-2 rounded-lg bg-blue-600 text-white font-semibold"
-        >
-          Aplicar
-        </button>
+
+        <div className="flex gap-2 mt-2">
+          <button
+            onClick={() => aplicarFiltroPeriodo("today")}
+            className={`px-3 py-2 rounded-lg text-sm font-semibold transition
+              ${
+                periodoAtivo === "today"
+                  ? "bg-purple-600 text-white"
+                  : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+              }`}
+          >
+            Hoje
+          </button>
+          <button
+            onClick={() => aplicarFiltroPeriodo("week")}
+            className={`px-3 py-2 rounded-lg text-sm font-semibold transition
+              ${
+                periodoAtivo === "week"
+                  ? "bg-purple-600 text-white"
+                  : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+              }`}
+          >
+            Semana
+          </button>
+          <button
+            onClick={() => aplicarFiltroPeriodo("month")}
+            className={`px-3 py-2 rounded-lg text-sm font-semibold transition
+              ${
+                periodoAtivo === "month"
+                  ? "bg-purple-600 text-white"
+                  : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+              }`}
+          >
+            Mês
+          </button>
+        </div>
+
         <button
           onClick={limparFiltros}
-          className="px-3 py-2 rounded-lg bg-gray-200 text-gray-800 font-semibold"
+          className="px-3 py-2 rounded-lg bg-gray-200 text-gray-800 font-semibold ml-auto"
         >
           Limpar
         </button>
@@ -541,3 +591,4 @@ export default function Financas() {
     </div>
   );
 }
+

@@ -34,7 +34,7 @@ const DatePill = forwardRef(
     <button
       ref={ref}
       onClick={onClick}
-      className="px-3 py-2 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 text-sm font-medium shadow-sm transition-colors"
+      className="px-3 py-2 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-500 text-sm font-medium shadow-sm transition-colors"
       type="button"
     >
       {label ? `${label} ${value}` : value}
@@ -273,7 +273,7 @@ export default function ReportsPage() {
       <div className="max-w-5xl mx-auto space-y-8">
         {/* Cabeçalho */}
         <div className="bg-purple-200 rounded-2xl shadow-md border border-purple-100 p-5 flex flex-col items-center justify-center">
-          <h1 className="text-3xl font-bold text-purple-500 flex items-center gap-3">
+          <h1 className="text-3xl font-bold text-purple-400 flex items-center gap-3">
             <FaCalendarAlt className="text-purple-500 text-3xl" />
             Relatórios
           </h1>
