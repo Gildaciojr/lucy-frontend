@@ -52,8 +52,8 @@ export default function AgendaPage() {
   return (
     <div className="flex flex-col min-h-screen p-4 bg-gray-100">
       <header className="py-4 text-center">
-        <div className="p-4 bg-purple-100 rounded-xl shadow-md transition-colors duration-200 hover:bg-purple-200 cursor-pointer">
-          <h1 className="text-3xl font-bold text-purple-500">Lucy Agenda</h1>
+        <div className="p-4 bg-purple-500 rounded-xl shadow-md transition-colors duration-200 hover:bg-purple-200 cursor-pointer">
+          <h1 className="text-3xl font-bold text-purple-700">Lucy Agenda</h1>
           <p className="text-black">Gerencie sua agenda e compromissos</p>
         </div>
       </header>
