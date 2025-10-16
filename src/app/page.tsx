@@ -149,8 +149,21 @@ export default function HomePage() {
 
   const buildFinancasUrl = useCallback(() => {
     const qs = new URLSearchParams();
-    if (fromDate) qs.set("from", toYMD(fromDate));
-    if (toDate) qs.set("to", toYMD(toDate));
+
+    const normalizeDate = (d: Date, isEnd = false) => {
+      const local = new Date(d);
+      local.setHours(
+        isEnd ? 23 : 0,
+        isEnd ? 59 : 0,
+        isEnd ? 59 : 0,
+        isEnd ? 999 : 0
+      );
+      return local.toISOString().split("T")[0];
+    };
+
+    if (fromDate) qs.set("from", normalizeDate(fromDate));
+    if (toDate) qs.set("to", normalizeDate(toDate, true));
+
     return `/financas${qs.toString() ? `?${qs.toString()}` : ""}`;
   }, [fromDate, toDate]);
 

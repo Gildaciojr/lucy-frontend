@@ -175,20 +175,27 @@ export default function Financas() {
   const aplicarFiltroManual = useCallback(() => {
     if (!fromManual && !toManual) return;
 
-    const normalizeDate = (d: string) => {
-      const local = new Date(d);
-      local.setHours(0, 0, 0, 0);
-      return local;
+    // 🔹 Função que normaliza datas no horário local
+    const normalizeDate = (dateStr: string, isEnd = false) => {
+      const d = new Date(dateStr + "T00:00:00");
+      d.setHours(
+        isEnd ? 23 : 0,
+        isEnd ? 59 : 0,
+        isEnd ? 59 : 0,
+        isEnd ? 999 : 0
+      );
+      return d;
     };
 
     const fromDate = fromManual
       ? normalizeDate(fromManual)
       : new Date("1970-01-01");
-    const toDate = toManual ? normalizeDate(toManual) : new Date("2999-12-31");
+    const toDate = toManual
+      ? normalizeDate(toManual, true)
+      : new Date("2999-12-31");
 
     const base = todasFinancas.filter((f) => {
       const dataItem = new Date(f.data);
-      dataItem.setHours(0, 0, 0, 0);
       return dataItem >= fromDate && dataItem <= toDate;
     });
 
@@ -291,11 +298,14 @@ export default function Financas() {
             </button>
           </DropdownMenuTrigger>
 
-          <DropdownMenuContent align="start" className="w-56">
+          <DropdownMenuContent
+            align="start"
+            className="w-56 bg-white border border-purple-400 shadow-lg rounded-lg p-1 text-gray-800"
+          >
             <DropdownMenuLabel>Selecionar Categoria</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              className="hover:bg-purple-100 text-purple-700 font-semibold"
+              className="hover:bg-purple-100 hover:text-purple-400 focus:bg-purple-100 focus:text-purple-400 rounded-md"
               onClick={() => aplicarFiltroCategoria(null)}
             >
               Todas

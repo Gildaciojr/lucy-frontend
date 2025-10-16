@@ -17,7 +17,7 @@ export default function ConteudoPage() {
 
       {/* Main */}
       <main className="flex-1 px-6 py-8">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-6xl mx-auto space-y-4">
           <Conteudo />
         </div>
       </main>
