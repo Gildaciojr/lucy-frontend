@@ -415,7 +415,7 @@ export default function HomePage() {
           </div>
 
           {/* Botões rápidos */}
-          <div className="flex gap-2 mt-2 sm:mt-0 flex-wrap">
+          <div className="flex flex-wrap gap-2 justify-center sm:justify-start mt-2 sm:mt-0">
             <button
               onClick={() => {
                 const today = new Date();

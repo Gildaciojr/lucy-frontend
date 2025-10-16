@@ -7,8 +7,11 @@ export default function ConteudoPage() {
     <div className="flex flex-col min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-purple-400 shadow-sm">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex flex-col items-center">
-          <h1 className="text-3xl font-extrabold text-white">Lucy Creator</h1>
+        <div className="max-w-6xl mx-auto px-6 py-6 flex flex-col items-center space-y-3">
+          <div className="mt-2" /> {/* 🔹 Espaço extra entre logo e título */}
+          <h1 className="text-3xl font-extrabold text-white mt-2">
+            Lucy Creator
+          </h1>
           <p className="text-black text-sm">
             Gerencie suas ideias e conteúdos de forma organizada
           </p>
@@ -31,6 +34,3 @@ export default function ConteudoPage() {
     </div>
   );
 }
-
-
-

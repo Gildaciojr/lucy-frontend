@@ -64,8 +64,17 @@ export default function ReportsPage() {
     async (from?: Date | null, to?: Date | null) => {
       if (!token) return;
       const params: string[] = [];
-      if (from) params.push(`from=${toYMD(from)}`);
-      if (to) params.push(`to=${toYMD(to)}`);
+
+      // 🔹 Normaliza para início/fim do dia no fuso local
+      const normalizeDate = (d: Date, isEnd = false) => {
+        const local = new Date(d);
+        local.setHours(isEnd ? 23 : 0, isEnd ? 59 : 0, isEnd ? 59 : 0, isEnd ? 999 : 0);
+        return local;
+      };
+
+      if (from) params.push(`from=${toYMD(normalizeDate(from))}`);
+      if (to) params.push(`to=${toYMD(normalizeDate(to, true))}`);
+
       const qs = params.length ? `?${params.join("&")}` : "";
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/financas${qs}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -185,16 +194,18 @@ export default function ReportsPage() {
       14,
       yResume + 6
     );
+
     const body = financas.map((f) => [
       new Date(f.data).toLocaleDateString("pt-BR"),
       f.categoria,
       f.tipo === "receita" ? "Receita" : "Despesa",
       `R$ ${Number(f.valor || 0).toFixed(2).replace(".", ",")}`,
     ]);
+
     autoTable(doc, {
       head: [["Data", "Categoria", "Tipo", "Valor"]],
       body,
-      startY: yResume + 14,
+      startY: 50, // 🔹 evita sobreposição
       styles: { fontSize: 10, halign: "center", valign: "middle" },
       headStyles: {
         fillColor: [109, 40, 217],
@@ -202,12 +213,13 @@ export default function ReportsPage() {
         halign: "center",
       },
       alternateRowStyles: { fillColor: [250, 247, 255] },
-      margin: { left: 14, right: 14 },
+      margin: { top: 25, left: 14, right: 14, bottom: 25 },
       didDrawPage: () => {
         drawLucyHeader(doc);
         drawLucyFooter(doc);
       },
     });
+
     drawLucyFooter(doc);
     return doc;
   };
@@ -277,7 +289,7 @@ export default function ReportsPage() {
             <FaCalendarAlt className="text-white text-3xl" />
             Relatórios
           </h1>
-          <p className="text-black mt-2 text-center">
+          <p className="text-white mt-2 text-center">
             Exporte e compartilhe suas finanças com segurança.
           </p>
         </div>
@@ -327,8 +339,7 @@ export default function ReportsPage() {
             />
           </div>
           <p className="text-sm text-gray-500 mt-3 text-center">
-            Escolha qualquer data de início e fim — o relatório é gerado
-            automaticamente 💜
+            Escolha qualquer data de início e fim — o relatório é gerado automaticamente 💜
           </p>
         </div>
 
@@ -385,6 +396,7 @@ export default function ReportsPage() {
     </div>
   );
 }
+
 
 
 
