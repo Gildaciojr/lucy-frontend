@@ -55,25 +55,28 @@ export default function ReportsPage() {
   const userId =
     typeof window !== "undefined" ? localStorage.getItem("user_id") : null;
 
-  const toYMD = (d: Date) =>
-    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-      d.getDate()
-    ).padStart(2, "0")}`;
+  /** Normalização de data para UTC “limpo” evitando incluir meses anteriores */
+  const normalizeDate = (d: Date, isEnd = false) => {
+    const utc = new Date(
+      Date.UTC(
+        d.getFullYear(),
+        d.getMonth(),
+        d.getDate(),
+        isEnd ? 23 : 0,
+        isEnd ? 59 : 0,
+        isEnd ? 59 : 0,
+        isEnd ? 999 : 0
+      )
+    );
+    return utc.toISOString().split("T")[0];
+  };
 
   const fetchFinancas = useCallback(
     async (from?: Date | null, to?: Date | null) => {
       if (!token) return;
       const params: string[] = [];
-
-      // 🔹 Normaliza para início/fim do dia no fuso local
-      const normalizeDate = (d: Date, isEnd = false) => {
-        const local = new Date(d);
-        local.setHours(isEnd ? 23 : 0, isEnd ? 59 : 0, isEnd ? 59 : 0, isEnd ? 999 : 0);
-        return local;
-      };
-
-      if (from) params.push(`from=${toYMD(normalizeDate(from))}`);
-      if (to) params.push(`to=${toYMD(normalizeDate(to, true))}`);
+      if (from) params.push(`from=${normalizeDate(from)}`);
+      if (to) params.push(`to=${normalizeDate(to, true)}`);
 
       const qs = params.length ? `?${params.join("&")}` : "";
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/financas${qs}`, {
@@ -81,7 +84,17 @@ export default function ReportsPage() {
       });
       if (!res.ok) throw new Error("Erro ao buscar finanças.");
       const data: Financa[] = await res.json();
-      setFinancas(data);
+
+      // 🔹 Garante que só entrem registros dentro do range
+      const fromD = from ? new Date(normalizeDate(from)) : null;
+      const toD = to ? new Date(normalizeDate(to, true)) : null;
+      const filtered = data.filter((f) => {
+        const dt = new Date(f.data);
+        if (fromD && dt < fromD) return false;
+        if (toD && dt > toD) return false;
+        return true;
+      });
+      setFinancas(filtered);
     },
     [token]
   );
@@ -102,8 +115,6 @@ export default function ReportsPage() {
       try {
         setLoading(true);
         await Promise.all([fetchFinancas(), fetchUserName()]);
-      } catch (err) {
-        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -111,14 +122,11 @@ export default function ReportsPage() {
     load();
   }, [fetchFinancas, fetchUserName]);
 
-  // 🔁 Atualiza automaticamente ao escolher datas
   useEffect(() => {
     const autoUpdate = async () => {
       try {
         await fetchFinancas(fromDate, toDate);
-      } catch (e) {
-        console.error(e);
-      }
+      } catch {}
     };
     if (fromDate || toDate) autoUpdate();
   }, [fromDate, toDate, fetchFinancas]);
@@ -147,7 +155,7 @@ export default function ReportsPage() {
     return `Período: ${fmt(fromDate!)} a ${fmt(toDate!)}`;
   }, [fromDate, toDate]);
 
-  // ===== PDF =====
+  /** ===== PDF ===== */
   const drawLucyHeader = (doc: PDF) => {
     doc.setFillColor(109, 40, 217);
     doc.rect(0, 0, doc.internal.pageSize.getWidth(), 18, "F");
@@ -169,9 +177,7 @@ export default function ReportsPage() {
     doc.setFontSize(9);
     doc.setTextColor(120, 120, 120);
     doc.text("Relatório gerado automaticamente pela Lucy", 14, h - 10);
-    doc.text(`${new Date().toLocaleString()}`, w - 14, h - 10, {
-      align: "right",
-    });
+    doc.text(`${new Date().toLocaleString()}`, w - 14, h - 10, { align: "right" });
   };
 
   const buildPdf = () => {
@@ -184,16 +190,8 @@ export default function ReportsPage() {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(11);
     const yResume = 36;
-    doc.text(
-      `Total de Receitas: R$ ${totalReceitas.toFixed(2).replace(".", ",")}`,
-      14,
-      yResume
-    );
-    doc.text(
-      `Total de Despesas: R$ ${totalDespesas.toFixed(2).replace(".", ",")}`,
-      14,
-      yResume + 6
-    );
+    doc.text(`Total de Receitas: R$ ${totalReceitas.toFixed(2).replace(".", ",")}`, 14, yResume);
+    doc.text(`Total de Despesas: R$ ${totalDespesas.toFixed(2).replace(".", ",")}`, 14, yResume + 6);
 
     const body = financas.map((f) => [
       new Date(f.data).toLocaleDateString("pt-BR"),
@@ -205,7 +203,7 @@ export default function ReportsPage() {
     autoTable(doc, {
       head: [["Data", "Categoria", "Tipo", "Valor"]],
       body,
-      startY: 50, // 🔹 evita sobreposição
+      startY: 50,
       styles: { fontSize: 10, halign: "center", valign: "middle" },
       headStyles: {
         fillColor: [109, 40, 217],
@@ -219,34 +217,25 @@ export default function ReportsPage() {
         drawLucyFooter(doc);
       },
     });
-
     drawLucyFooter(doc);
     return doc;
   };
 
-  const pdfFilename = (suffix = "") =>
-    `relatorio-financeiro-${userName}${suffix ? `-${suffix}` : ""}.pdf`;
-
+  const pdfFilename = (suffix = "") => `relatorio-financeiro-${userName}${suffix ? `-${suffix}` : ""}.pdf`;
   const getPdfBlob = () => buildPdf().output("blob");
-
   const downloadPdf = () => buildPdf().save(pdfFilename());
 
   const trySharePdf = async (title: string, text: string) => {
     try {
       const blob = getPdfBlob();
       const file = new File([blob], pdfFilename(), { type: "application/pdf" });
-      const navAny = navigator as Navigator & {
-        canShare?: (data: ShareData) => boolean;
-        share?: (data: ShareData) => Promise<void>;
-      };
+      const navAny = navigator as Navigator & { canShare?: (data: ShareData) => boolean; share?: (data: ShareData) => Promise<void>; };
       if (navAny?.canShare?.({ files: [file] })) {
         await navAny.share({ files: [file], title, text });
         return true;
       }
       return false;
-    } catch {
-      return false;
-    }
+    } catch { return false; }
   };
 
   const handleSendEmail = async () => {
@@ -265,9 +254,7 @@ export default function ReportsPage() {
     const shared = await trySharePdf("Relatório Financeiro", `Relatório financeiro de ${userName}`);
     if (!shared) {
       downloadPdf();
-      const texto = encodeURIComponent(
-        `Relatório financeiro de ${userName}. O PDF foi baixado no seu dispositivo.`
-      );
+      const texto = encodeURIComponent(`Relatório financeiro de ${userName}. O PDF foi baixado no seu dispositivo.`);
       window.open(`https://wa.me/?text=${texto}`, "_blank");
     }
   };
@@ -283,18 +270,14 @@ export default function ReportsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-50 via-purple-100 to-white p-4 sm:p-6">
       <div className="max-w-5xl mx-auto space-y-8">
-        {/* Cabeçalho */}
         <div className="bg-purple-400 rounded-2xl shadow-md border border-purple-400 p-5 flex flex-col items-center justify-center">
           <h1 className="text-3xl font-bold text-white flex items-center gap-3">
             <FaCalendarAlt className="text-white text-3xl" />
             Relatórios
           </h1>
-          <p className="text-white mt-2 text-center">
-            Exporte e compartilhe suas finanças com segurança.
-          </p>
+          <p className="text-black mt-2 text-center">Exporte e compartilhe suas finanças com segurança.</p>
         </div>
 
-        {/* Filtro com DatePicker */}
         <div className="flex flex-col items-center justify-center bg-white p-6 rounded-2xl shadow-md border border-purple-100">
           <div className="flex flex-col sm:flex-row items-center gap-3">
             <ReactDatePicker
@@ -305,16 +288,7 @@ export default function ReportsPage() {
               endDate={toDate || undefined}
               locale="pt-BR"
               dateFormat="dd/MM/yyyy"
-              customInput={
-                <DatePill
-                  label="📅 De:"
-                  value={
-                    fromDate
-                      ? fromDate.toLocaleDateString("pt-BR")
-                      : "Escolher data inicial"
-                  }
-                />
-              }
+              customInput={<DatePill label="📅 De:" value={fromDate ? fromDate.toLocaleDateString("pt-BR") : "Escolher data inicial"} />}
             />
             <span className="text-gray-400 font-semibold select-none">→</span>
             <ReactDatePicker
@@ -326,16 +300,7 @@ export default function ReportsPage() {
               minDate={fromDate || undefined}
               locale="pt-BR"
               dateFormat="dd/MM/yyyy"
-              customInput={
-                <DatePill
-                  label="Até:"
-                  value={
-                    toDate
-                      ? toDate.toLocaleDateString("pt-BR")
-                      : "Escolher data final"
-                  }
-                />
-              }
+              customInput={<DatePill label="Até:" value={toDate ? toDate.toLocaleDateString("pt-BR") : "Escolher data final"} />}
             />
           </div>
           <p className="text-sm text-gray-500 mt-3 text-center">
@@ -343,59 +308,41 @@ export default function ReportsPage() {
           </p>
         </div>
 
-        {/* Resumo */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="p-4 bg-white rounded-xl shadow-md border border-emerald-100">
             <p className="text-sm text-gray-500">Total de Receitas</p>
-            <p className="text-2xl font-bold text-emerald-600">
-              R$ {totalReceitas.toFixed(2).replace(".", ",")}
-            </p>
+            <p className="text-2xl font-bold text-emerald-600">R$ {totalReceitas.toFixed(2).replace(".", ",")}</p>
           </div>
           <div className="p-4 bg-white rounded-xl shadow-md border border-rose-100">
             <p className="text-sm text-gray-500">Total de Despesas</p>
-            <p className="text-2xl font-bold text-rose-600">
-              R$ {totalDespesas.toFixed(2).replace(".", ",")}
-            </p>
+            <p className="text-2xl font-bold text-rose-600">R$ {totalDespesas.toFixed(2).replace(".", ",")}</p>
           </div>
         </div>
 
-        {/* Ações */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <button
-            onClick={downloadPdf}
-            className="flex flex-col items-center justify-center gap-3 p-6 bg-purple-600 text-white rounded-xl shadow-lg hover:bg-purple-700 transition"
-          >
+          <button onClick={downloadPdf} className="flex flex-col items-center justify-center gap-3 p-6 bg-purple-600 text-white rounded-xl shadow-lg hover:bg-purple-700 transition">
             <FaDownload className="text-4xl" />
             <span className="text-lg font-semibold">Baixar PDF</span>
             <p className="text-sm text-purple-200">Salve no seu dispositivo</p>
           </button>
 
-          <button
-            onClick={handleSendEmail}
-            className="flex flex-col items-center justify-center gap-3 p-6 bg-blue-600 text-white rounded-xl shadow-lg hover:bg-blue-700 transition"
-          >
+          <button onClick={handleSendEmail} className="flex flex-col items-center justify-center gap-3 p-6 bg-blue-600 text-white rounded-xl shadow-lg hover:bg-blue-700 transition">
             <FaEnvelope className="text-4xl" />
             <span className="text-lg font-semibold">Enviar por E-mail</span>
-            <p className="text-sm text-blue-200">
-              Anexo automático quando suportado
-            </p>
+            <p className="text-sm text-blue-200">Anexo automático quando suportado</p>
           </button>
 
-          <button
-            onClick={handleSendWhatsApp}
-            className="flex flex-col items-center justify-center gap-3 p-6 bg-green-600 text-white rounded-xl shadow-lg hover:bg-green-700 transition"
-          >
+          <button onClick={handleSendWhatsApp} className="flex flex-col items-center justify-center gap-3 p-6 bg-green-600 text-white rounded-xl shadow-lg hover:bg-green-700 transition">
             <FaWhatsapp className="text-4xl" />
             <span className="text-lg font-semibold">Enviar por WhatsApp</span>
-            <p className="text-sm text-green-200">
-              Anexo automático quando suportado
-            </p>
+            <p className="text-sm text-green-200">Anexo automático quando suportado</p>
           </button>
         </div>
       </div>
     </div>
   );
 }
+
 
 
 
