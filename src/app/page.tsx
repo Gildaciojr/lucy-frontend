@@ -283,8 +283,8 @@ export default function HomePage() {
     totalConquistas === 0
       ? "Sem conquistas ainda"
       : totalConquistas === 1
-      ? "1 conquista"
-      : `${totalConquistas} conquistas`;
+        ? "1 conquista"
+        : `${totalConquistas} conquistas`;
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100 relative">
@@ -347,10 +347,10 @@ export default function HomePage() {
           ))}
         </div>
 
-        {/* 🔹 Barra de Filtro “De / Até” */}
+        {/* 🔹 Barra de Filtro “De / Até” com botões automáticos */}
         <div className="bg-white rounded-xl shadow-md p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <h3 className="text-base sm:text-lg font-semibold text-indigo-700 flex items-center gap-2">
-            <FaCalendarAlt className="text-indigo-600" />
+          <h3 className="text-base sm:text-lg font-semibold text-purple-700 flex items-center gap-2">
+            <FaCalendarAlt className="text-purple-600" />
             Filtro
           </h3>
 
@@ -367,7 +367,9 @@ export default function HomePage() {
                 <DatePill
                   label="De"
                   value={
-                    fromDate ? formatShortPtBR(fromDate) : dataHojeLabel
+                    fromDate
+                      ? formatShortPtBR(fromDate)
+                      : formatShortPtBR(new Date())
                   }
                   title="Selecionar data inicial"
                 />
@@ -388,7 +390,11 @@ export default function HomePage() {
               customInput={
                 <DatePill
                   label="Até"
-                  value={toDate ? formatShortPtBR(toDate) : finalMesLabel}
+                  value={
+                    toDate
+                      ? formatShortPtBR(toDate)
+                      : formatShortPtBR(endOfCurrentMonth())
+                  }
                   title="Selecionar data final"
                 />
               }
@@ -397,12 +403,47 @@ export default function HomePage() {
             />
           </div>
 
+          <div className="flex gap-2 mt-2">
+            <button
+              onClick={() => {
+                const today = new Date();
+                setFromDate(today);
+                setToDate(today);
+              }}
+              className="px-3 py-2 rounded-lg bg-purple-600 text-white font-semibold hover:bg-purple-700"
+            >
+              Hoje
+            </button>
+            <button
+              onClick={() => {
+                const end = new Date();
+                const start = new Date();
+                start.setDate(end.getDate() - 7);
+                setFromDate(start);
+                setToDate(end);
+              }}
+              className="px-3 py-2 rounded-lg bg-purple-600 text-white font-semibold hover:bg-purple-700"
+            >
+              Semana
+            </button>
+            <button
+              onClick={() => {
+                const end = new Date();
+                const start = new Date(end.getFullYear(), end.getMonth(), 1);
+                setFromDate(start);
+                setToDate(end);
+              }}
+              className="px-3 py-2 rounded-lg bg-purple-600 text-white font-semibold hover:bg-purple-700"
+            >
+              Mês
+            </button>
+          </div>
+
           <button
             onClick={onClearFilters}
             className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium transition-colors"
             type="button"
             disabled={loadingFinancas}
-            title="Limpar período"
           >
             Limpar
           </button>
@@ -539,4 +580,3 @@ export default function HomePage() {
     </div>
   );
 }
-

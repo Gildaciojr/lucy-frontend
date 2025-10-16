@@ -263,8 +263,8 @@ export default function Financas() {
               className={`px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition
                 ${
                   categoriaAtiva
-                    ? "bg-purple-100 text-purple-700 hover:bg-purple-200"
-                    : "bg-gray-100 text-gray-800 hover:bg-gray-200"
+                    ? "bg-purple-300 text-purple-700 hover:bg-purple-300"
+                    : "bg-gray-400 text-gray-800 hover:bg-gray-300"
                 }`}
             >
               {categoriaAtiva ? categoriaAtiva : "Todas"}

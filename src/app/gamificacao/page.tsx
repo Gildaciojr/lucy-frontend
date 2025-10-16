@@ -162,9 +162,9 @@ export default function GamificacaoPage() {
       points: 250,
     },
     {
-      name: "Bloqueado(a)",
-      color: "bg-gray-400",
-      icon: <FaLock className="text-white" />,
+      name: "Lendário(a)",
+      color: "bg-yellow-500",
+      icon: <FaMedal className="text-yellow-300" />,
       points: 0,
     },
   ];
@@ -373,4 +373,3 @@ export default function GamificacaoPage() {
     </div>
   );
 }
-

@@ -15,16 +15,19 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  // ✅ O Header será controlado via ClientLayoutWrapper (login excluído lá)
   return (
     <html lang="pt">
       <body className={inter.className}>
-        {/* ✅ só mostra o Header se NÃO for a página de login */}
-        {typeof window !== "undefined" && !window.location.pathname.startsWith("/login") && <Header />}
-        <ClientLayoutWrapper>{children}</ClientLayoutWrapper>
+        <ClientLayoutWrapper>
+          <Header /> {/* volta a aparecer no dashboard */}
+          {children}
+        </ClientLayoutWrapper>
       </body>
     </html>
   );
 }
+
 
 
 
