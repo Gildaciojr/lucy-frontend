@@ -126,11 +126,20 @@ export default function Financas() {
 
   const aplicarFiltroPeriodo = (mode: "today" | "week" | "month") => {
     const { from, to } = getDateRange(mode);
-    const fromDate = new Date(from);
-    const toDate = new Date(to);
+
+    // 🔹 Normaliza para início/fim do dia no fuso local
+    const normalizeDate = (d: string) => {
+      const local = new Date(d);
+      local.setHours(0, 0, 0, 0);
+      return local;
+    };
+
+    const fromDate = normalizeDate(from);
+    const toDate = normalizeDate(to);
 
     const base = todasFinancas.filter((f) => {
       const dataItem = new Date(f.data);
+      dataItem.setHours(0, 0, 0, 0);
       return dataItem >= fromDate && dataItem <= toDate;
     });
 
@@ -165,11 +174,21 @@ export default function Financas() {
 
   const aplicarFiltroManual = useCallback(() => {
     if (!fromManual && !toManual) return;
-    const fromDate = fromManual ? new Date(fromManual) : new Date("1970-01-01");
-    const toDate = toManual ? new Date(toManual) : new Date("2999-12-31");
+
+    const normalizeDate = (d: string) => {
+      const local = new Date(d);
+      local.setHours(0, 0, 0, 0);
+      return local;
+    };
+
+    const fromDate = fromManual
+      ? normalizeDate(fromManual)
+      : new Date("1970-01-01");
+    const toDate = toManual ? normalizeDate(toManual) : new Date("2999-12-31");
 
     const base = todasFinancas.filter((f) => {
       const dataItem = new Date(f.data);
+      dataItem.setHours(0, 0, 0, 0);
       return dataItem >= fromDate && dataItem <= toDate;
     });
 
@@ -591,4 +610,3 @@ export default function Financas() {
     </div>
   );
 }
-

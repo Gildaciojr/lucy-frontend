@@ -348,29 +348,27 @@ export default function HomePage() {
         </div>
 
         {/* 🔹 Barra de Filtro “De / Até” com botões automáticos */}
+        {/* 🔹 Barra de Filtro “De / Até” com datas e botões automáticos */}
         <div className="bg-white rounded-xl shadow-md p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <h3 className="text-base sm:text-lg font-semibold text-purple-700 flex items-center gap-2">
             <FaCalendarAlt className="text-purple-600" />
             Filtro
           </h3>
 
+          {/* Campos de data - iguais Finanças */}
           <div className="flex flex-col sm:flex-row gap-3 items-center">
             <ReactDatePicker
-              selected={fromDate}
-              onChange={(date) => setFromDate(date)}
+              selected={fromDate ?? new Date()}
+              onChange={(date) => setFromDate(date ?? new Date())}
               selectsStart
-              startDate={fromDate}
-              endDate={toDate || undefined}
+              startDate={fromDate ?? new Date()}
+              endDate={toDate ?? undefined}
               locale="pt-BR"
               dateFormat="dd/MM/yyyy"
               customInput={
                 <DatePill
-                  label="De"
-                  value={
-                    fromDate
-                      ? formatShortPtBR(fromDate)
-                      : formatShortPtBR(new Date())
-                  }
+                  label=""
+                  value={formatShortPtBR(fromDate ?? new Date())}
                   title="Selecionar data inicial"
                 />
               }
@@ -382,9 +380,9 @@ export default function HomePage() {
               selected={toDate}
               onChange={(date) => setToDate(date)}
               selectsEnd
-              startDate={fromDate || undefined}
-              endDate={toDate}
-              minDate={fromDate || undefined}
+              startDate={fromDate ?? new Date()}
+              endDate={toDate ?? undefined}
+              minDate={fromDate ?? undefined}
               locale="pt-BR"
               dateFormat="dd/MM/yyyy"
               customInput={
@@ -403,7 +401,8 @@ export default function HomePage() {
             />
           </div>
 
-          <div className="flex gap-2 mt-2">
+          {/* Botões rápidos */}
+          <div className="flex gap-2 mt-2 sm:mt-0 flex-wrap">
             <button
               onClick={() => {
                 const today = new Date();
@@ -443,7 +442,6 @@ export default function HomePage() {
             onClick={onClearFilters}
             className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium transition-colors"
             type="button"
-            disabled={loadingFinancas}
           >
             Limpar
           </button>

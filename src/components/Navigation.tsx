@@ -25,7 +25,7 @@ export default function Navigation() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-purple-400 bg-purple-200 backdrop-blur-lg">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-purple-500 bg-purple-200 backdrop-blur-lg">
       <ul className="flex justify-around items-center max-w-5xl mx-auto px-1 py-1 sm:py-2">
         {NAV.map((item) => {
           const active = pathname === item.href;

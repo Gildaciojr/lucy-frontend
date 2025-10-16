@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Navigation from "./Navigation";
+import Header from "./Header"; // ✅ Adicionado aqui
 import { getCurrentUser } from "@/lib/auth";
 
 export default function ClientLayoutWrapper({
@@ -14,10 +15,14 @@ export default function ClientLayoutWrapper({
   const router = useRouter();
   const [ready, setReady] = useState(false);
 
-  // rotas públicas
+  // 🔹 Rotas públicas (sem header / nav)
   const isPublic =
-    pathname === "/login" || pathname === "/signup" || pathname === "/register";
+    pathname === "/login" ||
+    pathname === "/signup" ||
+    pathname === "/register" ||
+    pathname === "/reset-password";
 
+  // 🔐 Autenticação automática
   useEffect(() => {
     if (!isPublic) {
       getCurrentUser()
@@ -32,10 +37,12 @@ export default function ClientLayoutWrapper({
     }
   }, [isPublic, router]);
 
+  // 🔴 Logout
   const handleLogout = () => {
     try {
       localStorage.removeItem("auth_token");
       localStorage.removeItem("user_id");
+      localStorage.removeItem("username");
     } catch {}
     router.push("/login");
   };
@@ -50,10 +57,16 @@ export default function ClientLayoutWrapper({
 
   return (
     <div className="flex flex-col min-h-screen">
+      {/* ✅ Mostra Header apenas no dashboard */}
+      {!isPublic && <Header />}
+
+      {/* Conteúdo principal */}
       <main className="flex-1 pb-20">{children}</main>
 
+      {/* ✅ Navigation apenas no dashboard */}
       {!isPublic && <Navigation />}
 
+      {/* ✅ Botão de logout fixo */}
       {!isPublic && (
         <button
           onClick={handleLogout}
@@ -65,6 +78,7 @@ export default function ClientLayoutWrapper({
     </div>
   );
 }
+
 
 
 
