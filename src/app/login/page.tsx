@@ -48,9 +48,9 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-purple-600 p-4">
+    <div className="flex items-center justify-center min-h-screen bg-purple-500 p-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 text-center">
-        {/* ✅ Logo Lucy nova */}
+        {/* ✅ Logo Lucy centralizada */}
         <div className="flex justify-center mb-4">
           <Image
             src="/images/logo-lucy.png"
@@ -62,9 +62,11 @@ export default function LoginPage() {
           />
         </div>
 
+        {/* ✅ Textos de boas-vindas */}
         <h1 className="text-2xl font-bold text-gray-900">Bem-vindo de volta</h1>
         <p className="text-gray-600 text-sm mb-6">Entre com seu e-mail e senha</p>
 
+        {/* 🔽 Formulário de login - mantido igual */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="text"
@@ -89,13 +91,14 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg flex items-center justify-center space-x-2 transition"
+            className="w-full py-3 bg-purple-500 hover:bg-purple-600 text-white font-semibold rounded-lg flex items-center justify-center space-x-2 transition"
           >
             {loading ? <FaSpinner className="animate-spin" /> : <FaSignInAlt />}
             <span>{loading ? "Entrando..." : "Entrar"}</span>
           </button>
         </form>
 
+        {/* 🔽 Mensagens e links */}
         {error && <p className="text-center text-red-500 mt-4">{error}</p>}
 
         <div className="mt-6 text-sm text-gray-700">
@@ -105,12 +108,14 @@ export default function LoginPage() {
               Cadastre-se
             </Link>
           </p>
+
           <p className="mt-2">
             Esqueceu sua senha?{" "}
             <Link href="/reset-password" className="text-purple-600 hover:underline">
               Clique aqui
             </Link>
           </p>
+
           <p className="mt-6 text-xs text-gray-500 flex items-center justify-center gap-2">
             <FaLock className="text-yellow-500" />
             <span>Seus dados estão totalmente seguros e protegidos.</span>
@@ -120,6 +125,7 @@ export default function LoginPage() {
     </div>
   );
 }
+
 
 
 
