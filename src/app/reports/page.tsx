@@ -1,6 +1,13 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState, forwardRef, Ref } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  forwardRef,
+  Ref,
+} from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import {
@@ -43,7 +50,11 @@ const apiDateToLocalYMD = (s: string): string => {
 /** Input estilizado p/ DatePicker */
 const DatePill = forwardRef(
   (
-    { label, value, onClick }: { label?: string; value: string; onClick?: () => void },
+    {
+      label,
+      value,
+      onClick,
+    }: { label?: string; value: string; onClick?: () => void },
     ref: Ref<HTMLButtonElement>
   ) => (
     <button
@@ -87,15 +98,41 @@ export default function ReportsPage() {
       if (!res.ok) throw new Error("Erro ao buscar finanças.");
       const data: Financa[] = await res.json();
 
-      // Filtro defensivo local por YMD (evita incluir 09 quando seleciona 10)
-      const fromY = from ? toYMDLocal(from) : null;
-      const toY = to ? toYMDLocal(to) : null;
+      // 🔧 Filtro local corrigido — garante corte exato no fuso horário local
       const filtered = data.filter((f) => {
-        const ymd = apiDateToLocalYMD(f.data);
-        if (fromY && ymd < fromY) return false;
-        if (toY && ymd > toY) return false;
+        const dataFinanca = new Date(f.data);
+
+        // Cria cópias seguras de "from" e "to" com horários padronizados
+        const fromLimit = from
+          ? new Date(
+              from.getFullYear(),
+              from.getMonth(),
+              from.getDate(),
+              0,
+              0,
+              0,
+              0
+            )
+          : null;
+        const toLimit = to
+          ? new Date(
+              to.getFullYear(),
+              to.getMonth(),
+              to.getDate(),
+              23,
+              59,
+              59,
+              999
+            )
+          : null;
+
+        if (fromLimit && dataFinanca < fromLimit) return false;
+        if (toLimit && dataFinanca > toLimit) return false;
+
         return true;
       });
+
+      setFinancas(filtered);
 
       setFinancas(filtered);
     },
@@ -185,7 +222,9 @@ export default function ReportsPage() {
     doc.setFontSize(9);
     doc.setTextColor(120, 120, 120);
     doc.text("Relatório gerado automaticamente pela Lucy", 14, h - 10);
-    doc.text(`${new Date().toLocaleString()}`, w - 14, h - 10, { align: "right" });
+    doc.text(`${new Date().toLocaleString()}`, w - 14, h - 10, {
+      align: "right",
+    });
   };
 
   const buildPdf = () => {
@@ -217,7 +256,9 @@ export default function ReportsPage() {
       new Date(apiDateToLocalYMD(f.data)).toLocaleDateString("pt-BR"),
       f.categoria,
       f.tipo === "receita" ? "Receita" : "Despesa",
-      `R$ ${Number(f.valor || 0).toFixed(2).replace(".", ",")}`,
+      `R$ ${Number(f.valor || 0)
+        .toFixed(2)
+        .replace(".", ",")}`,
     ]);
 
     autoTable(doc, {
@@ -362,7 +403,8 @@ export default function ReportsPage() {
             />
           </div>
           <p className="text-sm text-gray-500 mt-3 text-center">
-            Escolha qualquer data de início e fim — o relatório é gerado automaticamente 💜
+            Escolha qualquer data de início e fim — o relatório é gerado
+            automaticamente 💜
           </p>
         </div>
 
@@ -419,12 +461,3 @@ export default function ReportsPage() {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
