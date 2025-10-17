@@ -47,6 +47,12 @@ const apiDateToLocalYMD = (s: string): string => {
   return toYMDLocal(d);
 };
 
+/** Exibe data no formato brasileiro sem UTC */
+const formatPtBrFromYmd = (ymd: string) => {
+  const [y, m, d] = ymd.split("-");
+  return `${d}/${m}/${y}`;
+};
+
 /** Input estilizado p/ DatePicker */
 const DatePill = forwardRef(
   (
@@ -81,7 +87,7 @@ export default function ReportsPage() {
   const userId =
     typeof window !== "undefined" ? localStorage.getItem("user_id") : null;
 
-  /** Busca finanças usando YMD local (sem UTC) e filtra novamente no cliente por YMD */
+  /** Busca finanças usando YMD local (sem UTC) e filtra novamente no cliente */
   const fetchFinancas = useCallback(
     async (from?: Date | null, to?: Date | null) => {
       if (!token) return;
@@ -101,8 +107,6 @@ export default function ReportsPage() {
       // 🔧 Filtro local corrigido — garante corte exato no fuso horário local
       const filtered = data.filter((f) => {
         const dataFinanca = new Date(f.data);
-
-        // Cria cópias seguras de "from" e "to" com horários padronizados
         const fromLimit = from
           ? new Date(
               from.getFullYear(),
@@ -131,8 +135,6 @@ export default function ReportsPage() {
 
         return true;
       });
-
-      setFinancas(filtered);
 
       setFinancas(filtered);
     },
@@ -251,20 +253,21 @@ export default function ReportsPage() {
       yResume + 6
     );
 
-    // Tabela
-    const body = financas.map((f) => [
-      new Date(apiDateToLocalYMD(f.data)).toLocaleDateString("pt-BR"),
-      f.categoria,
-      f.tipo === "receita" ? "Receita" : "Despesa",
-      `R$ ${Number(f.valor || 0)
-        .toFixed(2)
-        .replace(".", ",")}`,
-    ]);
+    // ✅ Tabela corrigida (sem UTC)
+    const body = financas.map((f) => {
+      const ymd = apiDateToLocalYMD(f.data); // YMD local
+      return [
+        formatPtBrFromYmd(ymd),
+        f.categoria,
+        f.tipo === "receita" ? "Receita" : "Despesa",
+        `R$ ${Number(f.valor || 0).toFixed(2).replace(".", ",")}`,
+      ];
+    });
 
     autoTable(doc, {
       head: [["Data", "Categoria", "Tipo", "Valor"]],
       body,
-      startY: 50, // abaixo do bloco de resumo
+      startY: 50,
       styles: { fontSize: 10, halign: "center", valign: "middle" },
       headStyles: {
         fillColor: [109, 40, 217],
@@ -272,7 +275,7 @@ export default function ReportsPage() {
         halign: "center",
       },
       alternateRowStyles: { fillColor: [250, 247, 255] },
-      margin: { top: 25, left: 14, right: 14, bottom: 25 }, // respeita header/footer em todas as páginas
+      margin: { top: 25, left: 14, right: 14, bottom: 25 },
       didDrawPage: () => {
         drawLucyHeader(doc);
         drawLucyFooter(doc);
@@ -461,3 +464,4 @@ export default function ReportsPage() {
     </div>
   );
 }
+
