@@ -19,13 +19,28 @@ interface Financa {
   id: number;
   categoria: string;
   valor: number | string;
-  data: string;
+  data: string; // pode vir "YYYY-MM-DD" ou ISO
   tipo: "receita" | "despesa";
 }
 
 type PDF = InstanceType<typeof jsPDF>;
 
-/** Botão visual de data */
+/** Helpers de data em fuso LOCAL (evita UTC “roubar” um dia) */
+const pad2 = (n: number) => String(n).padStart(2, "0");
+const toYMDLocal = (d: Date) =>
+  `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+
+/** Converte um string de data da API para YMD no fuso LOCAL, sem UTC */
+const apiDateToLocalYMD = (s: string): string => {
+  // Se já vier "YYYY-MM-DD", usa direto:
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  // Se vier ISO, cria Date e extrai campos locais:
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return s; // fallback
+  return toYMDLocal(d);
+};
+
+/** Input estilizado p/ DatePicker */
 const DatePill = forwardRef(
   (
     { label, value, onClick }: { label?: string; value: string; onClick?: () => void },
@@ -55,46 +70,34 @@ export default function ReportsPage() {
   const userId =
     typeof window !== "undefined" ? localStorage.getItem("user_id") : null;
 
-  /** 🔹 Corrige range para evitar incluir mês anterior */
-  const normalizeDate = (d: Date, isEnd = false) => {
-    const local = new Date(d);
-    if (isEnd) {
-      local.setHours(23, 59, 59, 999);
-    } else {
-      local.setHours(0, 0, 0, 0);
-    }
-    return local;
-  };
-
+  /** Busca finanças usando YMD local (sem UTC) e filtra novamente no cliente por YMD */
   const fetchFinancas = useCallback(
     async (from?: Date | null, to?: Date | null) => {
       if (!token) return;
 
       const params: string[] = [];
-
-      if (from) params.push(`from=${normalizeDate(from).toISOString()}`);
-      if (to) params.push(`to=${normalizeDate(to, true).toISOString()}`);
+      if (from) params.push(`from=${toYMDLocal(from)}`);
+      if (to) params.push(`to=${toYMDLocal(to)}`);
 
       const qs = params.length ? `?${params.join("&")}` : "";
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/financas${qs}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/financas${qs}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!res.ok) throw new Error("Erro ao buscar finanças.");
+      const data: Financa[] = await res.json();
+
+      // Filtro defensivo local por YMD (evita incluir 09 quando seleciona 10)
+      const fromY = from ? toYMDLocal(from) : null;
+      const toY = to ? toYMDLocal(to) : null;
+      const filtered = data.filter((f) => {
+        const ymd = apiDateToLocalYMD(f.data);
+        if (fromY && ymd < fromY) return false;
+        if (toY && ymd > toY) return false;
+        return true;
       });
 
-      if (!res.ok) throw new Error("Erro ao buscar finanças.");
-      let data: Financa[] = await res.json();
-
-      // 🔒 Garante filtragem local, independente do backend
-      if (from || to) {
-        const start = from ? normalizeDate(from) : null;
-        const end = to ? normalizeDate(to, true) : null;
-
-        data = data.filter((f) => {
-          const date = new Date(f.data);
-          return (!start || date >= start) && (!end || date <= end);
-        });
-      }
-
-      setFinancas(data);
+      setFinancas(filtered);
     },
     [token]
   );
@@ -115,6 +118,8 @@ export default function ReportsPage() {
       try {
         setLoading(true);
         await Promise.all([fetchFinancas(), fetchUserName()]);
+      } catch (err) {
+        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -122,11 +127,14 @@ export default function ReportsPage() {
     load();
   }, [fetchFinancas, fetchUserName]);
 
+  // Atualiza automaticamente ao escolher datas
   useEffect(() => {
     const autoUpdate = async () => {
       try {
         await fetchFinancas(fromDate, toDate);
-      } catch {}
+      } catch (e) {
+        console.error(e);
+      }
     };
     if (fromDate || toDate) autoUpdate();
   }, [fromDate, toDate, fetchFinancas]);
@@ -157,7 +165,7 @@ export default function ReportsPage() {
 
   /** ===== PDF ===== */
   const drawLucyHeader = (doc: PDF) => {
-    doc.setFillColor(109, 40, 217);
+    doc.setFillColor(109, 40, 217); // purple-700
     doc.rect(0, 0, doc.internal.pageSize.getWidth(), 18, "F");
     doc.setFont("helvetica", "bold");
     doc.setFontSize(14);
@@ -165,9 +173,7 @@ export default function ReportsPage() {
     doc.text("Lucy Finance", 14, 12);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
-    doc.text(periodoLabel, doc.internal.pageSize.getWidth() - 14, 12, {
-      align: "right",
-    });
+    doc.text(periodoLabel, 120, 12, { align: "right" });
   };
 
   const drawLucyFooter = (doc: PDF) => {
@@ -179,14 +185,15 @@ export default function ReportsPage() {
     doc.setFontSize(9);
     doc.setTextColor(120, 120, 120);
     doc.text("Relatório gerado automaticamente pela Lucy", 14, h - 10);
-    doc.text(`${new Date().toLocaleString()}`, w - 14, h - 10, {
-      align: "right",
-    });
+    doc.text(`${new Date().toLocaleString()}`, w - 14, h - 10, { align: "right" });
   };
 
   const buildPdf = () => {
     const doc = new jsPDF();
+
     drawLucyHeader(doc);
+
+    // Bloco de resumo
     doc.setFont("helvetica", "bold");
     doc.setFontSize(12);
     doc.setTextColor(40, 40, 40);
@@ -205,8 +212,9 @@ export default function ReportsPage() {
       yResume + 6
     );
 
+    // Tabela
     const body = financas.map((f) => [
-      new Date(f.data).toLocaleDateString("pt-BR"),
+      new Date(apiDateToLocalYMD(f.data)).toLocaleDateString("pt-BR"),
       f.categoria,
       f.tipo === "receita" ? "Receita" : "Despesa",
       `R$ ${Number(f.valor || 0).toFixed(2).replace(".", ",")}`,
@@ -215,7 +223,7 @@ export default function ReportsPage() {
     autoTable(doc, {
       head: [["Data", "Categoria", "Tipo", "Valor"]],
       body,
-      startY: 50,
+      startY: 50, // abaixo do bloco de resumo
       styles: { fontSize: 10, halign: "center", valign: "middle" },
       headStyles: {
         fillColor: [109, 40, 217],
@@ -223,18 +231,20 @@ export default function ReportsPage() {
         halign: "center",
       },
       alternateRowStyles: { fillColor: [250, 247, 255] },
-      margin: { top: 30, left: 14, right: 14, bottom: 25 },
+      margin: { top: 25, left: 14, right: 14, bottom: 25 }, // respeita header/footer em todas as páginas
       didDrawPage: () => {
         drawLucyHeader(doc);
         drawLucyFooter(doc);
       },
     });
+
     drawLucyFooter(doc);
     return doc;
   };
 
   const pdfFilename = (suffix = "") =>
     `relatorio-financeiro-${userName}${suffix ? `-${suffix}` : ""}.pdf`;
+
   const getPdfBlob = () => buildPdf().output("blob");
   const downloadPdf = () => buildPdf().save(pdfFilename());
 
@@ -307,14 +317,14 @@ export default function ReportsPage() {
           </p>
         </div>
 
-        {/* Filtros */}
+        {/* Filtro com DatePicker */}
         <div className="flex flex-col items-center justify-center bg-white p-6 rounded-2xl shadow-md border border-purple-100">
           <div className="flex flex-col sm:flex-row items-center gap-3">
             <ReactDatePicker
               selected={fromDate}
               onChange={(date) => setFromDate(date)}
               selectsStart
-              startDate={fromDate}
+              startDate={fromDate || undefined}
               endDate={toDate || undefined}
               locale="pt-BR"
               dateFormat="dd/MM/yyyy"
@@ -335,7 +345,7 @@ export default function ReportsPage() {
               onChange={(date) => setToDate(date)}
               selectsEnd
               startDate={fromDate || undefined}
-              endDate={toDate}
+              endDate={toDate || undefined}
               minDate={fromDate || undefined}
               locale="pt-BR"
               dateFormat="dd/MM/yyyy"
@@ -409,6 +419,7 @@ export default function ReportsPage() {
     </div>
   );
 }
+
 
 
 
