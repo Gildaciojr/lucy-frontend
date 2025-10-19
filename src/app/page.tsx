@@ -29,10 +29,6 @@ import ReactDatePicker, { registerLocale } from "react-datepicker";
 import { ptBR as dfnsPtBR } from "date-fns/locale";
 import "react-datepicker/dist/react-datepicker.css";
 
-// 🆕 Calendário responsivo
-import Calendar from "react-calendar";
-import "react-calendar/dist/Calendar.css";
-
 registerLocale("pt-BR", dfnsPtBR);
 
 interface FinanceItem {
@@ -149,12 +145,6 @@ export default function HomePage() {
   const [toDate, setToDate] = useState<Date | null>(null);
   const initialLoadedRef = useRef(false);
 
-  // 🆕 Estado do calendário na Home
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const compromissosDoDia = compromissos.filter(
-    (c) => new Date(c.data).toDateString() === selectedDate.toDateString()
-  );
-
   const parseValor = (v: number | string) =>
     Number.isNaN(Number(v)) ? 0 : Number(v);
 
@@ -218,8 +208,7 @@ export default function HomePage() {
               .slice()
               .sort(
                 (a, b) =>
-                  new Date(b.createdAt).getTime() -
-                  new Date(a.createdAt).getTime()
+                  new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
               )[0].ideia
           : "Nenhuma ideia";
 
@@ -491,78 +480,6 @@ export default function HomePage() {
           </div>
         </Link>
 
-        {/* 📅 Calendário Responsivo — NOVO CARD */}
-        <div className="bg-white rounded-2xl shadow-md border border-purple-100 p-5 sm:p-6">
-          <h3 className="text-lg font-semibold text-purple-700 mb-3 flex items-center gap-2">
-            <FaCalendarAlt className="text-purple-500" />
-            Sua Agenda
-          </h3>
-
-          <div className="flex flex-col lg:flex-row gap-4 items-start">
-            {/* Calendário (sempre cabe no mobile sem scroll lateral) */}
-            <div className="w-full flex justify-center">
-              <div className="w-full max-w-sm sm:max-w-md bg-white border border-purple-100 rounded-xl p-2 sm:p-3 shadow-sm">
-                <Calendar
-                  onChange={(value) => setSelectedDate(value as Date)}
-                  value={selectedDate}
-                  locale="pt-BR"
-                  className="w-full rounded-xl border-0 text-sm sm:text-base"
-                  tileClassName={({ date }) => {
-                    const hasEvent = compromissos.some(
-                      (c) =>
-                        new Date(c.data).toDateString() === date.toDateString()
-                    );
-                    return hasEvent
-                      ? "bg-purple-100 text-purple-700 font-semibold rounded-md"
-                      : "";
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Lista do dia selecionado */}
-            <div className="flex-1 w-full bg-purple-50 p-4 rounded-xl text-purple-700">
-              <h4 className="font-semibold mb-2 text-center sm:text-left">
-                {selectedDate.toLocaleDateString("pt-BR", {
-                  weekday: "long",
-                  day: "2-digit",
-                  month: "long",
-                })}
-              </h4>
-
-              {compromissosDoDia.length === 0 ? (
-                <p className="text-sm text-gray-500 text-center sm:text-left">
-                  Nenhum compromisso neste dia.
-                </p>
-              ) : (
-                <ul className="space-y-2">
-                  {compromissosDoDia.map((c) => (
-                    <li
-                      key={c.id}
-                      className={`flex flex-col sm:flex-row sm:items-center justify-between bg-white px-3 py-2 rounded-lg shadow-sm border ${
-                        c.concluido
-                          ? "border-green-200 text-green-700"
-                          : "border-purple-200 text-purple-700"
-                      }`}
-                    >
-                      <span className="truncate">{c.titulo}</span>
-                      {c.concluido ? (
-                        <span className="text-xs text-green-600 font-semibold mt-1 sm:mt-0">
-                          Concluído
-                        </span>
-                      ) : (
-                        <span className="text-xs text-purple-600 font-semibold mt-1 sm:mt-0">
-                          Pendente
-                        </span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
-        </div>
-
         {/* Gráficos */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white rounded-xl shadow-md p-4">
@@ -673,3 +590,4 @@ export default function HomePage() {
     </div>
   );
 }
+
