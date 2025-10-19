@@ -56,14 +56,14 @@ export default function AgendaPage() {
     }
   };
 
-  // 🗓️ Selecionar data no calendário
+  // 🗓️ Selecionar data
   const handleDateChange: CalendarProps["onChange"] = (value) => {
     if (value instanceof Date) setSelectedDate(value);
     else if (Array.isArray(value)) setSelectedDate(value[0]);
     else setSelectedDate(null);
   };
 
-  // ➕ Adicionar compromisso no banco
+  // ➕ Adicionar compromisso
   const handleAddCompromisso = async () => {
     if (!titulo.trim()) {
       alert("Digite um título para o compromisso.");
@@ -170,24 +170,64 @@ export default function AgendaPage() {
             </div>
           </div>
 
-          {/* 📅 Calendário Responsivo */}
+          {/* 📅 Calendário + Agenda */}
           {isMobile ? (
-            <div className="bg-white rounded-xl shadow-md p-4 w-full">
-              <h3 className="text-base font-semibold text-purple-700 mb-3 flex items-center gap-2">
-                <FaCalendarAlt className="text-purple-600" /> Calendário
-              </h3>
-              <div className="rounded-lg overflow-hidden shadow-inner">
-                <Calendar
-                  onChange={handleDateChange}
-                  value={selectedDate}
-                  locale="pt-BR"
-                  next2Label={null}
-                  prev2Label={null}
-                  className="w-full text-sm"
-                />
+            <>
+              {/* Versão mobile com calendário + card adicionar */}
+              <div className="bg-white rounded-xl shadow-md p-4 w-full">
+                <h3 className="text-base font-semibold text-purple-700 mb-3 flex items-center gap-2">
+                  <FaCalendarAlt className="text-purple-600" /> Calendário
+                </h3>
+                <div className="rounded-lg overflow-hidden shadow-inner">
+                  <Calendar
+                    onChange={handleDateChange}
+                    value={selectedDate}
+                    locale="pt-BR"
+                    next2Label={null}
+                    prev2Label={null}
+                    className="w-full text-sm"
+                  />
+                </div>
               </div>
-            </div>
+
+              {/* ➕ Card Adicionar Compromisso (somente mobile) */}
+              <div className="bg-white rounded-xl shadow-md p-5 border border-purple-100">
+                <h3 className="text-lg font-semibold text-purple-700 mb-3 flex items-center gap-2">
+                  <FaPlus className="text-purple-600" /> Adicionar Compromissos
+                </h3>
+
+                <div className="flex flex-col sm:flex-row items-center gap-3">
+                  <input
+                    type="text"
+                    placeholder="Digite o título do compromisso"
+                    value={titulo}
+                    onChange={(e) => setTitulo(e.target.value)}
+                    className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm sm:text-base"
+                  />
+                  <button
+                    onClick={handleAddCompromisso}
+                    disabled={adding}
+                    className="px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition disabled:bg-gray-400 flex items-center justify-center gap-2"
+                  >
+                    <FaPlus />
+                    {adding ? "Adicionando..." : "Adicionar"}
+                  </button>
+                </div>
+
+                {selectedDate && (
+                  <p className="mt-2 text-sm text-gray-600">
+                    📅 Compromisso para:{" "}
+                    <span className="font-medium text-purple-700">
+                      {selectedDate instanceof Date
+                        ? selectedDate.toLocaleDateString("pt-BR")
+                        : ""}
+                    </span>
+                  </p>
+                )}
+              </div>
+            </>
           ) : (
+            // 💻 Desktop mantém apenas o componente Agenda completo
             <div className="bg-white rounded-xl shadow-md p-6">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-purple-700">
                 <FaCalendarAlt className="text-purple-600" /> Agenda Completa
@@ -195,44 +235,9 @@ export default function AgendaPage() {
               <Agenda />
             </div>
           )}
-
-          {/* ➕ Card Adicionar Compromissos (restaurado) */}
-          <div className="bg-white rounded-xl shadow-md p-5 border border-purple-100">
-            <h3 className="text-lg font-semibold text-purple-700 mb-3 flex items-center gap-2">
-              <FaPlus className="text-purple-600" /> Adicionar Compromissos
-            </h3>
-
-            <div className="flex flex-col sm:flex-row items-center gap-3">
-              <input
-                type="text"
-                placeholder="Digite o título do compromisso"
-                value={titulo}
-                onChange={(e) => setTitulo(e.target.value)}
-                className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm sm:text-base"
-              />
-              <button
-                onClick={handleAddCompromisso}
-                disabled={adding}
-                className="px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition disabled:bg-gray-400 flex items-center justify-center gap-2"
-              >
-                <FaPlus />
-                {adding ? "Adicionando..." : "Adicionar"}
-              </button>
-            </div>
-
-            {selectedDate && (
-              <p className="mt-2 text-sm text-gray-600">
-                📅 Compromisso para:{" "}
-                <span className="font-medium text-purple-700">
-                  {selectedDate instanceof Date
-                    ? selectedDate.toLocaleDateString("pt-BR")
-                    : ""}
-                </span>
-              </p>
-            )}
-          </div>
         </div>
       </main>
     </div>
   );
 }
+
