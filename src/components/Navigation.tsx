@@ -36,12 +36,12 @@ export default function Navigation() {
                 className={`flex flex-col items-center justify-center px-2 py-1 sm:py-2 rounded-xl text-[10px] sm:text-xs font-semibold transition-all duration-150 ${
                   active
                     ? "bg-purple-400 text-white shadow-md scale-105"
-                    : "text-gray-700 hover:bg-purple-200 hover:text-purple-500"
+                    : "text-gray-700 hover:bg-purple-200 hover:text-purple-400"
                 }`}
               >
                 <span
                   className={`text-base sm:text-lg mb-0.5 ${
-                    active ? "text-white" : "text-purple-600/80"
+                    active ? "text-white" : "text-purple-500/80"
                   }`}
                 >
                   {item.icon}
