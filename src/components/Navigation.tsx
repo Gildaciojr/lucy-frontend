@@ -25,7 +25,7 @@ export default function Navigation() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-purple-400 bg-purple-400 backdrop-blur-lg">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-purple-300 bg-white backdrop-blur-lg shadow-md">
       <ul className="flex justify-around items-center max-w-5xl mx-auto px-1 py-1 sm:py-2">
         {NAV.map((item) => {
           const active = pathname === item.href;
@@ -35,8 +35,8 @@ export default function Navigation() {
                 href={item.href}
                 className={`flex flex-col items-center justify-center px-2 py-1 sm:py-2 rounded-xl text-[10px] sm:text-xs font-semibold transition-all duration-150 ${
                   active
-                    ? "bg-purple-400 text-white shadow-md scale-105"
-                    : "text-gray-700 hover:bg-purple-200 hover:text-purple-400"
+                    ? "bg-purple-500 text-white shadow-md scale-105"
+                    : "text-gray-700 hover:bg-purple-100 hover:text-purple-500"
                 }`}
               >
                 <span
