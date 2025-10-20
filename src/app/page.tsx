@@ -10,7 +10,13 @@ import React, {
 } from "react";
 import Link from "next/link";
 import Navigation from "../components/Navigation";
-import { FaSpinner, FaWhatsapp, FaTrophy, FaCalendarAlt } from "react-icons/fa";
+import {
+  FaSpinner,
+  FaWhatsapp,
+  FaTrophy,
+  FaCalendarAlt,
+  FaCheckCircle,
+} from "react-icons/fa";
 import {
   ResponsiveContainer,
   LineChart,
@@ -27,7 +33,9 @@ import {
 import { apiFetch } from "@/lib/api";
 import ReactDatePicker, { registerLocale } from "react-datepicker";
 import { ptBR as dfnsPtBR } from "date-fns/locale";
+import Calendar from "react-calendar";
 import "react-datepicker/dist/react-datepicker.css";
+import "react-calendar/dist/Calendar.css";
 
 registerLocale("pt-BR", dfnsPtBR);
 
@@ -143,6 +151,7 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
   const [fromDate, setFromDate] = useState<Date | null>(null);
   const [toDate, setToDate] = useState<Date | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const initialLoadedRef = useRef(false);
 
   const parseValor = (v: number | string) =>
@@ -208,7 +217,8 @@ export default function HomePage() {
               .slice()
               .sort(
                 (a, b) =>
-                  new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                  new Date(b.createdAt).getTime() -
+                  new Date(a.createdAt).getTime()
               )[0].ideia
           : "Nenhuma ideia";
 
@@ -288,16 +298,16 @@ export default function HomePage() {
       </div>
     );
 
+  const compromissosDoDia = compromissos.filter(
+    (c) => new Date(c.data).toDateString() === selectedDate.toDateString()
+  );
+
   const hoje = new Date();
-  const dataHojeLabel = formatFullPtBR(hoje);
-  const finalMesLabel = formatShortPtBR(endOfCurrentMonth());
   const totalConquistas = gamificacao?.unlockedCount ?? 0;
   const legendaConquistas =
     totalConquistas === 0
       ? "Sem conquistas ainda"
-      : totalConquistas === 1
-        ? "1 conquista"
-        : `${totalConquistas} conquistas`;
+      : `${totalConquistas} conquistas`;
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100 relative">
@@ -338,9 +348,7 @@ export default function HomePage() {
             <button
               key={card.label}
               onClick={card.action}
-              className={`group relative overflow-hidden rounded-xl bg-white shadow-sm hover:shadow-md transform transition-all duration-400 hover:-translate-y-0.5 ${
-                card.active ? `ring-2 ring-${card.color}-400` : ""
-              }`}
+              className={`group relative overflow-hidden rounded-xl bg-white shadow-sm hover:shadow-md transform transition-all duration-400 hover:-translate-y-0.5 ${card.active ? `ring-2 ring-${card.color}-400` : ""}`}
             >
               <div
                 className={`absolute inset-0 bg-gradient-to-br from-${card.color}-50 via-white to-${card.color}-100 opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
@@ -367,7 +375,7 @@ export default function HomePage() {
             Filtro
           </h3>
 
-          {/* Campos de data - iguais Finanças */}
+          {/* Campos de data */}
           <div className="flex flex-col sm:flex-row gap-3 items-center">
             <ReactDatePicker
               selected={fromDate ?? new Date()}
@@ -527,8 +535,6 @@ export default function HomePage() {
           </div>
         </div>
 
-        
-
         {/* Últimas movimentações */}
         <div className="bg-white rounded-xl shadow-md p-4">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">
@@ -560,7 +566,7 @@ export default function HomePage() {
                               : "text-green-600"
                           }`}
                         >
-                          R{"$ "}
+                          R${" "}
                           {Number.isNaN(valorNum) ? "-" : valorNum.toFixed(2)}
                         </td>
                         <td className="px-4 py-2">
@@ -577,6 +583,74 @@ export default function HomePage() {
             </div>
           )}
         </div>
+
+        {/* 🟣 CARD MODERNO “SUA AGENDA” */}
+        <div className="bg-white rounded-2xl shadow-md border border-purple-100 p-5 sm:p-6">
+          <h3 className="text-lg font-semibold text-purple-700 mb-3 flex items-center gap-2">
+            <FaCalendarAlt className="text-purple-500" />
+            Sua Agenda
+          </h3>
+          <div className="flex flex-col lg:flex-row gap-4 items-start">
+            <div className="w-full flex justify-center">
+              <div className="w-full max-w-sm sm:max-w-md bg-white border border-purple-100 rounded-xl p-2 sm:p-3 shadow-sm">
+                <Calendar
+                  onChange={(value) => setSelectedDate(value as Date)}
+                  value={selectedDate}
+                  locale="pt-BR"
+                  className="w-full rounded-xl border-0 text-sm sm:text-base"
+                  tileClassName={({ date }) => {
+                    const hasEvent = compromissos.some(
+                      (c) =>
+                        new Date(c.data).toDateString() === date.toDateString()
+                    );
+                    return hasEvent
+                      ? "bg-purple-100 text-purple-700 font-semibold rounded-md"
+                      : "";
+                  }}
+                />
+              </div>
+            </div>
+            <div className="flex-1 w-full bg-purple-50 p-4 rounded-xl text-purple-700">
+              <h4 className="font-semibold mb-2 text-center sm:text-left">
+                {selectedDate.toLocaleDateString("pt-BR", {
+                  weekday: "long",
+                  day: "2-digit",
+                  month: "long",
+                })}
+              </h4>
+              {compromissosDoDia.length === 0 ? (
+                <p className="text-sm text-gray-500 text-center sm:text-left">
+                  Nenhum compromisso neste dia.
+                </p>
+              ) : (
+                <ul className="space-y-2">
+                  {compromissosDoDia.map((c) => (
+                    <li
+                      key={c.id}
+                      className={`flex flex-col sm:flex-row sm:items-center justify-between bg-white px-3 py-2 rounded-lg shadow-sm border ${
+                        c.concluido
+                          ? "border-green-200 text-green-700"
+                          : "border-purple-200 text-purple-700"
+                      }`}
+                    >
+                      <span className="truncate">{c.titulo}</span>
+                      {c.concluido ? (
+                        <span className="text-xs text-green-600 font-semibold mt-1 sm:mt-0">
+                          <FaCheckCircle className="inline mr-1" />
+                          Concluído
+                        </span>
+                      ) : (
+                        <span className="text-xs text-purple-600 font-semibold mt-1 sm:mt-0">
+                          Pendente
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
       </main>
 
       <Navigation />
@@ -592,4 +666,3 @@ export default function HomePage() {
     </div>
   );
 }
-
