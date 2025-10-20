@@ -2,14 +2,16 @@
 
 import React, { useState } from "react";
 import Agenda from "../../components/Agenda";
-import { FaGoogle, FaSyncAlt } from "react-icons/fa";
+import { FaGoogle, FaSyncAlt, FaCalendarAlt } from "react-icons/fa";
 import { apiFetch } from "@/lib/api";
+import Calendar from "react-calendar";
+import "react-calendar/dist/Calendar.css";
 
 export default function AgendaPage() {
   const [loadingConnect, setLoadingConnect] = useState(false);
   const [loadingSync, setLoadingSync] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
-  // 🚀 Redireciona o usuário para o fluxo OAuth no backend
   const connectGoogleCalendar = async () => {
     try {
       setLoadingConnect(true);
@@ -21,7 +23,6 @@ export default function AgendaPage() {
     }
   };
 
-  // 🔄 Chama o endpoint para sincronizar eventos do Google Calendar com o banco da Lucy
   const syncGoogleCalendar = async () => {
     try {
       setLoadingSync(true);
@@ -37,13 +38,13 @@ export default function AgendaPage() {
         {
           method: "POST",
           headers,
-        },
+        }
       );
 
-      alert(`✅ Sincronização concluída: ${result.imported} novos eventos importados.`);
+      alert(`✅ ${result.imported} novos eventos importados.`);
     } catch (err) {
-      console.error("Erro ao sincronizar Google Calendar:", err);
-      alert("Erro ao sincronizar eventos com o Google Calendar.");
+      console.error("Erro ao sincronizar:", err);
+      alert("Erro ao sincronizar com o Google Calendar.");
     } finally {
       setLoadingSync(false);
     }
@@ -51,24 +52,27 @@ export default function AgendaPage() {
 
   return (
     <div className="flex flex-col min-h-screen p-4 bg-gray-100">
-      {/* Cabeçalho */}
       <header className="py-4 text-center">
-        <div className="p-3 sm:p-4 bg-purple-500 rounded-xl shadow-md transition-colors duration-200 hover:bg-purple-400">
-          <h1 className="text-2xl sm:text-3xl font-bold text-white">Lucy Agenda</h1>
-          <p className="text-gray-100 text-sm sm:text-base">Gerencie sua agenda e compromissos</p>
+        <div className="p-3 sm:p-4 bg-purple-500 rounded-xl shadow-md hover:bg-purple-400 transition">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white">
+            Lucy Agenda
+          </h1>
+          <p className="text-gray-100 text-sm sm:text-base">
+            Gerencie sua agenda e compromissos
+          </p>
         </div>
       </header>
 
       <main className="flex-1 p-4 sm:p-6 flex flex-col items-center space-y-6">
         <div className="w-full max-w-6xl">
-          {/* 🔗 Integração com Google Calendar — versão compacta */}
+          {/* 🔗 Integração Google */}
           <div className="flex flex-col sm:flex-row items-center justify-between bg-white p-3 sm:p-4 rounded-xl shadow border mb-6">
             <div>
               <h2 className="text-base sm:text-lg font-semibold text-gray-800">
                 Integração com Google Calendar
               </h2>
               <p className="text-gray-600 text-xs sm:text-sm">
-                Conecte sua conta Google para importar seus compromissos diretamente na Lucy.
+                Conecte e sincronize seus compromissos automaticamente.
               </p>
             </div>
 
@@ -76,41 +80,56 @@ export default function AgendaPage() {
               <button
                 onClick={connectGoogleCalendar}
                 disabled={loadingConnect}
-                className={`flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 rounded-lg font-semibold text-white transition ${
+                className={`flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 rounded-lg font-semibold text-white ${
                   loadingConnect
-                    ? "bg-gray-400 cursor-not-allowed"
+                    ? "bg-gray-400"
                     : "bg-red-500 hover:bg-red-600"
                 }`}
               >
                 <FaGoogle />
-                <span className="text-sm sm:text-base">
-                  {loadingConnect ? "Conectando..." : "Conectar"}
-                </span>
+                {loadingConnect ? "Conectando..." : "Conectar"}
               </button>
 
               <button
                 onClick={syncGoogleCalendar}
                 disabled={loadingSync}
-                className={`flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 rounded-lg font-semibold text-white transition ${
+                className={`flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 rounded-lg font-semibold text-white ${
                   loadingSync
-                    ? "bg-gray-400 cursor-not-allowed"
+                    ? "bg-gray-400"
                     : "bg-green-600 hover:bg-green-700"
                 }`}
               >
                 <FaSyncAlt />
-                <span className="text-sm sm:text-base">
-                  {loadingSync ? "Sincronizando..." : "Sincronizar"}
-                </span>
+                {loadingSync ? "Sincronizando..." : "Sincronizar"}
               </button>
             </div>
           </div>
 
-          {/* 📅 Apenas o componente da Agenda (responsivo + card de adicionar compromisso original) */}
-          <Agenda />
+          {/* 🟣 Exibe o calendário moderno somente em telas pequenas */}
+          <div className="block sm:hidden">
+            <div className="bg-white rounded-2xl shadow-md border border-purple-100 p-5">
+              <h3 className="text-lg font-semibold text-purple-700 mb-3 flex items-center gap-2">
+                <FaCalendarAlt className="text-purple-500" />
+                Sua Agenda
+              </h3>
+              <Calendar
+                onChange={(value) => setSelectedDate(value as Date)}
+                value={selectedDate}
+                locale="pt-BR"
+                className="w-full rounded-xl border-0 text-sm"
+              />
+            </div>
+          </div>
+
+          {/* 🖥️ Exibe o componente completo apenas no desktop */}
+          <div className="hidden sm:block">
+            <Agenda />
+          </div>
         </div>
       </main>
     </div>
   );
 }
+
 
 
