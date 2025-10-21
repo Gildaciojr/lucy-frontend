@@ -4,6 +4,7 @@ import Conteudo from "@/components/Conteudo";
 import { useState } from "react";
 import { FaCamera, FaTimes } from "react-icons/fa";
 import { apiFetch } from "@/lib/api";
+import Image from "next/image";
 
 export default function ConteudoPage() {
   const [imagens, setImagens] = useState<string[]>([]);
@@ -20,11 +21,14 @@ export default function ConteudoPage() {
     try {
       setUploading(true);
       const token = localStorage.getItem("auth_token");
-      const result = await apiFetch<{ url: string }>("/conteudo/upload", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
+      const result = await apiFetch<{ url: string; id?: number }>(
+        "/conteudo/upload",
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        }
+      );
       setImagens((prev) => [result.url, ...prev]);
     } catch (err) {
       console.error(err);
@@ -83,9 +87,12 @@ export default function ConteudoPage() {
                     key={i}
                     className="relative group overflow-hidden rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all"
                   >
-                    <img
+                    <Image
                       src={url}
                       alt={`Imagem ${i + 1}`}
+                      width={600}
+                      height={400}
+                      unoptimized
                       className="w-full h-40 object-cover cursor-pointer group-hover:scale-105 transition-transform"
                       onClick={() => setPreview(url)}
                     />
@@ -103,9 +110,12 @@ export default function ConteudoPage() {
                   >
                     <FaTimes className="text-lucy" />
                   </button>
-                  <img
+                  <Image
                     src={preview}
                     alt="Visualização"
+                    width={1600}
+                    height={1000}
+                    unoptimized
                     className="w-full max-h-[80vh] object-contain rounded-lg"
                   />
                 </div>

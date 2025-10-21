@@ -8,7 +8,7 @@ export default function FinancasPage() {
       <header className="py-4 text-center">
         <div className="p-4 bg-lucy rounded-xl shadow-md transition-colors duration-200 hover:bg-purple-200 cursor-pointer">
           <h1 className="text-3xl font-bold text-white">Lucy Finance</h1>
-          <p className="text-black">Controle suas finanças pessoais</p>
+          <p className="text-white">Controle suas finanças pessoais</p>
         </div>
       </header>
       <main className="flex-1 p-6 flex flex-col items-center">
