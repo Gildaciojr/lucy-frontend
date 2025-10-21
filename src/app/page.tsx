@@ -16,9 +16,6 @@ import {
   FaTrophy,
   FaCalendarAlt,
   FaCheckCircle,
-  FaArrowDown,
-  FaMoneyBillWave,
-  FaBalanceScale,
 } from "react-icons/fa";
 import {
   ResponsiveContainer,
@@ -42,6 +39,7 @@ import "react-calendar/dist/Calendar.css";
 
 registerLocale("pt-BR", dfnsPtBR);
 
+// Interfaces
 interface FinanceItem {
   id: number;
   categoria: string;
@@ -84,11 +82,23 @@ interface SummaryData {
   chartData: ChartItem[];
   financasRecentes: FinanceItem[];
 }
-
 type TipoFilter = "all" | "receita" | "despesa";
+
 const COLORS = ["#6d28d9", "#22c55e", "#facc15", "#ef4444"];
 
+// Utilitários
 const pad2 = (n: number) => String(n).padStart(2, "0");
+const toYMD = (d: Date) =>
+  `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+const formatFullPtBR = (d: Date) =>
+  d.toLocaleDateString("pt-BR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+const endOfCurrentMonth = () =>
+  new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
 const formatShortPtBR = (d: Date) =>
   d.toLocaleDateString("pt-BR", {
     day: "2-digit",
@@ -96,9 +106,7 @@ const formatShortPtBR = (d: Date) =>
     year: "numeric",
   });
 
-const endOfCurrentMonth = () =>
-  new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
-
+// Botão de seleção de data (customizado)
 const DatePill = forwardRef(
   (
     {
@@ -124,6 +132,7 @@ const DatePill = forwardRef(
 );
 DatePill.displayName = "DatePill";
 
+// Página principal
 export default function HomePage() {
   const [tipoFilter, setTipoFilter] = useState<TipoFilter>("all");
   const [financasRaw, setFinancasRaw] = useState<FinanceItem[]>([]);
@@ -150,6 +159,7 @@ export default function HomePage() {
   const parseValor = (v: number | string) =>
     Number.isNaN(Number(v)) ? 0 : Number(v);
 
+  // 🔹 Monta a URL de busca de finanças
   const buildFinancasUrl = useCallback(() => {
     const qs = new URLSearchParams();
     const normalizeDate = (d: Date, isEnd = false) => {
@@ -173,6 +183,7 @@ export default function HomePage() {
     [tipoFilter]
   );
 
+  // 🔹 Recalcula os cards e gráficos
   const recomputeSummary = useCallback(
     (
       financasBase: FinanceItem[],
@@ -180,31 +191,39 @@ export default function HomePage() {
       conteudoData: Conteudo[]
     ) => {
       const financas = filterByTipo(financasBase);
-      const totalReceitas = financas
-        .filter((f) => f.tipo === "receita")
-        .reduce((sum, f) => sum + parseValor(f.valor), 0);
-      const totalDespesas = financas
-        .filter((f) => f.tipo === "despesa")
-        .reduce((sum, f) => sum + parseValor(f.valor), 0);
+      let totalReceitas = 0;
+      let totalDespesas = 0;
+
+      financas.forEach((f) => {
+        const valorNum = parseValor(f.valor);
+        if (f.tipo === "despesa") totalDespesas += Math.abs(valorNum);
+        else totalReceitas += Math.abs(valorNum);
+      });
+
       const saldo = totalReceitas - totalDespesas;
 
       const proximoCompromisso =
         compromissosData.length > 0
-          ? compromissosData.sort(
-              (a, b) => new Date(a.data).getTime() - new Date(b.data).getTime()
-            )[0].titulo
+          ? compromissosData
+              .slice()
+              .sort(
+                (a, b) =>
+                  new Date(a.data).getTime() - new Date(b.data).getTime()
+              )[0].titulo
           : "Nenhum agendado";
 
       const ultimaIdeia =
         conteudoData.length > 0
-          ? conteudoData.sort(
-              (a, b) =>
-                new Date(b.createdAt).getTime() -
-                new Date(a.createdAt).getTime()
-            )[0].ideia
+          ? conteudoData
+              .slice()
+              .sort(
+                (a, b) =>
+                  new Date(b.createdAt).getTime() -
+                  new Date(a.createdAt).getTime()
+              )[0].ideia
           : "Nenhuma ideia";
 
-      const chartData = [
+      const chartData: ChartItem[] = [
         { name: "Finanças", uso: financas.length },
         { name: "Agenda", uso: compromissosData.length },
         { name: "Conteúdo", uso: conteudoData.length },
@@ -228,6 +247,7 @@ export default function HomePage() {
     [filterByTipo]
   );
 
+  // 🔹 Busca dados do backend
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
@@ -241,15 +261,14 @@ export default function HomePage() {
           apiFetch<Conteudo[]>("/conteudo", { headers }),
           apiFetch<GamificacaoSummary>("/gamificacao", { headers }),
         ]);
-
       setFinancasRaw(financasData);
       setCompromissos(compromissosData);
       setConteudo(conteudoData);
       setGamificacao(gamificacaoData);
       recomputeSummary(financasData, compromissosData, conteudoData);
       initialLoadedRef.current = true;
-    } catch (err) {
-      console.error("Erro ao carregar dados:", err);
+    } catch (err: unknown) {
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -261,11 +280,15 @@ export default function HomePage() {
 
   useEffect(() => {
     if (initialLoadedRef.current) loadData();
-  }, [fromDate, toDate, tipoFilter, loadData]);
+  }, [fromDate, toDate, loadData]);
 
-  const compromissosDoDia = compromissos.filter(
-    (c) => new Date(c.data).toDateString() === selectedDate.toDateString()
-  );
+  // 🔹 Limpar filtros
+  const onClearFilters = () => {
+    setFromDate(null);
+    setToDate(null);
+    setTipoFilter("all");
+    loadData();
+  };
 
   const toggleTipo = (t: Exclude<TipoFilter, "all">) =>
     setTipoFilter((prev) => (prev === t ? "all" : t));
@@ -278,113 +301,123 @@ export default function HomePage() {
       </div>
     );
 
+  const compromissosDoDia = compromissos.filter(
+    (c) => new Date(c.data).toDateString() === selectedDate.toDateString()
+  );
+
   const totalConquistas = gamificacao?.unlockedCount ?? 0;
   const legendaConquistas =
     totalConquistas === 0
       ? "Sem conquistas ainda"
-      : `${totalConquistas} conquistas`;
+      : totalConquistas === 1
+        ? "1 conquista"
+        : `${totalConquistas} conquistas`;
 
+  // === Layout ===
   return (
     <div className="flex flex-col min-h-screen bg-gray-100 relative">
       <main className="flex-1 p-4 sm:p-6 flex flex-col mb-20 space-y-6">
-        {/* 💰 Cards com gráficos pequenos */}
+        {/* 🟣 Cards principais */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
           {[
             {
               label: "Receitas",
-              value: summary.totalReceitas,
+              value: `R$ ${summary.totalReceitas.toFixed(2)}`,
               color: "green",
-              icon: <FaMoneyBillWave />,
-              tipo: "receita",
+              active: tipoFilter === "receita",
+              action: () => toggleTipo("receita"),
             },
             {
               label: "Despesas",
-              value: summary.totalDespesas,
+              value: `R$ ${summary.totalDespesas.toFixed(2)}`,
               color: "red",
-              icon: <FaArrowDown />,
-              tipo: "despesa",
+              active: tipoFilter === "despesa",
+              action: () => toggleTipo("despesa"),
             },
             {
               label: "Saldo",
-              value: summary.saldo,
+              value: `R$ ${summary.saldo.toFixed(2)}`,
               color: summary.saldo >= 0 ? "blue" : "orange",
-              icon: <FaBalanceScale />,
             },
-          ].map((c) => (
+            {
+              label: "Próximo Compromisso",
+              value: summary.proximoCompromisso,
+              color: "purple",
+            },
+            {
+              label: "Última Ideia",
+              value: summary.ultimaIdeia,
+              color: "pink",
+            },
+          ].map((card) => (
             <button
-              key={c.label}
-              onClick={() =>
-                c.tipo && toggleTipo(c.tipo as Exclude<TipoFilter, "all">)
-              }
-              className={`group relative rounded-xl bg-white shadow-sm hover:shadow-md p-3 sm:p-4 transition-all ${
-                tipoFilter === c.tipo ? `ring-2 ring-${c.color}-400` : ""
+              key={card.label}
+              onClick={card.action}
+              className={`group relative overflow-hidden rounded-xl bg-white shadow-sm hover:shadow-md transform transition-all duration-400 hover:-translate-y-0.5 ${
+                card.active ? `ring-2 ring-${card.color}-400` : ""
               }`}
             >
-              <div className="flex items-center gap-3">
-                <div
-                  className={`p-3 rounded-full bg-${c.color}-100 text-${c.color}-600`}
+              <div
+                className={`absolute inset-0 bg-gradient-to-br from-${card.color}-50 via-white to-${card.color}-100 opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
+              />
+              <div className="relative z-10 px-3 py-3 sm:px-4 sm:py-4 text-center">
+                <h4 className="text-[0.65rem] sm:text-xs font-semibold text-gray-500">
+                  {card.label}
+                </h4>
+                <p
+                  className={`text-sm sm:text-base font-extrabold mt-1 text-${card.color}-600 group-hover:text-${card.color}-700 transition-colors duration-300 truncate`}
+                  title={card.value}
                 >
-                  {c.icon}
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-600">
-                    {c.label}
-                  </h4>
-                  <p className={`text-lg font-bold text-${c.color}-700`}>
-                    R$ {c.value.toFixed(2).replace(".", ",")}
-                  </p>
-                </div>
+                  {card.value}
+                </p>
               </div>
             </button>
           ))}
         </div>
 
-        {/* 🔹 Filtros de data */}
+        {/* 🔹 Barra de filtros “Hoje / Semana / Mês” */}
         <div className="bg-white rounded-xl shadow-md p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <h3 className="text-base sm:text-lg font-semibold text-lucy flex items-center gap-2">
             <FaCalendarAlt className="text-lucy" />
-            Filtro
+            Filtro de período
           </h3>
-          <div className="flex flex-wrap gap-3 items-center justify-center sm:justify-start">
-            <ReactDatePicker
-              selected={fromDate ?? new Date()}
-              onChange={(date) => setFromDate(date ?? new Date())}
-              selectsStart
-              startDate={fromDate ?? new Date()}
-              endDate={toDate ?? undefined}
-              locale="pt-BR"
-              dateFormat="dd/MM/yyyy"
-              customInput={
-                <DatePill value={formatShortPtBR(fromDate ?? new Date())} />
-              }
-            />
-            <ReactDatePicker
-              selected={toDate}
-              onChange={(date) => setToDate(date)}
-              selectsEnd
-              startDate={fromDate ?? new Date()}
-              endDate={toDate ?? undefined}
-              minDate={fromDate ?? undefined}
-              locale="pt-BR"
-              dateFormat="dd/MM/yyyy"
-              customInput={
-                <DatePill
-                  label="Até"
-                  value={
-                    toDate
-                      ? formatShortPtBR(toDate)
-                      : formatShortPtBR(endOfCurrentMonth())
-                  }
-                />
-              }
-            />
+
+          <div className="flex flex-wrap gap-2 justify-center sm:justify-start mt-2 sm:mt-0">
             <button
               onClick={() => {
-                setFromDate(null);
-                setToDate(null);
-                setTipoFilter("all");
-                loadData();
+                const today = new Date();
+                setFromDate(today);
+                setToDate(today);
               }}
+              className="px-3 py-2 rounded-lg bg-lucy text-white font-semibold hover:bg-lucy"
+            >
+              Hoje
+            </button>
+            <button
+              onClick={() => {
+                const end = new Date();
+                const start = new Date();
+                start.setDate(end.getDate() - 7);
+                setFromDate(start);
+                setToDate(end);
+              }}
+              className="px-3 py-2 rounded-lg bg-lucy text-white font-semibold hover:bg-lucy"
+            >
+              Semana
+            </button>
+            <button
+              onClick={() => {
+                const end = new Date();
+                const start = new Date(end.getFullYear(), end.getMonth(), 1);
+                setFromDate(start);
+                setToDate(end);
+              }}
+              className="px-3 py-2 rounded-lg bg-lucy text-white font-semibold hover:bg-lucy"
+            >
+              Mês
+            </button>
+            <button
+              onClick={onClearFilters}
               className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium transition-colors"
             >
               Limpar
@@ -410,11 +443,11 @@ export default function HomePage() {
           </div>
         </Link>
 
-        {/* 📊 Gráficos */}
+        {/* Gráficos */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white rounded-xl shadow-md p-4">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">
-              Resumo de Atividades
+              Resumo de atividades
             </h3>
             <ResponsiveContainer width="100%" height={250}>
               <LineChart data={summary.chartData}>
@@ -422,7 +455,13 @@ export default function HomePage() {
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
-                <Line type="monotone" dataKey="uso" stroke="#6d28d9" />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey="uso"
+                  stroke="#6d28d9"
+                  activeDot={{ r: 8 }}
+                />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -445,12 +484,13 @@ export default function HomePage() {
                   ))}
                 </Pie>
                 <Tooltip />
+                <Legend />
               </PieChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* 📋 Últimas movimentações */}
+        {/* Últimas movimentações */}
         <div className="bg-white rounded-xl shadow-md p-4">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">
             Últimas movimentações financeiras
@@ -472,7 +512,7 @@ export default function HomePage() {
                   {summary.financasRecentes.map((f) => {
                     const valorNum = parseValor(f.valor);
                     return (
-                      <tr key={`${f.id}-${f.data}`}>
+                      <tr key={`${f.origem}-${f.id}`}>
                         <td className="px-4 py-2">{f.categoria}</td>
                         <td
                           className={`px-4 py-2 ${
@@ -481,12 +521,13 @@ export default function HomePage() {
                               : "text-green-600"
                           }`}
                         >
-                          R$ {valorNum.toFixed(2).replace(".", ",")}
+                          R${" "}
+                          {Number.isNaN(valorNum) ? "-" : valorNum.toFixed(2)}
                         </td>
                         <td className="px-4 py-2">
                           {new Date(f.data).toLocaleDateString("pt-BR")}
                         </td>
-                        <td className="px-4 py-2 capitalize">
+                        <td className="px-4 py-2">
                           {f.origem === "whatsapp" ? "WhatsApp" : "Dashboard"}
                         </td>
                       </tr>
@@ -498,7 +539,7 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* 🟣 CARD MODERNO “SUA AGENDA” */}
+        {/* 🟣 Sua Agenda */}
         <div className="bg-white rounded-2xl shadow-md border border-purple-100 p-5 sm:p-6">
           <h3 className="text-lg font-semibold text-lucy mb-3 flex items-center gap-2">
             <FaCalendarAlt className="text-lucy" />
@@ -512,24 +553,18 @@ export default function HomePage() {
                   value={selectedDate}
                   locale="pt-BR"
                   className="w-full rounded-xl border-0 text-sm sm:text-base"
-                  tileContent={({ date }) => {
-                    const compromissosDoDia = compromissos.filter(
+                  tileClassName={({ date }) => {
+                    const hasEvent = compromissos.some(
                       (c) =>
                         new Date(c.data).toDateString() === date.toDateString()
                     );
-                    if (compromissosDoDia.length > 0) {
-                      return (
-                        <div className="flex justify-center mt-1">
-                          <div className="w-2 h-2 rounded-full bg-lucy" />
-                        </div>
-                      );
-                    }
-                    return null;
+                    return hasEvent
+                      ? "bg-purple-100 text-purple-700 font-semibold rounded-md"
+                      : "";
                   }}
                 />
               </div>
             </div>
-
             <div className="flex-1 w-full bg-purple-50 p-4 rounded-xl text-lucy">
               <h4 className="font-semibold mb-2 text-center sm:text-left">
                 {selectedDate.toLocaleDateString("pt-BR", {
@@ -550,7 +585,7 @@ export default function HomePage() {
                       className={`flex flex-col sm:flex-row sm:items-center justify-between bg-white px-3 py-2 rounded-lg shadow-sm border ${
                         c.concluido
                           ? "border-green-200 text-green-700"
-                          : "border-purple-200 text-lucy"
+                          : "border-purple-200 text-purple-700"
                       }`}
                     >
                       <span className="truncate">{c.titulo}</span>
@@ -575,6 +610,7 @@ export default function HomePage() {
 
       <Navigation />
 
+      {/* Botão WhatsApp */}
       <a
         href="https://wa.me/message/JQ6SLHBNNAAHG1"
         target="_blank"
