@@ -16,6 +16,9 @@ import {
   FaTrophy,
   FaCalendarAlt,
   FaCheckCircle,
+  FaArrowDown,
+  FaMoneyBillWave,
+  FaBalanceScale,
 } from "react-icons/fa";
 import {
   ResponsiveContainer,
@@ -81,28 +84,20 @@ interface SummaryData {
   chartData: ChartItem[];
   financasRecentes: FinanceItem[];
 }
-type TipoFilter = "all" | "receita" | "despesa";
 
+type TipoFilter = "all" | "receita" | "despesa";
 const COLORS = ["#6d28d9", "#22c55e", "#facc15", "#ef4444"];
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
-const toYMD = (d: Date) =>
-  `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
-const formatFullPtBR = (d: Date) =>
-  d.toLocaleDateString("pt-BR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-const endOfCurrentMonth = () =>
-  new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
 const formatShortPtBR = (d: Date) =>
   d.toLocaleDateString("pt-BR", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
   });
+
+const endOfCurrentMonth = () =>
+  new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
 
 const DatePill = forwardRef(
   (
@@ -147,8 +142,6 @@ export default function HomePage() {
     financasRecentes: [],
   });
   const [loading, setLoading] = useState(true);
-  const [loadingFinancas, setLoadingFinancas] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [fromDate, setFromDate] = useState<Date | null>(null);
   const [toDate, setToDate] = useState<Date | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -159,7 +152,6 @@ export default function HomePage() {
 
   const buildFinancasUrl = useCallback(() => {
     const qs = new URLSearchParams();
-
     const normalizeDate = (d: Date, isEnd = false) => {
       const local = new Date(d);
       local.setHours(
@@ -170,10 +162,8 @@ export default function HomePage() {
       );
       return local.toISOString().split("T")[0];
     };
-
     if (fromDate) qs.set("from", normalizeDate(fromDate));
     if (toDate) qs.set("to", normalizeDate(toDate, true));
-
     return `/financas${qs.toString() ? `?${qs.toString()}` : ""}`;
   }, [fromDate, toDate]);
 
@@ -190,39 +180,31 @@ export default function HomePage() {
       conteudoData: Conteudo[]
     ) => {
       const financas = filterByTipo(financasBase);
-      let totalReceitas = 0;
-      let totalDespesas = 0;
-
-      financas.forEach((f) => {
-        const valorNum = parseValor(f.valor);
-        if (f.tipo === "despesa") totalDespesas += Math.abs(valorNum);
-        else totalReceitas += Math.abs(valorNum);
-      });
-
+      const totalReceitas = financas
+        .filter((f) => f.tipo === "receita")
+        .reduce((sum, f) => sum + parseValor(f.valor), 0);
+      const totalDespesas = financas
+        .filter((f) => f.tipo === "despesa")
+        .reduce((sum, f) => sum + parseValor(f.valor), 0);
       const saldo = totalReceitas - totalDespesas;
 
       const proximoCompromisso =
         compromissosData.length > 0
-          ? compromissosData
-              .slice()
-              .sort(
-                (a, b) =>
-                  new Date(a.data).getTime() - new Date(b.data).getTime()
-              )[0].titulo
+          ? compromissosData.sort(
+              (a, b) => new Date(a.data).getTime() - new Date(b.data).getTime()
+            )[0].titulo
           : "Nenhum agendado";
 
       const ultimaIdeia =
         conteudoData.length > 0
-          ? conteudoData
-              .slice()
-              .sort(
-                (a, b) =>
-                  new Date(b.createdAt).getTime() -
-                  new Date(a.createdAt).getTime()
-              )[0].ideia
+          ? conteudoData.sort(
+              (a, b) =>
+                new Date(b.createdAt).getTime() -
+                new Date(a.createdAt).getTime()
+            )[0].ideia
           : "Nenhuma ideia";
 
-      const chartData: ChartItem[] = [
+      const chartData = [
         { name: "Finanças", uso: financas.length },
         { name: "Agenda", uso: compromissosData.length },
         { name: "Conteúdo", uso: conteudoData.length },
@@ -259,14 +241,15 @@ export default function HomePage() {
           apiFetch<Conteudo[]>("/conteudo", { headers }),
           apiFetch<GamificacaoSummary>("/gamificacao", { headers }),
         ]);
+
       setFinancasRaw(financasData);
       setCompromissos(compromissosData);
       setConteudo(conteudoData);
       setGamificacao(gamificacaoData);
       recomputeSummary(financasData, compromissosData, conteudoData);
       initialLoadedRef.current = true;
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Erro ao carregar dados.");
+    } catch (err) {
+      console.error("Erro ao carregar dados:", err);
     } finally {
       setLoading(false);
     }
@@ -278,14 +261,11 @@ export default function HomePage() {
 
   useEffect(() => {
     if (initialLoadedRef.current) loadData();
-  }, [fromDate, toDate, loadData]);
+  }, [fromDate, toDate, tipoFilter, loadData]);
 
-  const onClearFilters = () => {
-    setFromDate(null);
-    setToDate(null);
-    setTipoFilter("all");
-    loadData();
-  };
+  const compromissosDoDia = compromissos.filter(
+    (c) => new Date(c.data).toDateString() === selectedDate.toDateString()
+  );
 
   const toggleTipo = (t: Exclude<TipoFilter, "all">) =>
     setTipoFilter((prev) => (prev === t ? "all" : t));
@@ -298,11 +278,6 @@ export default function HomePage() {
       </div>
     );
 
-  const compromissosDoDia = compromissos.filter(
-    (c) => new Date(c.data).toDateString() === selectedDate.toDateString()
-  );
-
-  const hoje = new Date();
   const totalConquistas = gamificacao?.unlockedCount ?? 0;
   const legendaConquistas =
     totalConquistas === 0
@@ -312,71 +287,65 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-100 relative">
       <main className="flex-1 p-4 sm:p-6 flex flex-col mb-20 space-y-6">
-        {/* 🟣 Cards menores e interativos */}
+        {/* 💰 Cards com gráficos pequenos */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
           {[
             {
               label: "Receitas",
-              value: `R$ ${summary.totalReceitas.toFixed(2)}`,
+              value: summary.totalReceitas,
               color: "green",
-              active: tipoFilter === "receita",
-              action: () => toggleTipo("receita"),
+              icon: <FaMoneyBillWave />,
+              tipo: "receita",
             },
             {
               label: "Despesas",
-              value: `R$ ${summary.totalDespesas.toFixed(2)}`,
+              value: summary.totalDespesas,
               color: "red",
-              active: tipoFilter === "despesa",
-              action: () => toggleTipo("despesa"),
+              icon: <FaArrowDown />,
+              tipo: "despesa",
             },
             {
               label: "Saldo",
-              value: `R$ ${summary.saldo.toFixed(2)}`,
+              value: summary.saldo,
               color: summary.saldo >= 0 ? "blue" : "orange",
+              icon: <FaBalanceScale />,
             },
-            {
-              label: "Próximo Compromisso",
-              value: summary.proximoCompromisso,
-              color: "purple",
-            },
-            {
-              label: "Última Ideia",
-              value: summary.ultimaIdeia,
-              color: "pink",
-            },
-          ].map((card) => (
+          ].map((c) => (
             <button
-              key={card.label}
-              onClick={card.action}
-              className={`group relative overflow-hidden rounded-xl bg-white shadow-sm hover:shadow-md transform transition-all duration-400 hover:-translate-y-0.5 ${card.active ? `ring-2 ring-${card.color}-400` : ""}`}
+              key={c.label}
+              onClick={() =>
+                c.tipo && toggleTipo(c.tipo as Exclude<TipoFilter, "all">)
+              }
+              className={`group relative rounded-xl bg-white shadow-sm hover:shadow-md p-3 sm:p-4 transition-all ${
+                tipoFilter === c.tipo ? `ring-2 ring-${c.color}-400` : ""
+              }`}
             >
-              <div
-                className={`absolute inset-0 bg-gradient-to-br from-${card.color}-50 via-white to-${card.color}-100 opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
-              />
-              <div className="relative z-10 px-3 py-3 sm:px-4 sm:py-4 text-center">
-                <h4 className="text-[0.65rem] sm:text-xs font-semibold text-gray-500">
-                  {card.label}
-                </h4>
-                <p
-                  className={`text-sm sm:text-base font-extrabold mt-1 text-${card.color}-600 group-hover:text-${card.color}-700 transition-colors duration-300 truncate`}
-                  title={card.value}
+              <div className="flex items-center gap-3">
+                <div
+                  className={`p-3 rounded-full bg-${c.color}-100 text-${c.color}-600`}
                 >
-                  {card.value}
-                </p>
+                  {c.icon}
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-600">
+                    {c.label}
+                  </h4>
+                  <p className={`text-lg font-bold text-${c.color}-700`}>
+                    R$ {c.value.toFixed(2).replace(".", ",")}
+                  </p>
+                </div>
               </div>
             </button>
           ))}
         </div>
 
-        {/* 🔹 Barra de Filtro “De / Até” com datas e botões automáticos */}
+        {/* 🔹 Filtros de data */}
         <div className="bg-white rounded-xl shadow-md p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <h3 className="text-base sm:text-lg font-semibold text-lucy flex items-center gap-2">
             <FaCalendarAlt className="text-lucy" />
             Filtro
           </h3>
-
-          {/* Campos de data */}
-          <div className="flex flex-col sm:flex-row gap-3 items-center">
+          <div className="flex flex-wrap gap-3 items-center justify-center sm:justify-start">
             <ReactDatePicker
               selected={fromDate ?? new Date()}
               onChange={(date) => setFromDate(date ?? new Date())}
@@ -386,16 +355,9 @@ export default function HomePage() {
               locale="pt-BR"
               dateFormat="dd/MM/yyyy"
               customInput={
-                <DatePill
-                  label=""
-                  value={formatShortPtBR(fromDate ?? new Date())}
-                  title="Selecionar data inicial"
-                />
+                <DatePill value={formatShortPtBR(fromDate ?? new Date())} />
               }
-              popperPlacement="bottom-start"
-              showPopperArrow={false}
             />
-
             <ReactDatePicker
               selected={toDate}
               onChange={(date) => setToDate(date)}
@@ -413,58 +375,21 @@ export default function HomePage() {
                       ? formatShortPtBR(toDate)
                       : formatShortPtBR(endOfCurrentMonth())
                   }
-                  title="Selecionar data final"
                 />
               }
-              popperPlacement="bottom-end"
-              showPopperArrow={false}
             />
-          </div>
-
-          {/* Botões rápidos */}
-          <div className="flex flex-wrap gap-2 justify-center sm:justify-start mt-2 sm:mt-0">
             <button
               onClick={() => {
-                const today = new Date();
-                setFromDate(today);
-                setToDate(today);
+                setFromDate(null);
+                setToDate(null);
+                setTipoFilter("all");
+                loadData();
               }}
-              className="px-3 py-2 rounded-lg bg-lucy text-white font-semibold hover:bg-lucy"
+              className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium transition-colors"
             >
-              Hoje
-            </button>
-            <button
-              onClick={() => {
-                const end = new Date();
-                const start = new Date();
-                start.setDate(end.getDate() - 7);
-                setFromDate(start);
-                setToDate(end);
-              }}
-              className="px-3 py-2 rounded-lg bg-lucy text-white font-semibold hover:bg-lucy"
-            >
-              Semana
-            </button>
-            <button
-              onClick={() => {
-                const end = new Date();
-                const start = new Date(end.getFullYear(), end.getMonth(), 1);
-                setFromDate(start);
-                setToDate(end);
-              }}
-              className="px-3 py-2 rounded-lg bg-lucy text-white font-semibold hover:bg-lucy"
-            >
-              Mês
+              Limpar
             </button>
           </div>
-
-          <button
-            onClick={onClearFilters}
-            className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium transition-colors"
-            type="button"
-          >
-            Limpar
-          </button>
         </div>
 
         {/* 🏆 Gamificação */}
@@ -482,17 +407,14 @@ export default function HomePage() {
                 {legendaConquistas} • Toque para ver suas metas e conquistas
               </p>
             </div>
-            <div className="text-xs sm:text-sm font-semibold bg-white/20 px-3 py-1 rounded-full">
-              Ver página
-            </div>
           </div>
         </Link>
 
-        {/* Gráficos */}
+        {/* 📊 Gráficos */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white rounded-xl shadow-md p-4">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">
-              Resumo de atividades
+              Resumo de Atividades
             </h3>
             <ResponsiveContainer width="100%" height={250}>
               <LineChart data={summary.chartData}>
@@ -500,13 +422,7 @@ export default function HomePage() {
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
-                <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="uso"
-                  stroke="#6d28d9"
-                  activeDot={{ r: 8 }}
-                />
+                <Line type="monotone" dataKey="uso" stroke="#6d28d9" />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -529,13 +445,12 @@ export default function HomePage() {
                   ))}
                 </Pie>
                 <Tooltip />
-                <Legend />
               </PieChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Últimas movimentações */}
+        {/* 📋 Últimas movimentações */}
         <div className="bg-white rounded-xl shadow-md p-4">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">
             Últimas movimentações financeiras
@@ -557,7 +472,7 @@ export default function HomePage() {
                   {summary.financasRecentes.map((f) => {
                     const valorNum = parseValor(f.valor);
                     return (
-                      <tr key={`${f.origem}-${f.id}`}>
+                      <tr key={`${f.id}-${f.data}`}>
                         <td className="px-4 py-2">{f.categoria}</td>
                         <td
                           className={`px-4 py-2 ${
@@ -566,13 +481,12 @@ export default function HomePage() {
                               : "text-green-600"
                           }`}
                         >
-                          R${" "}
-                          {Number.isNaN(valorNum) ? "-" : valorNum.toFixed(2)}
+                          R$ {valorNum.toFixed(2).replace(".", ",")}
                         </td>
                         <td className="px-4 py-2">
                           {new Date(f.data).toLocaleDateString("pt-BR")}
                         </td>
-                        <td className="px-4 py-2">
+                        <td className="px-4 py-2 capitalize">
                           {f.origem === "whatsapp" ? "WhatsApp" : "Dashboard"}
                         </td>
                       </tr>
@@ -598,18 +512,24 @@ export default function HomePage() {
                   value={selectedDate}
                   locale="pt-BR"
                   className="w-full rounded-xl border-0 text-sm sm:text-base"
-                  tileClassName={({ date }) => {
-                    const hasEvent = compromissos.some(
+                  tileContent={({ date }) => {
+                    const compromissosDoDia = compromissos.filter(
                       (c) =>
                         new Date(c.data).toDateString() === date.toDateString()
                     );
-                    return hasEvent
-                      ? "bg-purple-100 text-purple-700 font-semibold rounded-md"
-                      : "";
+                    if (compromissosDoDia.length > 0) {
+                      return (
+                        <div className="flex justify-center mt-1">
+                          <div className="w-2 h-2 rounded-full bg-lucy" />
+                        </div>
+                      );
+                    }
+                    return null;
                   }}
                 />
               </div>
             </div>
+
             <div className="flex-1 w-full bg-purple-50 p-4 rounded-xl text-lucy">
               <h4 className="font-semibold mb-2 text-center sm:text-left">
                 {selectedDate.toLocaleDateString("pt-BR", {

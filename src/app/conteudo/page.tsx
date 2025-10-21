@@ -3,7 +3,6 @@
 import Conteudo from "@/components/Conteudo";
 import { useState } from "react";
 import { FaCamera, FaTimes } from "react-icons/fa";
-import { apiFetch } from "@/lib/api";
 import Image from "next/image";
 
 export default function ConteudoPage() {
@@ -21,14 +20,22 @@ export default function ConteudoPage() {
     try {
       setUploading(true);
       const token = localStorage.getItem("auth_token");
-      const result = await apiFetch<{ url: string; id?: number }>(
-        "/conteudo/upload",
+
+      // ✅ Envio direto, evitando apiFetch (que força JSON)
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/conteudo/upload`,
         {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
           body: formData,
         }
       );
+
+      if (!response.ok) {
+        throw new Error(`Erro ao enviar: ${response.status}`);
+      }
+
+      const result = await response.json();
       setImagens((prev) => [result.url, ...prev]);
     } catch (err) {
       console.error(err);
@@ -56,7 +63,7 @@ export default function ConteudoPage() {
           {/* Card original de ideias */}
           <Conteudo />
 
-          {/* 🟣 Novo Card de Upload de Imagens */}
+          {/* 🟣 Card de Upload */}
           <div className="bg-white rounded-2xl shadow-md border border-lucy/30 p-5 sm:p-6">
             <h3 className="text-lg font-semibold text-lucy mb-4 flex items-center gap-2">
               <FaCamera className="text-lucy" />
@@ -134,3 +141,4 @@ export default function ConteudoPage() {
     </div>
   );
 }
+
