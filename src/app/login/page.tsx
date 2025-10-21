@@ -48,7 +48,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-fuchsia-500 p-4">
+    <div className="flex items-center justify-center min-h-screen bg-lucy p-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 text-center">
         {/* ✅ Logo Lucy centralizada */}
         <div className="flex justify-center mb-4">
@@ -74,7 +74,7 @@ export default function LoginPage() {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
-            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-fuchsia-500"
+            className="w-full p-3 border rounded-lg focus:ring-2 focus:bg-lucy"
             disabled={loading}
           />
 
@@ -84,14 +84,14 @@ export default function LoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-fuchsia-500"
+            className="w-full p-3 border rounded-lg focus:ring-2 focus:bg-lucy"
             disabled={loading}
           />
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-fuchsia-500 hover:bg-fuchsia-500 text-white font-semibold rounded-lg flex items-center justify-center space-x-2 transition"
+            className="w-full py-3 bg-lucy hover:bg-lucy text-white font-semibold rounded-lg flex items-center justify-center space-x-2 transition"
           >
             {loading ? <FaSpinner className="animate-spin" /> : <FaSignInAlt />}
             <span>{loading ? "Entrando..." : "Entrar"}</span>

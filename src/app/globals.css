@@ -2,16 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 🌈 Tema Lucy */
+/* 🌈 Tema Lucy Oficial */
 :root {
-  --background: #f9f8ff;
-  --foreground: #1f1d2b;
-  --primary: #7c3aed;
-  --secondary: #ede9fe;
-  --accent: #c4b5fd;
-  --card: #ffffff;
-  --border: #e9d5ff;
+  --background: #f9f8ff;      /* fundo claro */
+  --foreground: #1f1d2b;      /* texto principal */
+  --primary: #ae43c6;         /* 💜 Cor oficial Lucy */
+  --primary-light: #c87bda;   /* variação clara */
+  --primary-dark: #9b3ab3;    /* variação escura */
+  --secondary: #f4e2fb;       /* fundo sutil roxo-claro */
+  --accent: #e5b3f1;          /* destaque */
+  --card: #ffffff;            /* fundo dos cards */
+  --border: #e9d5ff;          /* bordas suaves */
 }
+
+/* Aplicar Lucy nas variáveis do Tailwind */
+[data-theme="lucy"] {
+  --tw-bg-opacity: 1;
+  --tw-text-opacity: 1;
+  --tw-border-opacity: 1;
+}
+
+
 
 body {
   @apply bg-[var(--background)] text-[var(--foreground)] font-inter;

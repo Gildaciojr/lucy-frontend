@@ -1,10 +1,9 @@
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+import tailwindcssAnimate from "tailwindcss-animate";
+
+const config = {
   darkMode: ["class"],
-  content: [
-    "./src/**/*.{js,ts,jsx,tsx}",
-    "./app/**/*.{js,ts,jsx,tsx}",
-  ],
+  content: ["./src/**/*.{js,ts,jsx,tsx}", "./app/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
       fontFamily: {
@@ -12,9 +11,9 @@ module.exports = {
       },
       colors: {
         lucy: {
-          purple: "#7c3aed",
-          light: "#ede9fe",
-          accent: "#c4b5fd",
+          DEFAULT: "#AE43C6", // 💜 Cor oficial Lucy (Pantone 2592 C)
+          light: "#C87BDA",
+          dark: "#9B3AB3",
         },
       },
       borderRadius: {
@@ -22,5 +21,7 @@ module.exports = {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [tailwindcssAnimate],
 };
+
+export default config;
