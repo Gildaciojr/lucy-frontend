@@ -370,7 +370,7 @@ export default function HomePage() {
 
         {/* 🔹 Barra de Filtro “De / Até” com datas e botões automáticos */}
         <div className="bg-white rounded-xl shadow-md p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <h3 className="text-base sm:text-lg font-semibold text-purple-700 flex items-center gap-2">
+          <h3 className="text-base sm:text-lg font-semibold text-purple-400 flex items-center gap-2">
             <FaCalendarAlt className="text-purple-600" />
             Filtro
           </h3>
@@ -429,7 +429,7 @@ export default function HomePage() {
                 setFromDate(today);
                 setToDate(today);
               }}
-              className="px-3 py-2 rounded-lg bg-purple-600 text-white font-semibold hover:bg-purple-700"
+              className="px-3 py-2 rounded-lg bg-purple-400 text-white font-semibold hover:bg-purple-500"
             >
               Hoje
             </button>
@@ -441,7 +441,7 @@ export default function HomePage() {
                 setFromDate(start);
                 setToDate(end);
               }}
-              className="px-3 py-2 rounded-lg bg-purple-600 text-white font-semibold hover:bg-purple-700"
+              className="px-3 py-2 rounded-lg bg-purple-400 text-white font-semibold hover:bg-purple-500"
             >
               Semana
             </button>
@@ -452,7 +452,7 @@ export default function HomePage() {
                 setFromDate(start);
                 setToDate(end);
               }}
-              className="px-3 py-2 rounded-lg bg-purple-600 text-white font-semibold hover:bg-purple-700"
+              className="px-3 py-2 rounded-lg bg-purple-400 text-white font-semibold hover:bg-purple-500"
             >
               Mês
             </button>
@@ -470,7 +470,7 @@ export default function HomePage() {
         {/* 🏆 Gamificação */}
         <Link
           href="/gamificacao"
-          className="group block rounded-xl shadow-md p-5 text-white hover:shadow-lg transition-shadow bg-gradient-to-r from-purple-600 via-fuchsia-600 to-amber-500"
+          className="group block rounded-xl shadow-md p-5 text-white hover:shadow-lg transition-shadow bg-gradient-to-r from-purple-400 via-fuchsia-500 to-amber-500"
         >
           <div className="flex items-center gap-3">
             <div className="p-3 rounded-xl bg-white/10">
@@ -586,8 +586,8 @@ export default function HomePage() {
 
         {/* 🟣 CARD MODERNO “SUA AGENDA” */}
         <div className="bg-white rounded-2xl shadow-md border border-purple-100 p-5 sm:p-6">
-          <h3 className="text-lg font-semibold text-purple-700 mb-3 flex items-center gap-2">
-            <FaCalendarAlt className="text-purple-500" />
+          <h3 className="text-lg font-semibold text-purple-500 mb-3 flex items-center gap-2">
+            <FaCalendarAlt className="text-purple-400" />
             Sua Agenda
           </h3>
           <div className="flex flex-col lg:flex-row gap-4 items-start">
@@ -610,7 +610,7 @@ export default function HomePage() {
                 />
               </div>
             </div>
-            <div className="flex-1 w-full bg-purple-50 p-4 rounded-xl text-purple-700">
+            <div className="flex-1 w-full bg-purple-50 p-4 rounded-xl text-purple-500">
               <h4 className="font-semibold mb-2 text-center sm:text-left">
                 {selectedDate.toLocaleDateString("pt-BR", {
                   weekday: "long",
@@ -640,7 +640,7 @@ export default function HomePage() {
                           Concluído
                         </span>
                       ) : (
-                        <span className="text-xs text-purple-600 font-semibold mt-1 sm:mt-0">
+                        <span className="text-xs text-purple-400 font-semibold mt-1 sm:mt-0">
                           Pendente
                         </span>
                       )}

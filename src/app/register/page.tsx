@@ -54,9 +54,9 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-400 to-purple-600 p-4">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-400 to-purple-500 p-4">
       <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
-        <h1 className="text-3xl font-bold text-center text-purple-700 mb-6">
+        <h1 className="text-3xl font-bold text-center text-purple-500 mb-6">
           Criar Conta
         </h1>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -66,7 +66,7 @@ export default function RegisterPage() {
           <input type="password" name="password" placeholder="Senha" value={form.password} onChange={handleChange} required className="w-full p-3 border rounded-lg" />
           <input name="phone" placeholder="Telefone" value={form.phone} onChange={handleChange} className="w-full p-3 border rounded-lg" />
 
-          <button type="submit" disabled={loading} className="w-full py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg flex items-center justify-center space-x-2">
+          <button type="submit" disabled={loading} className="w-full py-3 bg-purple-400 hover:bg-purple-500 text-white rounded-lg flex items-center justify-center space-x-2">
             {loading ? <FaSpinner className="animate-spin" /> : <FaUserPlus />}
             <span>{loading ? "Criando..." : "Criar Conta"}</span>
           </button>
@@ -76,7 +76,7 @@ export default function RegisterPage() {
 
         <p className="mt-6 text-center text-sm">
           Já tem conta?{" "}
-          <a href="/login" className="text-purple-600 hover:underline">
+          <a href="/login" className="text-purple-500 hover:underline">
             Entre aqui
           </a>
         </p>

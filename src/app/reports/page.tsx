@@ -66,7 +66,7 @@ const DatePill = forwardRef(
     <button
       ref={ref}
       onClick={onClick}
-      className="px-3 py-2 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-500 text-sm font-medium shadow-sm transition-colors"
+      className="px-3 py-2 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-400 text-sm font-medium shadow-sm transition-colors"
       type="button"
     >
       {label ? `${label} ${value}` : value}
@@ -431,7 +431,7 @@ export default function ReportsPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <button
             onClick={downloadPdf}
-            className="flex flex-col items-center justify-center gap-3 p-6 bg-purple-600 text-white rounded-xl shadow-lg hover:bg-purple-700 transition"
+            className="flex flex-col items-center justify-center gap-3 p-6 bg-purple-400 text-white rounded-xl shadow-lg hover:bg-purple-500 transition"
           >
             <FaDownload className="text-4xl" />
             <span className="text-lg font-semibold">Baixar PDF</span>

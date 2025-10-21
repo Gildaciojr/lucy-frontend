@@ -74,7 +74,7 @@ export default function LoginPage() {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
-            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-purple-500"
+            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-purple-400"
             disabled={loading}
           />
 
@@ -84,14 +84,14 @@ export default function LoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-purple-500"
+            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-purple-400"
             disabled={loading}
           />
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-purple-500 hover:bg-purple-600 text-white font-semibold rounded-lg flex items-center justify-center space-x-2 transition"
+            className="w-full py-3 bg-purple-400 hover:bg-purple-400 text-white font-semibold rounded-lg flex items-center justify-center space-x-2 transition"
           >
             {loading ? <FaSpinner className="animate-spin" /> : <FaSignInAlt />}
             <span>{loading ? "Entrando..." : "Entrar"}</span>
@@ -104,14 +104,14 @@ export default function LoginPage() {
         <div className="mt-6 text-sm text-gray-700">
           <p>
             Não tem conta?{" "}
-            <Link href="/signup" className="text-purple-600 hover:underline">
+            <Link href="/signup" className="text-purple-400 hover:underline">
               Cadastre-se
             </Link>
           </p>
 
           <p className="mt-2">
             Esqueceu sua senha?{" "}
-            <Link href="/reset-password" className="text-purple-600 hover:underline">
+            <Link href="/reset-password" className="text-purple-400 hover:underline">
               Clique aqui
             </Link>
           </p>

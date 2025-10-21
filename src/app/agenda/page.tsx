@@ -53,7 +53,7 @@ export default function AgendaPage() {
   return (
     <div className="flex flex-col min-h-screen p-4 bg-gray-100">
       <header className="py-4 text-center">
-        <div className="p-3 sm:p-4 bg-purple-500 rounded-xl shadow-md hover:bg-purple-400 transition">
+        <div className="p-3 sm:p-4 bg-purple-400 rounded-xl shadow-md hover:bg-purple-400 transition">
           <h1 className="text-2xl sm:text-3xl font-bold text-white">
             Lucy Agenda
           </h1>
@@ -108,7 +108,7 @@ export default function AgendaPage() {
           {/* 🟣 Exibe o calendário moderno somente em telas pequenas */}
           <div className="block sm:hidden">
             <div className="bg-white rounded-2xl shadow-md border border-purple-100 p-5">
-              <h3 className="text-lg font-semibold text-purple-700 mb-3 flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-purple-500 mb-3 flex items-center gap-2">
                 <FaCalendarAlt className="text-purple-500" />
                 Sua Agenda
               </h3>

@@ -198,7 +198,7 @@ export default function GamificacaoPage() {
     {
       name: "03 dias seguidos de uso",
       points: 50,
-      icon: <FaMedal className="text-purple-500" />,
+      icon: <FaMedal className="text-purple-400" />,
     },
     {
       name: "07 dias seguidos de uso",
@@ -219,7 +219,7 @@ export default function GamificacaoPage() {
 
   if (loading)
     return (
-      <div className="flex justify-center items-center h-60 text-purple-700 font-semibold">
+      <div className="flex justify-center items-center h-60 text-purple-400 font-semibold">
         <FaSpinner className="animate-spin text-2xl mr-2" />
         Carregando sua gamificação…
       </div>
@@ -239,13 +239,13 @@ export default function GamificacaoPage() {
             <FaStar />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-purple-700">
+            <h1 className="text-3xl font-bold text-purple-400">
               Pontuação Total
             </h1>
             <motion.p
               animate={{ scale: [1, 1.05, 1] }}
               transition={{ repeat: Infinity, duration: 2 }}
-              className="text-4xl font-extrabold text-purple-700"
+              className="text-4xl font-extrabold text-purple-400"
             >
               {animatedPoints}
             </motion.p>
@@ -266,7 +266,7 @@ export default function GamificacaoPage() {
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${progressPercent}%` }}
-              className="h-4 bg-gradient-to-r from-purple-600 to-fuchsia-500"
+              className="h-4 bg-gradient-to-r from-purple-500 to-fuchsia-500"
               transition={{ duration: 1 }}
             />
           </div>
@@ -278,7 +278,7 @@ export default function GamificacaoPage() {
         {/* Conquistas */}
         <div className="bg-white rounded-2xl shadow p-6 border border-purple-100">
           <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-            <FaMedal className="text-purple-600" /> Conquistas
+            <FaMedal className="text-purple-400" /> Conquistas
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
             {availableAchievements.map((ach) => {
@@ -337,7 +337,7 @@ export default function GamificacaoPage() {
         {/* Últimas ações */}
         <div className="bg-white rounded-2xl shadow p-6 border border-purple-100">
           <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-            <FaChartLine className="text-purple-600" /> Últimas ações
+            <FaChartLine className="text-purple-500" /> Últimas ações
           </h2>
           {summary?.recent?.length ? (
             <ul className="space-y-2 text-sm text-gray-700">
@@ -346,7 +346,7 @@ export default function GamificacaoPage() {
                   key={r.id}
                   className="flex flex-wrap md:flex-nowrap gap-2 justify-between bg-gray-50 rounded-lg px-3 py-2 hover:bg-purple-50 transition"
                 >
-                  <span className="font-semibold text-purple-700">
+                  <span className="font-semibold text-purple-500">
                     {ACTION_LABEL[r.action] ?? r.action}
                   </span>
                   <span className="text-emerald-600 font-semibold">
