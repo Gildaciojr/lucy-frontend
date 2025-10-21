@@ -429,7 +429,7 @@ export default function HomePage() {
                 setFromDate(today);
                 setToDate(today);
               }}
-              className="px-3 py-2 rounded-lg bg-purple-400 text-white font-semibold hover:bg-lucy"
+              className="px-3 py-2 rounded-lg bg-lucy text-white font-semibold hover:bg-lucy"
             >
               Hoje
             </button>
@@ -441,7 +441,7 @@ export default function HomePage() {
                 setFromDate(start);
                 setToDate(end);
               }}
-              className="px-3 py-2 rounded-lg bg-lucy text-white font-semibold hover:bg-purple-500"
+              className="px-3 py-2 rounded-lg bg-lucy text-white font-semibold hover:bg-lucy"
             >
               Semana
             </button>

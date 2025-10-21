@@ -77,7 +77,7 @@ export default function LeadsTable() {
 
           <button
             onClick={() => downloadFile("pdf")}
-            className="px-4 py-2 bg-purple-500 text-white text-sm rounded hover:bg-lucy flex items-center gap-2 disabled:opacity-50"
+            className="px-4 py-2 bg-lucy text-white text-sm rounded hover:bg-lucy flex items-center gap-2 disabled:opacity-50"
             disabled={!!downloading}
           >
             {downloading === "pdf" && <FaSpinner className="animate-spin" />}
