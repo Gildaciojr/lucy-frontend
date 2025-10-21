@@ -55,7 +55,7 @@ export default function ProfileMenu() {
         onClick={() => setOpen(!open)}
         className="flex items-center gap-2 rounded-full bg-white/10 hover:bg-white/20 px-3 py-2 transition"
       >
-        <div className="h-9 w-9 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold shadow-md">
+        <div className="h-9 w-9 rounded-full bg-lucy flex items-center justify-center text-white font-bold shadow-md">
           {user?.name?.[0]?.toUpperCase() || "U"}
         </div>
         <span className="hidden sm:block text-white font-medium">
@@ -73,7 +73,7 @@ export default function ProfileMenu() {
               window.dispatchEvent(new CustomEvent("open-profile-modal"));
             }}
           >
-            <FaUser className="text-purple-600" /> Meu perfil
+            <FaUser className="text-lucy" /> Meu perfil
           </button>
           <button
             className="flex items-center gap-2 w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100"
@@ -164,7 +164,7 @@ function ProfileModal() {
             Cancelar
           </button>
           <button
-            className="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition disabled:opacity-50"
+            className="px-4 py-2 rounded-lg bg-lucy text-white hover:bg-lucy transition disabled:opacity-50"
             onClick={save}
             disabled={saving}
           >
@@ -225,7 +225,7 @@ function PasswordModal() {
             Cancelar
           </button>
           <button
-            className="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition disabled:opacity-50"
+            className="px-4 py-2 rounded-lg bg-lucy text-white hover:bg-lucy transition disabled:opacity-50"
             onClick={save}
             disabled={saving || !newPassword}
           >
