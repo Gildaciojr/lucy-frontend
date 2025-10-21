@@ -84,29 +84,24 @@ interface SummaryData {
 }
 type TipoFilter = "all" | "receita" | "despesa";
 
-const COLORS = ["#6d28d9", "#22c55e", "#facc15", "#ef4444"];
+// Paleta Lucy
+const LUCY_HEX = "#AE43C6";
+const COLORS = [LUCY_HEX, "#22c55e", "#facc15", "#ef4444"];
 
-// Utilitários
+// Utils
 const pad2 = (n: number) => String(n).padStart(2, "0");
 const toYMD = (d: Date) =>
   `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
-const formatFullPtBR = (d: Date) =>
-  d.toLocaleDateString("pt-BR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-const endOfCurrentMonth = () =>
-  new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
 const formatShortPtBR = (d: Date) =>
   d.toLocaleDateString("pt-BR", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
   });
+const endOfCurrentMonth = () =>
+  new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
 
-// Botão de seleção de data (customizado)
+// DatePill (custom button do DatePicker)
 const DatePill = forwardRef(
   (
     {
@@ -122,10 +117,10 @@ const DatePill = forwardRef(
       type="button"
       onClick={onClick}
       title={title}
-      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-medium shadow-sm transition-colors"
+      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-lucy/10 hover:bg-lucy/15 text-lucy text-sm font-medium shadow-sm transition-colors"
     >
-      <FaCalendarAlt className="text-indigo-600" />
-      {label && <span>{label}</span>}
+      <FaCalendarAlt className="text-lucy" />
+      {label && <span className="hidden sm:inline">{label}</span>}
       <span>{value}</span>
     </button>
   )
@@ -151,17 +146,25 @@ export default function HomePage() {
     financasRecentes: [],
   });
   const [loading, setLoading] = useState(true);
-  const [fromDate, setFromDate] = useState<Date | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Filtros de período
+  const [fromDate, setFromDate] = useState<Date | null>(new Date());
   const [toDate, setToDate] = useState<Date | null>(null);
+
+  // Agenda
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+
+  // Evitar recarregar logo no primeiro render ao trocar datas
   const initialLoadedRef = useRef(false);
 
   const parseValor = (v: number | string) =>
     Number.isNaN(Number(v)) ? 0 : Number(v);
 
-  // 🔹 Monta a URL de busca de finanças
+  // Monta URL de /financas com os filtros
   const buildFinancasUrl = useCallback(() => {
     const qs = new URLSearchParams();
+
     const normalizeDate = (d: Date, isEnd = false) => {
       const local = new Date(d);
       local.setHours(
@@ -172,18 +175,21 @@ export default function HomePage() {
       );
       return local.toISOString().split("T")[0];
     };
+
     if (fromDate) qs.set("from", normalizeDate(fromDate));
     if (toDate) qs.set("to", normalizeDate(toDate, true));
+
     return `/financas${qs.toString() ? `?${qs.toString()}` : ""}`;
   }, [fromDate, toDate]);
 
+  // Filtra receita/despesa
   const filterByTipo = useCallback(
     (items: FinanceItem[]): FinanceItem[] =>
       tipoFilter === "all" ? items : items.filter((f) => f.tipo === tipoFilter),
     [tipoFilter]
   );
 
-  // 🔹 Recalcula os cards e gráficos
+  // Recalcula os cards/gráficos
   const recomputeSummary = useCallback(
     (
       financasBase: FinanceItem[],
@@ -191,6 +197,7 @@ export default function HomePage() {
       conteudoData: Conteudo[]
     ) => {
       const financas = filterByTipo(financasBase);
+
       let totalReceitas = 0;
       let totalDespesas = 0;
 
@@ -247,13 +254,16 @@ export default function HomePage() {
     [filterByTipo]
   );
 
-  // 🔹 Busca dados do backend
+  // Busca dados do backend
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
+      setErrorMsg(null);
       const token = localStorage.getItem("auth_token");
       if (!token) throw new Error("Usuário não autenticado.");
+
       const headers = { Authorization: `Bearer ${token}` };
+
       const [financasData, compromissosData, conteudoData, gamificacaoData] =
         await Promise.all([
           apiFetch<FinanceItem[]>(buildFinancasUrl(), { headers }),
@@ -261,45 +271,65 @@ export default function HomePage() {
           apiFetch<Conteudo[]>("/conteudo", { headers }),
           apiFetch<GamificacaoSummary>("/gamificacao", { headers }),
         ]);
-      setFinancasRaw(financasData);
-      setCompromissos(compromissosData);
-      setConteudo(conteudoData);
-      setGamificacao(gamificacaoData);
-      recomputeSummary(financasData, compromissosData, conteudoData);
+
+      setFinancasRaw(financasData ?? []);
+      setCompromissos(compromissosData ?? []);
+      setConteudo(conteudoData ?? []);
+      setGamificacao(gamificacaoData ?? null);
+
+      // Recalcula resumo com os dados recém-carregados
+      recomputeSummary(
+        financasData ?? [],
+        compromissosData ?? [],
+        conteudoData ?? []
+      );
       initialLoadedRef.current = true;
     } catch (err: unknown) {
       console.error(err);
+      setErrorMsg(
+        err instanceof Error ? err.message : "Erro ao carregar dados."
+      );
     } finally {
       setLoading(false);
     }
   }, [buildFinancasUrl, recomputeSummary]);
 
+  // Primeiro carregamento
   useEffect(() => {
     loadData();
   }, [loadData]);
 
+  // Recarrega ao trocar período
   useEffect(() => {
     if (initialLoadedRef.current) loadData();
   }, [fromDate, toDate, loadData]);
 
-  // 🔹 Limpar filtros
+  // 🔁 Recalcula ao trocar o filtro de tipo (sem bater API de novo)
+  useEffect(() => {
+    if (!initialLoadedRef.current) return;
+    recomputeSummary(financasRaw, compromissos, conteudo);
+  }, [tipoFilter, financasRaw, compromissos, conteudo, recomputeSummary]);
+
+  // Limpar filtros
   const onClearFilters = () => {
-    setFromDate(null);
+    setFromDate(new Date());
     setToDate(null);
     setTipoFilter("all");
+    // chama loadData por consistência (vai usar as novas datas)
     loadData();
   };
 
   const toggleTipo = (t: Exclude<TipoFilter, "all">) =>
     setTipoFilter((prev) => (prev === t ? "all" : t));
 
-  if (loading)
+  if (loading) {
     return (
-      <div className="text-center p-4 flex items-center justify-center space-x-2">
-        <FaSpinner className="animate-spin" />
+      <div className="text-center p-6 flex items-center justify-center space-x-2">
+        <FaSpinner className="animate-spin text-lucy" />
         <span>Carregando resumo...</span>
       </div>
     );
+  }
 
   const compromissosDoDia = compromissos.filter(
     (c) => new Date(c.data).toDateString() === selectedDate.toDateString()
@@ -313,10 +343,16 @@ export default function HomePage() {
         ? "1 conquista"
         : `${totalConquistas} conquistas`;
 
-  // === Layout ===
   return (
     <div className="flex flex-col min-h-screen bg-gray-100 relative">
       <main className="flex-1 p-4 sm:p-6 flex flex-col mb-20 space-y-6">
+        {/* Erro (se houver) */}
+        {errorMsg && (
+          <div className="bg-red-50 text-red-700 border border-red-200 rounded-lg p-3">
+            {errorMsg}
+          </div>
+        )}
+
         {/* 🟣 Cards principais */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
           {[
@@ -375,13 +411,60 @@ export default function HomePage() {
           ))}
         </div>
 
-        {/* 🔹 Barra de filtros “Hoje / Semana / Mês” */}
+        {/* 🔹 Barra de filtros — com DatePills “De / Até” + botões rápidos */}
         <div className="bg-white rounded-xl shadow-md p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <h3 className="text-base sm:text-lg font-semibold text-lucy flex items-center gap-2">
             <FaCalendarAlt className="text-lucy" />
             Filtro de período
           </h3>
 
+          {/* DatePills */}
+          <div className="flex flex-col sm:flex-row gap-3 items-center">
+            <ReactDatePicker
+              selected={fromDate ?? new Date()}
+              onChange={(date) => setFromDate(date ?? new Date())}
+              selectsStart
+              startDate={fromDate ?? new Date()}
+              endDate={toDate ?? undefined}
+              locale="pt-BR"
+              dateFormat="dd/MM/yyyy"
+              customInput={
+                <DatePill
+                  label="De"
+                  value={formatShortPtBR(fromDate ?? new Date())}
+                  title="Selecionar data inicial"
+                />
+              }
+              popperPlacement="bottom-start"
+              showPopperArrow={false}
+            />
+
+            <ReactDatePicker
+              selected={toDate}
+              onChange={(date) => setToDate(date)}
+              selectsEnd
+              startDate={fromDate ?? new Date()}
+              endDate={toDate ?? undefined}
+              minDate={fromDate ?? undefined}
+              locale="pt-BR"
+              dateFormat="dd/MM/yyyy"
+              customInput={
+                <DatePill
+                  label="Até"
+                  value={
+                    toDate
+                      ? formatShortPtBR(toDate)
+                      : formatShortPtBR(endOfCurrentMonth())
+                  }
+                  title="Selecionar data final"
+                />
+              }
+              popperPlacement="bottom-end"
+              showPopperArrow={false}
+            />
+          </div>
+
+          {/* Botões rápidos */}
           <div className="flex flex-wrap gap-2 justify-center sm:justify-start mt-2 sm:mt-0">
             <button
               onClick={() => {
@@ -389,7 +472,7 @@ export default function HomePage() {
                 setFromDate(today);
                 setToDate(today);
               }}
-              className="px-3 py-2 rounded-lg bg-lucy text-white font-semibold hover:bg-lucy"
+              className="px-3 py-2 rounded-lg bg-lucy text-white font-semibold hover:opacity-90"
             >
               Hoje
             </button>
@@ -401,7 +484,7 @@ export default function HomePage() {
                 setFromDate(start);
                 setToDate(end);
               }}
-              className="px-3 py-2 rounded-lg bg-lucy text-white font-semibold hover:bg-lucy"
+              className="px-3 py-2 rounded-lg bg-lucy text-white font-semibold hover:opacity-90"
             >
               Semana
             </button>
@@ -412,7 +495,7 @@ export default function HomePage() {
                 setFromDate(start);
                 setToDate(end);
               }}
-              className="px-3 py-2 rounded-lg bg-lucy text-white font-semibold hover:bg-lucy"
+              className="px-3 py-2 rounded-lg bg-lucy text-white font-semibold hover:opacity-90"
             >
               Mês
             </button>
@@ -453,13 +536,13 @@ export default function HomePage() {
               <LineChart data={summary.chartData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
-                <YAxis />
+                <YAxis allowDecimals={false} />
                 <Tooltip />
                 <Legend />
                 <Line
                   type="monotone"
                   dataKey="uso"
-                  stroke="#6d28d9"
+                  stroke={LUCY_HEX}
                   activeDot={{ r: 8 }}
                 />
               </LineChart>
@@ -521,7 +604,7 @@ export default function HomePage() {
                               : "text-green-600"
                           }`}
                         >
-                          R${" "}
+                          R{"$ "}
                           {Number.isNaN(valorNum) ? "-" : valorNum.toFixed(2)}
                         </td>
                         <td className="px-4 py-2">
@@ -565,8 +648,8 @@ export default function HomePage() {
                 />
               </div>
             </div>
-            <div className="flex-1 w-full bg-purple-50 p-4 rounded-xl text-lucy">
-              <h4 className="font-semibold mb-2 text-center sm:text-left">
+            <div className="flex-1 w-full bg-purple-50 p-4 rounded-xl">
+              <h4 className="font-semibold mb-2 text-center sm:text-left text-lucy">
                 {selectedDate.toLocaleDateString("pt-BR", {
                   weekday: "long",
                   day: "2-digit",
