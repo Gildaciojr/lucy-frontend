@@ -56,7 +56,7 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-400 to-purple-500 p-4">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-lucy to-lucy p-4">
       <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
         <h1 className="text-3xl font-bold text-center text-purple-500 mb-6">
           Criar Conta
@@ -152,7 +152,7 @@ export default function SignupPage() {
             className={`w-full py-3 rounded-lg flex items-center justify-center space-x-2 ${
               loading || !isStrong
                 ? "bg-gray-400 cursor-not-allowed"
-                : "bg-purple-400 hover:bg-purple-500"
+                : "bg-lucy hover:bg-lucy"
             } text-white transition`}
           >
             {loading ? <FaSpinner className="animate-spin" /> : <FaUserPlus />}
@@ -164,13 +164,13 @@ export default function SignupPage() {
 
         <p className="mt-6 text-center text-sm">
           Já tem conta?{" "}
-          <a href="/login" className="text-purple-500 hover:underline">
+          <a href="/login" className="text-lucy hover:underline">
             Entre aqui
           </a>
         </p>
 
         <footer className="mt-8 text-center text-sm text-gray-500 flex items-center justify-center gap-2">
-          <FaLock className="text-purple-500" />
+          <FaLock className="text-lucy" />
           <span>Seus dados estão totalmente seguros e protegidos.</span>
         </footer>
       </div>

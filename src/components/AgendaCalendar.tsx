@@ -97,13 +97,13 @@ export default function AgendaCalendar({ events, onAddEvent }: Props) {
       {/* Cabeçalho */}
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-          <FaCalendarAlt className="text-purple-600" />
+          <FaCalendarAlt className="text-lucy" />
           Agenda
         </h2>
         {onAddEvent && (
           <button
             onClick={onAddEvent}
-            className="flex items-center gap-2 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold rounded-lg shadow transition"
+            className="flex items-center gap-2 px-3 py-2 bg-lucy hover:bg-lucy text-white text-sm font-semibold rounded-lg shadow transition"
           >
             <FaPlus className="text-sm" /> Novo evento
           </button>

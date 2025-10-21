@@ -74,7 +74,7 @@ export default function LoginPage() {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
-            className="w-full p-3 border rounded-lg focus:ring-2 focus:bg-lucy"
+            className="w-full p-3 border rounded-lg focus:ring-2 focus:bg-white"
             disabled={loading}
           />
 
@@ -84,7 +84,7 @@ export default function LoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="w-full p-3 border rounded-lg focus:ring-2 focus:bg-lucy"
+            className="w-full p-3 border rounded-lg focus:ring-2 focus:bg-white"
             disabled={loading}
           />
 

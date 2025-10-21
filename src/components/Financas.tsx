@@ -265,7 +265,7 @@ export default function Financas() {
 
   if (loading)
     return (
-      <div className="flex justify-center items-center p-6 text-purple-600 space-x-2">
+      <div className="flex justify-center items-center p-6 text-lucy space-x-2">
         <FaSpinner className="animate-spin" /> <span>Carregando dados...</span>
       </div>
     );
@@ -289,7 +289,7 @@ export default function Financas() {
               className={`px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition
                 ${
                   categoriaAtiva
-                    ? "bg-purple-300 text-purple-700 hover:bg-purple-300"
+                    ? "bg-purple-300 text-lucy hover:bg-purple-300"
                     : "bg-gray-400 text-gray-800 hover:bg-gray-300"
                 }`}
             >
@@ -300,12 +300,12 @@ export default function Financas() {
 
           <DropdownMenuContent
             align="start"
-            className="w-56 bg-white border border-purple-400 shadow-lg rounded-lg p-1 text-gray-800"
+            className="w-56 bg-white border border-lucy shadow-lg rounded-lg p-1 text-gray-800"
           >
             <DropdownMenuLabel>Selecionar Categoria</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              className="hover:bg-purple-100 hover:text-purple-400 focus:bg-purple-100 focus:text-purple-400 rounded-md"
+              className="hover:bg-purple-100 hover:text-lucy focus:bg-purple-100 focus:text-purple-400 rounded-md"
               onClick={() => aplicarFiltroCategoria(null)}
             >
               Todas
@@ -350,7 +350,7 @@ export default function Financas() {
             className={`px-3 py-2 rounded-lg text-sm font-semibold transition
               ${
                 periodoAtivo === "today"
-                  ? "bg-purple-600 text-white"
+                  ? "bg-lucy text-white"
                   : "bg-gray-100 hover:bg-gray-200 text-gray-700"
               }`}
           >
@@ -361,7 +361,7 @@ export default function Financas() {
             className={`px-3 py-2 rounded-lg text-sm font-semibold transition
               ${
                 periodoAtivo === "week"
-                  ? "bg-purple-600 text-white"
+                  ? "bg-lucy text-white"
                   : "bg-gray-100 hover:bg-gray-200 text-gray-700"
               }`}
           >
@@ -372,7 +372,7 @@ export default function Financas() {
             className={`px-3 py-2 rounded-lg text-sm font-semibold transition
               ${
                 periodoAtivo === "month"
-                  ? "bg-purple-600 text-white"
+                  ? "bg-lucy text-white"
                   : "bg-gray-100 hover:bg-gray-200 text-gray-700"
               }`}
           >
@@ -447,7 +447,7 @@ export default function Financas() {
           <div
             className={`flex items-center space-x-4 p-4 rounded-xl shadow-md border-2 transition-all ${
               tipoAtivo === "all"
-                ? "border-purple-500 bg-purple-50"
+                ? "border-lucy bg-purple-50"
                 : "border-transparent bg-white"
             }`}
           >
@@ -470,7 +470,7 @@ export default function Financas() {
 
       {/* 📊 Gráfico */}
       <div className="bg-white rounded-xl shadow-md p-6 flex flex-col items-center">
-        <h3 className="text-xl font-bold text-purple-700 mb-5 text-center tracking-wide">
+        <h3 className="text-xl font-bold text-lucy mb-5 text-center tracking-wide">
           Distribuição por Categoria 💰
         </h3>
         <ResponsiveContainer width="90%" height={320}>
@@ -531,7 +531,7 @@ export default function Financas() {
           </h3>
           <button
             onClick={limparFiltros}
-            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg shadow transition"
+            className="flex items-center gap-2 bg-lucy hover:bg-lucy text-white px-4 py-2 rounded-lg shadow transition"
             type="button"
           >
             <FaUndo /> Limpar Filtros

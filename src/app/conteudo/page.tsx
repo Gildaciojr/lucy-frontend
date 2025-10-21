@@ -56,7 +56,7 @@ export default function ConteudoPage() {
           <div className="bg-white rounded-2xl shadow-md border border-lucy/30 p-5 sm:p-6">
             <h3 className="text-lg font-semibold text-lucy mb-4 flex items-center gap-2">
               <FaCamera className="text-lucy" />
-              Envie suas imagens 📸
+              Galeria 📸
             </h3>
 
             <div className="flex justify-center mb-4">

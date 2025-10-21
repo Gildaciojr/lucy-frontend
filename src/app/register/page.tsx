@@ -54,9 +54,9 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-400 to-purple-500 p-4">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-lucy to-lucy p-4">
       <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
-        <h1 className="text-3xl font-bold text-center text-purple-500 mb-6">
+        <h1 className="text-3xl font-bold text-center text-lucy mb-6">
           Criar Conta
         </h1>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -76,7 +76,7 @@ export default function RegisterPage() {
 
         <p className="mt-6 text-center text-sm">
           Já tem conta?{" "}
-          <a href="/login" className="text-purple-500 hover:underline">
+          <a href="/login" className="text-lucy hover:underline">
             Entre aqui
           </a>
         </p>

@@ -86,7 +86,7 @@ export default function Header() {
         <div className="relative">
           <button
             onClick={() => setOpen(!open)}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-400 text-white rounded-lg shadow hover:bg-purple-400 transition"
+            className="flex items-center gap-2 px-4 py-2 bg-lucy text-white rounded-lg shadow hover:bg-lucy transition"
           >
             <FaUserCircle className="text-lg" />
             <span className="hidden sm:inline">{user.name || user.username || "Usuário"}</span>
@@ -102,7 +102,7 @@ export default function Header() {
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   className="w-full p-2 border rounded-lg"
                 />
-                <button onClick={() => handleUpdate("name")} className="mt-1 text-xs text-purple-400 hover:underline">
+                <button onClick={() => handleUpdate("name")} className="mt-1 text-xs text-lucy hover:underline">
                   Atualizar Nome
                 </button>
               </div>
@@ -115,7 +115,7 @@ export default function Header() {
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
                   className="w-full p-2 border rounded-lg"
                 />
-                <button onClick={() => handleUpdate("phone")} className="mt-1 text-xs text-purple-400 hover:underline">
+                <button onClick={() => handleUpdate("phone")} className="mt-1 text-xs text-lucy hover:underline">
                   Atualizar Telefone
                 </button>
               </div>
@@ -131,7 +131,7 @@ export default function Header() {
                 <p className="text-xs text-gray-500">
                   A senha deve conter maiúscula, minúscula, número e caractere especial.
                 </p>
-                <button onClick={() => handleUpdate("password")} className="mt-1 text-xs text-purple-400 hover:underline">
+                <button onClick={() => handleUpdate("password")} className="mt-1 text-xs text-lucy hover:underline">
                   Atualizar Senha
                 </button>
               </div>

@@ -64,7 +64,7 @@ export default function Gamificacao() {
   if (loading)
     return (
       <div className="text-center p-6 flex items-center justify-center space-x-2">
-        <FaSpinner className="animate-spin text-purple-600" />
+        <FaSpinner className="animate-spin text-lucy" />
         <span>Carregando gamificação...</span>
       </div>
     );
@@ -86,7 +86,7 @@ export default function Gamificacao() {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="p-6 rounded-2xl shadow-md bg-gradient-to-br from-purple-600 to-fuchsia-500 text-white"
+      className="p-6 rounded-2xl shadow-md bg-gradient-to-br from-lucy to-lucy text-white"
     >
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold flex items-center gap-2">

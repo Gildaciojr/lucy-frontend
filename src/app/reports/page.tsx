@@ -351,7 +351,7 @@ export default function ReportsPage() {
     <div className="min-h-screen bg-gradient-to-b from-purple-50 via-purple-100 to-white p-4 sm:p-6">
       <div className="max-w-5xl mx-auto space-y-8">
         {/* Cabeçalho */}
-        <div className="bg-purple-400 rounded-2xl shadow-md border border-purple-400 p-5 flex flex-col items-center justify-center">
+        <div className="bg-lucy rounded-2xl shadow-md border border-lucy p-5 flex flex-col items-center justify-center">
           <h1 className="text-3xl font-bold text-white flex items-center gap-3">
             <FaCalendarAlt className="text-white text-3xl" />
             Relatórios
@@ -431,7 +431,7 @@ export default function ReportsPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <button
             onClick={downloadPdf}
-            className="flex flex-col items-center justify-center gap-3 p-6 bg-purple-400 text-white rounded-xl shadow-lg hover:bg-purple-500 transition"
+            className="flex flex-col items-center justify-center gap-3 p-6 bg-lucy text-white rounded-xl shadow-lg hover:bg-lucy transition"
           >
             <FaDownload className="text-4xl" />
             <span className="text-lg font-semibold">Baixar PDF</span>
