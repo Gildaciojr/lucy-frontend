@@ -1,21 +1,21 @@
 "use client";
 
 /**
- * Remove barras finais duplicadas
+ * 🔧 Normaliza a URL base
  */
 function normalize(url: string): string {
   return url.replace(/\/+$/, "");
 }
 
 /**
- * Type guard para objetos simples
+ * Verifica se o valor é um objeto
  */
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null;
 }
 
 /**
- * Extrai mensagem de erro de payloads variados
+ * Extrai mensagem de erro
  */
 function getErrorMessage(payload: unknown, res: Response): string {
   if (typeof payload === "string" && payload.trim()) return payload;
@@ -25,36 +25,31 @@ function getErrorMessage(payload: unknown, res: Response): string {
       (payload["message"] as unknown) ??
       (payload["error"] as unknown) ??
       (payload["msg"] as unknown);
-
     if (typeof candidate === "string" && candidate.trim()) return candidate;
   }
 
   return `Erro ${res.status}`;
 }
 
-/**
- * Base da API (não adicionar /api)
- */
 const RAW_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 export const API_BASE = normalize(RAW_BASE || "https://api.mylucy.app");
 
 /**
- * Função principal de fetch da Lucy
+ * Função principal de fetch da Lucy com retry inteligente
  */
 export async function apiFetch<T>(
   path: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  retries = 2
 ): Promise<T> {
   const url = `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
 
-  // Garante headers sempre presentes
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     Accept: "application/json",
     ...(options.headers as Record<string, string> | undefined),
   };
 
-  // Injeta token de autenticação se existir
   if (typeof window !== "undefined") {
     const token = localStorage.getItem("auth_token");
     if (token && !headers.Authorization) {
@@ -62,34 +57,50 @@ export async function apiFetch<T>(
     }
   }
 
-  // ✅ Corrigido: sempre envia modo CORS e inclui cookies (se existir)
-  const response = await fetch(url, {
-    ...options,
-    headers,
-    mode: "cors",
-    credentials: "include",
-  });
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers,
+      mode: "cors",
+      credentials: "include",
+    });
 
-  // ✅ Corrigido: leitura robusta de payload JSON
-  const text = await response.text();
-  let payload: unknown = {};
-  if (text) {
-    try {
-      payload = JSON.parse(text);
-    } catch {
-      payload = text;
+    const text = await response.text();
+    let payload: unknown = {};
+    if (text) {
+      try {
+        payload = JSON.parse(text);
+      } catch {
+        payload = text;
+      }
     }
-  }
 
-  if (!response.ok) {
-    throw new Error(getErrorMessage(payload, response));
-  }
+    if (!response.ok) {
+      // Retry automático em erros temporários
+      if (
+        retries > 0 &&
+        [429, 500, 502, 503, 504].includes(response.status)
+      ) {
+        const delay = 500 * (3 - retries); // 500ms, 1000ms...
+        await new Promise((r) => setTimeout(r, delay));
+        return apiFetch(path, options, retries - 1);
+      }
 
-  return payload as T;
+      throw new Error(getErrorMessage(payload, response));
+    }
+
+    return payload as T;
+  } catch (error) {
+    if (retries > 0) {
+      await new Promise((r) => setTimeout(r, 700));
+      return apiFetch(path, options, retries - 1);
+    }
+    throw error;
+  }
 }
 
 /* ===========================================================
-   🔹 API Registros Financeiros
+   🔹 API Registros Financeiros (mantida)
    =========================================================== */
 
 export async function getRegistrosFinanceiros() {
@@ -130,6 +141,7 @@ export async function updateRegistroFinanceiro(
 export async function deleteRegistroFinanceiro(id: number) {
   return apiFetch(`/registros-financeiros/${id}`, { method: "DELETE" });
 }
+
 
 
 

@@ -166,13 +166,9 @@ export default function HomePage() {
     const qs = new URLSearchParams();
 
     const normalizeDate = (d: Date, isEnd = false) => {
-      const local = new Date(d);
-      local.setHours(
-        isEnd ? 23 : 0,
-        isEnd ? 59 : 0,
-        isEnd ? 59 : 0,
-        isEnd ? 999 : 0
-      );
+      const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+      if (isEnd) local.setHours(23, 59, 59, 999);
+      else local.setHours(0, 0, 0, 0);
       return local.toISOString().split("T")[0];
     };
 
@@ -301,7 +297,10 @@ export default function HomePage() {
 
   // Recarrega ao trocar período
   useEffect(() => {
-    if (initialLoadedRef.current) loadData();
+    if (initialLoadedRef.current) {
+      const timeout = setTimeout(() => loadData(), 400);
+      return () => clearTimeout(timeout);
+    }
   }, [fromDate, toDate, loadData]);
 
   // 🔁 Recalcula ao trocar o filtro de tipo (sem bater API de novo)
