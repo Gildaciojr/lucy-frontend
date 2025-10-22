@@ -2,11 +2,12 @@
 
 import React, { useState } from "react";
 
-interface ResetPasswordTokenPageProps {
+// ✅ Versão compatível com Next.js 15 — sem tipagem manual em params
+export default function ResetPasswordTokenPage({
+  params,
+}: {
   params: { token: string };
-}
-
-export default function ResetPasswordTokenPage({ params }: ResetPasswordTokenPageProps) {
+}) {
   const token = params.token;
   const [newPassword, setNewPassword] = useState("");
   const [message, setMessage] = useState("");
@@ -18,21 +19,29 @@ export default function ResetPasswordTokenPage({ params }: ResetPasswordTokenPag
     setMessage("");
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/reset-password/confirm`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          token,
-          newPassword,
-        }),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/reset-password/confirm`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            token,
+            newPassword,
+          }),
+        }
+      );
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Erro ao redefinir senha.");
+      if (!response.ok)
+        throw new Error(data.message || "Erro ao redefinir senha.");
 
       setMessage("✅ Senha redefinida com sucesso! Você já pode fazer login.");
     } catch (err: unknown) {
-      setMessage(err instanceof Error ? err.message : "Erro desconhecido ao redefinir senha.");
+      setMessage(
+        err instanceof Error
+          ? err.message
+          : "Erro desconhecido ao redefinir senha."
+      );
     } finally {
       setLoading(false);
     }
@@ -41,7 +50,9 @@ export default function ResetPasswordTokenPage({ params }: ResetPasswordTokenPag
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-lucy to-lucy p-4">
       <div className="bg-white shadow-lg rounded-xl w-full max-w-md p-8">
-        <h1 className="text-3xl font-bold text-center text-lucy mb-6">Lucy 💜</h1>
+        <h1 className="text-3xl font-bold text-center text-lucy mb-6">
+          Lucy 💜
+        </h1>
         <p className="text-center text-gray-500 mb-6">Redefinir senha</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -76,4 +87,5 @@ export default function ResetPasswordTokenPage({ params }: ResetPasswordTokenPag
     </div>
   );
 }
+
 
