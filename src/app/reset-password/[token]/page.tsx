@@ -2,11 +2,12 @@
 
 import React, { useState } from "react";
 
-interface ResetPasswordPageProps {
+interface ResetPasswordTokenPageProps {
   params: { token: string };
 }
 
-export default function ResetPasswordTokenPage({ params }: ResetPasswordPageProps) {
+export default function ResetPasswordTokenPage({ params }: ResetPasswordTokenPageProps) {
+  const token = params.token;
   const [newPassword, setNewPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -21,7 +22,7 @@ export default function ResetPasswordTokenPage({ params }: ResetPasswordPageProp
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          token: params.token,
+          token,
           newPassword,
         }),
       });
@@ -63,7 +64,11 @@ export default function ResetPasswordTokenPage({ params }: ResetPasswordPageProp
         </form>
 
         {message && (
-          <p className={`text-center text-sm mt-4 ${message.startsWith("✅") ? "text-green-600" : "text-red-600"}`}>
+          <p
+            className={`text-center text-sm mt-4 ${
+              message.startsWith("✅") ? "text-green-600" : "text-red-600"
+            }`}
+          >
             {message}
           </p>
         )}
