@@ -1,12 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 export default function ResetPasswordTokenPage() {
-  // ✅ Agora pegamos o token diretamente da rota via useParams()
-  const params = useParams();
-  const token = params?.token as string;
+  const { token } = useParams<{ token: string }>();
+  const router = useRouter();
 
   const [newPassword, setNewPassword] = useState("");
   const [message, setMessage] = useState("");
@@ -28,15 +27,13 @@ export default function ResetPasswordTokenPage() {
       );
 
       const data = await response.json();
-      if (!response.ok)
-        throw new Error(data.message || "Erro ao redefinir senha.");
+      if (!response.ok) throw new Error(data.message || "Erro ao redefinir senha.");
 
       setMessage("✅ Senha redefinida com sucesso! Você já pode fazer login.");
+      setTimeout(() => router.push("/login"), 4000); // redireciona após 4s
     } catch (err: unknown) {
       setMessage(
-        err instanceof Error
-          ? err.message
-          : "Erro desconhecido ao redefinir senha."
+        err instanceof Error ? err.message : "Erro desconhecido ao redefinir senha."
       );
     } finally {
       setLoading(false);
@@ -49,7 +46,9 @@ export default function ResetPasswordTokenPage() {
         <h1 className="text-3xl font-bold text-center text-lucy mb-6">
           Lucy 💜
         </h1>
-        <p className="text-center text-gray-500 mb-6">Redefinir senha</p>
+        <p className="text-center text-gray-500 mb-6">
+          Redefinir senha
+        </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
@@ -83,4 +82,5 @@ export default function ResetPasswordTokenPage() {
     </div>
   );
 }
+
 
