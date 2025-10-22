@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Navigation from "./Navigation";
-import Header from "./Header"; // ✅ Adicionado aqui
+import Header from "./Header";
 import { getCurrentUser } from "@/lib/auth";
 
 export default function ClientLayoutWrapper({
@@ -15,12 +15,19 @@ export default function ClientLayoutWrapper({
   const router = useRouter();
   const [ready, setReady] = useState(false);
 
-  // 🔹 Rotas públicas (sem header / nav)
+  // ✅ Rotas públicas (sem Header/Nav e sem necessidade de login)
+  const PUBLIC_ROUTES = [
+    "/login",
+    "/signup",
+    "/register",
+    "/forgot-password",   // nova rota do card de recuperação
+    "/reset-password",    // rota legacy (com usuário/senha)
+  ];
+
+  // ✅ Detectar também rotas dinâmicas tipo /reset-password/[token]
   const isPublic =
-    pathname === "/login" ||
-    pathname === "/signup" ||
-    pathname === "/register" ||
-    pathname === "/reset-password";
+    PUBLIC_ROUTES.includes(pathname) ||
+    pathname.startsWith("/reset-password/");
 
   // 🔐 Autenticação automática
   useEffect(() => {
@@ -57,10 +64,9 @@ export default function ClientLayoutWrapper({
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* ✅ Mostra Header apenas no dashboard */}
+      {/* ✅ Mostra Header apenas para usuários logados */}
       {!isPublic && <Header />}
 
-      {/* Conteúdo principal */}
       <main className="flex-1 pb-20">{children}</main>
 
       {/* ✅ Navigation apenas no dashboard */}
@@ -78,6 +84,7 @@ export default function ClientLayoutWrapper({
     </div>
   );
 }
+
 
 
 
