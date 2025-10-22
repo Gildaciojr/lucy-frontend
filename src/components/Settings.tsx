@@ -147,11 +147,10 @@ export default function Settings() {
         <select
           value={selectedLanguage}
           onChange={handleLanguageChange}
-          className="p-3 bg-gray-100 rounded-lg text-gray-700 w-full"
+          disabled
+          className="p-3 bg-gray-100 rounded-lg text-gray-700 w-full cursor-not-allowed"
         >
-          <option value="pt-BR">Português</option>
-          <option value="en-US">Inglês</option>
-          <option value="es-ES">Espanhol</option>
+          <option value="pt-BR">Português (padrão)</option>
         </select>
       </SettingsCard>
 
@@ -222,10 +221,3 @@ export default function Settings() {
     </div>
   );
 }
-
-
-
-
-
-
-
