@@ -2,7 +2,7 @@
 
 import Conteudo from "@/components/Conteudo";
 import { useState } from "react";
-import { FaCamera, FaTimes } from "react-icons/fa";
+import { FaCamera, FaTimes, FaTrash } from "react-icons/fa";
 import Image from "next/image";
 
 export default function ConteudoPage() {
@@ -20,8 +20,6 @@ export default function ConteudoPage() {
     try {
       setUploading(true);
       const token = localStorage.getItem("auth_token");
-
-      // ✅ Envio direto, evitando apiFetch (que força JSON)
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/conteudo/upload`,
         {
@@ -31,9 +29,7 @@ export default function ConteudoPage() {
         }
       );
 
-      if (!response.ok) {
-        throw new Error(`Erro ao enviar: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`Erro ao enviar: ${response.status}`);
 
       const result = await response.json();
       setImagens((prev) => [result.url, ...prev]);
@@ -42,6 +38,31 @@ export default function ConteudoPage() {
       alert("Erro ao enviar imagem. Tente novamente.");
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleDelete = async (url: string) => {
+    const confirmDelete = confirm("Deseja realmente excluir esta imagem?");
+    if (!confirmDelete) return;
+
+    try {
+      const token = localStorage.getItem("auth_token");
+      const parts = url.split("/");
+      const idPart = parts[parts.length - 1]?.split("-")[0];
+      if (!idPart) return;
+
+      await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/conteudo/imagem/${idPart}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      setImagens((prev) => prev.filter((img) => img !== url));
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao excluir imagem.");
     }
   };
 
@@ -60,10 +81,9 @@ export default function ConteudoPage() {
       {/* Main */}
       <main className="flex-1 px-6 py-8">
         <div className="max-w-6xl mx-auto space-y-6">
-          {/* Card original de ideias */}
           <Conteudo />
 
-          {/* 🟣 Card de Upload */}
+          {/* Galeria */}
           <div className="bg-white rounded-2xl shadow-md border border-lucy/30 p-5 sm:p-6">
             <h3 className="text-lg font-semibold text-lucy mb-4 flex items-center gap-2">
               <FaCamera className="text-lucy" />
@@ -103,6 +123,12 @@ export default function ConteudoPage() {
                       className="w-full h-40 object-cover cursor-pointer group-hover:scale-105 transition-transform"
                       onClick={() => setPreview(url)}
                     />
+                    <button
+                      onClick={() => handleDelete(url)}
+                      className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <FaTrash />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -132,7 +158,6 @@ export default function ConteudoPage() {
         </div>
       </main>
 
-      {/* Footer */}
       <footer className="bg-white border-t mt-8">
         <div className="max-w-6xl mx-auto px-6 py-4 text-center text-gray-400 text-sm">
           © {new Date().getFullYear()} Lucy — Gestão de Ideias
@@ -141,4 +166,3 @@ export default function ConteudoPage() {
     </div>
   );
 }
-
