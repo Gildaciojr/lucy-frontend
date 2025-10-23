@@ -6,10 +6,12 @@ import Link from "next/link";
 import { FaSpinner, FaSignInAlt, FaLock, FaEnvelope } from "react-icons/fa";
 import Image from "next/image";
 import { apiFetch } from "@/lib/api";
+import { Eye, EyeOff } from "lucide-react"; // 👁️ Novo
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false); // 👁️ controle do olho
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -108,7 +110,7 @@ export default function LoginPage() {
           Entre com seu e-mail e senha
         </p>
 
-        {/* 🔽 Formulário de login - igual ao original */}
+        {/* 🔽 Formulário de login */}
         {!showForgot && (
           <form onSubmit={handleSubmit} className="space-y-4">
             <input
@@ -121,15 +123,30 @@ export default function LoginPage() {
               disabled={loading}
             />
 
-            <input
-              type="password"
-              placeholder="Senha"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:bg-white"
-              disabled={loading}
-            />
+            {/* 👁️ Campo de senha com botão de ver/ocultar */}
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Senha"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full p-3 border rounded-lg focus:ring-2 focus:bg-white pr-10"
+                disabled={loading}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((p) => !p)}
+                className="absolute right-3 top-3 text-gray-500 hover:text-gray-700"
+                tabIndex={-1}
+              >
+                {showPassword ? (
+                  <EyeOff className="w-5 h-5" />
+                ) : (
+                  <Eye className="w-5 h-5" />
+                )}
+              </button>
+            </div>
 
             <button
               type="submit"
@@ -211,10 +228,7 @@ export default function LoginPage() {
             <div className="mt-6 text-sm text-gray-700">
               <p>
                 Não tem conta?{" "}
-                <Link
-                  href="/signup"
-                  className="text-lucy hover:underline"
-                >
+                <Link href="/signup" className="text-lucy hover:underline">
                   Cadastre-se
                 </Link>
               </p>
@@ -241,3 +255,4 @@ export default function LoginPage() {
     </div>
   );
 }
+
