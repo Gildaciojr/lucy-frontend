@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import PasswordField from "@/components/PasswordField";
 
 export default function ResetPasswordTokenPage() {
   const { token } = useParams<{ token: string }>();
@@ -27,10 +28,11 @@ export default function ResetPasswordTokenPage() {
       );
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Erro ao redefinir senha.");
+      if (!response.ok)
+        throw new Error(data.message || "Erro ao redefinir senha.");
 
       setMessage("✅ Senha redefinida com sucesso! Você já pode fazer login.");
-      setTimeout(() => router.push("/login"), 4000); // redireciona após 4s
+      setTimeout(() => router.push("/login"), 4000);
     } catch (err: unknown) {
       setMessage(
         err instanceof Error ? err.message : "Erro desconhecido ao redefinir senha."
@@ -43,21 +45,14 @@ export default function ResetPasswordTokenPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-lucy to-lucy p-4">
       <div className="bg-white shadow-lg rounded-xl w-full max-w-md p-8">
-        <h1 className="text-3xl font-bold text-center text-lucy mb-6">
-          Lucy 💜
-        </h1>
-        <p className="text-center text-gray-500 mb-6">
-          Redefinir senha
-        </p>
+        <h1 className="text-3xl font-bold text-center text-lucy mb-6">Lucy 💜</h1>
+        <p className="text-center text-gray-500 mb-6">Redefinir senha</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="password"
-            placeholder="Digite sua nova senha"
+          <PasswordField
             value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            required
-            className="w-full p-3 border rounded-lg"
+            onChange={setNewPassword}
+            placeholder="Nova senha"
           />
 
           <button
@@ -82,5 +77,7 @@ export default function ResetPasswordTokenPage() {
     </div>
   );
 }
+
+
 
 

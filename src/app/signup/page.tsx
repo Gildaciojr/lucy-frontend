@@ -2,7 +2,8 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { FaSpinner, FaUserPlus, FaLock, FaCheckCircle, FaTimesCircle } from "react-icons/fa";
+import { FaSpinner, FaUserPlus, FaLock } from "react-icons/fa";
+import PasswordField from "@/components/PasswordField";
 import { apiFetch } from "@/lib/api";
 
 export default function SignupPage() {
@@ -17,29 +18,15 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const router = useRouter();
 
-  const strongPassword = (s: string) =>
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(s);
-
-  const [isStrong, setIsStrong] = useState(false);
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
-    if (name === "password") setIsStrong(strongPassword(value));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
-
-    if (!strongPassword(form.password)) {
-      setLoading(false);
-      setError(
-        "A senha deve ter no mínimo 8 caracteres, incluindo maiúscula, minúscula, número e caractere especial."
-      );
-      return;
-    }
 
     try {
       await apiFetch("/auth/register", {
@@ -65,7 +52,7 @@ export default function SignupPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             name="name"
-            placeholder="Nome"
+            placeholder="Nome completo"
             value={form.name}
             onChange={handleChange}
             required
@@ -89,58 +76,16 @@ export default function SignupPage() {
             className="w-full p-3 border rounded-lg"
           />
 
-          {/* Campo de senha com força e instrução */}
-          <div>
-            <input
-              type="password"
-              name="password"
-              placeholder="Senha"
-              value={form.password}
-              onChange={handleChange}
-              required
-              className={`w-full p-3 border rounded-lg ${
-                form.password
-                  ? isStrong
-                    ? "border-green-400"
-                    : "border-red-400"
-                  : ""
-              }`}
-            />
-
-            {/* Orientação abaixo do campo */}
-            <p className="text-xs text-gray-600 mt-1">
-              🔒 A senha deve conter:
-              <br />- Mínimo de 8 caracteres
-              <br />- Letras maiúsculas e minúsculas
-              <br />- Pelo menos 1 número
-              <br />- Pelo menos 1 caractere especial
-            </p>
-
-            {/* Barra de força da senha */}
-            {form.password && (
-              <div className="mt-2 flex items-center gap-2">
-                {isStrong ? (
-                  <>
-                    <FaCheckCircle className="text-green-600" />
-                    <span className="text-green-600 text-sm">
-                      Senha forte e válida ✅
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <FaTimesCircle className="text-red-600" />
-                    <span className="text-red-600 text-sm">
-                      Senha ainda não atende aos requisitos
-                    </span>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
+          {/* Campo de senha com feedback visual */}
+          <PasswordField
+            value={form.password}
+            onChange={(val) => setForm((prev) => ({ ...prev, password: val }))}
+            placeholder="Senha"
+          />
 
           <input
             name="phone"
-            placeholder="Telefone"
+            placeholder="Telefone (opcional)"
             value={form.phone}
             onChange={handleChange}
             className="w-full p-3 border rounded-lg"
@@ -148,11 +93,11 @@ export default function SignupPage() {
 
           <button
             type="submit"
-            disabled={loading || !isStrong}
+            disabled={loading}
             className={`w-full py-3 rounded-lg flex items-center justify-center space-x-2 ${
-              loading || !isStrong
+              loading
                 ? "bg-gray-400 cursor-not-allowed"
-                : "bg-lucy hover:bg-lucy"
+                : "bg-lucy hover:bg-lucy-dark"
             } text-white transition`}
           >
             {loading ? <FaSpinner className="animate-spin" /> : <FaUserPlus />}
@@ -177,6 +122,7 @@ export default function SignupPage() {
     </div>
   );
 }
+
 
 
 
