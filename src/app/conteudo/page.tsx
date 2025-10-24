@@ -1,8 +1,8 @@
 "use client";
 
 import Conteudo from "@/components/Conteudo";
-import { useState } from "react";
-import { FaCamera, FaTimes, FaTrash } from "react-icons/fa";
+import { useState, useEffect, useRef } from "react";
+import { FaCamera, FaTimes, FaTrash, FaPaperPlane } from "react-icons/fa";
 import Image from "next/image";
 
 export default function ConteudoPage() {
@@ -10,12 +10,24 @@ export default function ConteudoPage() {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
 
-  // 🔹 Estados da IA
+  // 🔹 Estados da IA com chat
   const [showAI, setShowAI] = useState(false);
-  const [prompt, setPrompt] = useState("");
-  const [response, setResponse] = useState("");
+  const [input, setInput] = useState("");
+  const [conversation, setConversation] = useState<
+    { role: "user" | "assistant"; content: string }[]
+  >([]);
   const [loadingAI, setLoadingAI] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
 
+  const scrollToBottom = () => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [conversation]);
+
+  // 🔹 Upload de imagens
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -72,32 +84,52 @@ export default function ConteudoPage() {
     }
   };
 
-  // 🔹 Função da IA
-  const handleGenerate = async () => {
-    setLoadingAI(true);
-    setResponse("");
+  // 🔹 Enviar mensagem para IA com histórico
+  const handleSend = async () => {
+    if (!input.trim()) return;
+    const userMessage = input.trim();
+    setInput("");
+    setConversation((prev) => [
+      ...prev,
+      { role: "user", content: userMessage },
+    ]);
+
     try {
+      setLoadingAI(true);
       const token = localStorage.getItem("auth_token");
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/ai/content-helper`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: token ? `Bearer ${token}` : "",
-          },
-          body: JSON.stringify({ prompt }),
-        }
-      );
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ai/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: "system",
+              content: "Você é Lucy 💜, uma IA criativa de marketing digital.",
+            },
+            ...conversation.map((m) => ({ role: m.role, content: m.content })),
+            { role: "user", content: userMessage },
+          ],
+        }),
+      });
+
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Erro ao gerar conteúdo.");
-      setResponse(data.text);
+      if (!res.ok) throw new Error(data.message || "Erro ao gerar resposta.");
+      setConversation((prev) => [
+        ...prev,
+        { role: "assistant", content: data.reply },
+      ]);
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setResponse(err.message);
-      } else {
-        setResponse("Erro ao gerar conteúdo.");
-      }
+      console.error(err);
+      setConversation((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "⚠️ Erro ao processar a resposta da Lucy.",
+        },
+      ]);
     } finally {
       setLoadingAI(false);
     }
@@ -120,18 +152,17 @@ export default function ConteudoPage() {
         <div className="bg-white rounded-2xl shadow-md border border-lucy/30 p-6 flex flex-col sm:flex-row justify-between items-center gap-4">
           <div>
             <h3 className="text-xl font-semibold text-lucy">
-              ✨ Crie ideias virais com a Lucy
+              ✨ Converse com a Lucy
             </h3>
             <p className="text-sm text-gray-600">
-              Gere títulos, legendas e ideias criativas para seus posts em
-              segundos.
+              Tenha ideias criativas, dicas de conteúdo e muito mais com a Lucy.
             </p>
           </div>
           <button
             onClick={() => setShowAI(true)}
             className="bg-lucy hover:bg-lucy-dark text-white font-semibold px-5 py-2 rounded-lg shadow-md transition-colors"
           >
-            Usar agora
+            Abrir Chat
           </button>
         </div>
       </div>
@@ -216,10 +247,10 @@ export default function ConteudoPage() {
         </div>
       </main>
 
-      {/* 🔹 Modal da IA */}
+      {/* 💬 Modal Chat da Lucy */}
       {showAI && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-xl shadow-xl relative">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-xl shadow-xl relative flex flex-col h-[80vh]">
             <button
               onClick={() => setShowAI(false)}
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
@@ -227,35 +258,55 @@ export default function ConteudoPage() {
               ✕
             </button>
 
-            <h3 className="text-lg font-semibold mb-3 text-lucy">
-              💡 Gerador de ideias com a Lucy
+            <h3 className="text-lg font-semibold mb-3 text-lucy text-center">
+              💜 Chat com Lucy
             </h3>
 
-            <textarea
-              rows={4}
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Exemplo: Crie 5 ideias de posts sobre motivação e produtividade..."
-              className="w-full p-3 border rounded-lg mb-3"
-            />
+            <div className="flex-1 overflow-y-auto border p-3 rounded-lg bg-gray-50 mb-3 space-y-3">
+              {conversation.length === 0 && (
+                <p className="text-center text-gray-500 text-sm">
+                  Inicie uma conversa com a Lucy!
+                </p>
+              )}
 
-            <button
-              onClick={handleGenerate}
-              disabled={loadingAI || !prompt.trim()}
-              className={`w-full py-2 rounded-lg text-white font-semibold transition ${
-                loadingAI || !prompt.trim()
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-lucy hover:bg-lucy-dark"
-              }`}
-            >
-              {loadingAI ? "Gerando..." : "Gerar ideias"}
-            </button>
+              {conversation.map((msg, idx) => (
+                <div
+                  key={idx}
+                  className={`flex ${
+                    msg.role === "user" ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  <div
+                    className={`max-w-[80%] p-3 rounded-2xl text-sm shadow-sm ${
+                      msg.role === "user"
+                        ? "bg-lucy text-white rounded-br-none"
+                        : "bg-gray-200 text-gray-800 rounded-bl-none"
+                    }`}
+                  >
+                    {msg.content}
+                  </div>
+                </div>
+              ))}
+              <div ref={chatEndRef} />
+            </div>
 
-            {response && (
-              <div className="mt-4 p-3 bg-gray-50 border rounded-lg text-gray-800 whitespace-pre-wrap max-h-80 overflow-auto">
-                {response}
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                placeholder="Digite sua mensagem..."
+                className="flex-1 border rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-lucy"
+                disabled={loadingAI}
+              />
+              <button
+                onClick={handleSend}
+                disabled={loadingAI || !input.trim()}
+                className="bg-lucy hover:bg-lucy-dark text-white p-3 rounded-lg transition disabled:bg-gray-400"
+              >
+                <FaPaperPlane />
+              </button>
+            </div>
           </div>
         </div>
       )}
