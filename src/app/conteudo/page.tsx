@@ -10,6 +10,12 @@ export default function ConteudoPage() {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
 
+  // 🔹 Estados da IA
+  const [showAI, setShowAI] = useState(false);
+  const [prompt, setPrompt] = useState("");
+  const [response, setResponse] = useState("");
+  const [loadingAI, setLoadingAI] = useState(false);
+
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -66,6 +72,37 @@ export default function ConteudoPage() {
     }
   };
 
+  // 🔹 Função da IA
+  const handleGenerate = async () => {
+    setLoadingAI(true);
+    setResponse("");
+    try {
+      const token = localStorage.getItem("auth_token");
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/ai/content-helper`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : "",
+          },
+          body: JSON.stringify({ prompt }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Erro ao gerar conteúdo.");
+      setResponse(data.text);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setResponse(err.message);
+      } else {
+        setResponse("Erro ao gerar conteúdo.");
+      }
+    } finally {
+      setLoadingAI(false);
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       {/* Header */}
@@ -76,6 +113,27 @@ export default function ConteudoPage() {
         <p className="text-white/80 mt-2 text-center text-sm">
           Gerencie suas ideias, conteúdos e imagens 💜
         </p>
+      </div>
+
+      {/* 🔮 Card IA GPT */}
+      <div className="max-w-6xl mx-auto mt-6 px-6">
+        <div className="bg-white rounded-2xl shadow-md border border-lucy/30 p-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div>
+            <h3 className="text-xl font-semibold text-lucy">
+              ✨ Crie ideias virais com GPT
+            </h3>
+            <p className="text-sm text-gray-600">
+              Gere títulos, legendas e ideias criativas para seus posts em
+              segundos.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowAI(true)}
+            className="bg-lucy hover:bg-lucy-dark text-white font-semibold px-5 py-2 rounded-lg shadow-md transition-colors"
+          >
+            Usar IA agora
+          </button>
+        </div>
       </div>
 
       {/* Main */}
@@ -157,6 +215,50 @@ export default function ConteudoPage() {
           </div>
         </div>
       </main>
+
+      {/* 🔹 Modal da IA */}
+      {showAI && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-xl shadow-xl relative">
+            <button
+              onClick={() => setShowAI(false)}
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
+            >
+              ✕
+            </button>
+
+            <h3 className="text-lg font-semibold mb-3 text-lucy">
+              💡 Gerador de ideias com GPT
+            </h3>
+
+            <textarea
+              rows={4}
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Exemplo: Crie 5 ideias de posts sobre motivação e produtividade..."
+              className="w-full p-3 border rounded-lg mb-3"
+            />
+
+            <button
+              onClick={handleGenerate}
+              disabled={loadingAI || !prompt.trim()}
+              className={`w-full py-2 rounded-lg text-white font-semibold transition ${
+                loadingAI || !prompt.trim()
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-lucy hover:bg-lucy-dark"
+              }`}
+            >
+              {loadingAI ? "Gerando..." : "Gerar ideias"}
+            </button>
+
+            {response && (
+              <div className="mt-4 p-3 bg-gray-50 border rounded-lg text-gray-800 whitespace-pre-wrap max-h-80 overflow-auto">
+                {response}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <footer className="bg-white border-t mt-8">
         <div className="max-w-6xl mx-auto px-6 py-4 text-center text-gray-400 text-sm">
