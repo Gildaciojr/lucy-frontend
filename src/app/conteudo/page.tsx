@@ -120,7 +120,7 @@ export default function ConteudoPage() {
         <div className="bg-white rounded-2xl shadow-md border border-lucy/30 p-6 flex flex-col sm:flex-row justify-between items-center gap-4">
           <div>
             <h3 className="text-xl font-semibold text-lucy">
-              ✨ Crie ideias virais com GPT
+              ✨ Crie ideias virais com a Lucy
             </h3>
             <p className="text-sm text-gray-600">
               Gere títulos, legendas e ideias criativas para seus posts em
@@ -131,7 +131,7 @@ export default function ConteudoPage() {
             onClick={() => setShowAI(true)}
             className="bg-lucy hover:bg-lucy-dark text-white font-semibold px-5 py-2 rounded-lg shadow-md transition-colors"
           >
-            Usar IA agora
+            Usar agora
           </button>
         </div>
       </div>
@@ -228,7 +228,7 @@ export default function ConteudoPage() {
             </button>
 
             <h3 className="text-lg font-semibold mb-3 text-lucy">
-              💡 Gerador de ideias com GPT
+              💡 Gerador de ideias com a Lucy
             </h3>
 
             <textarea
