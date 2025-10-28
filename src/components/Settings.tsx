@@ -1,7 +1,9 @@
+// frontend/src/components/Settings.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
 import { FaLanguage, FaCommentAlt, FaCrown, FaSpinner } from "react-icons/fa";
+import { apiFetch } from "@/lib/api"; // ✅
 
 interface User {
   id: number;
@@ -49,22 +51,8 @@ export default function Settings() {
         return;
       }
 
-      // 🔹 agora o backend pega userId do token
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/users/me`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Erro ao buscar plano do usuário.");
-      }
-      const user: User = await response.json();
-
-      setPlanStatus({
-        plan: user.plan || "Free",
-      });
+      const user = await apiFetch<User>("/users/me"); // ✅
+      setPlanStatus({ plan: user.plan || "Free" });
     } catch (err: unknown) {
       if (err instanceof Error) setError(err.message);
       else setError("Erro desconhecido.");
@@ -96,24 +84,14 @@ export default function Settings() {
         return;
       }
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/feedback`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            rating: feedbackRating,
-            comment: feedback,
-          }),
-        }
-      );
+      await apiFetch("/feedback", {
+        method: "POST",
+        body: JSON.stringify({
+          rating: feedbackRating,
+          comment: feedback,
+        }),
+      }); // ✅
 
-      if (!response.ok) {
-        throw new Error("Erro ao enviar feedback.");
-      }
       setFeedbackStatus("✅ Feedback enviado com sucesso!");
       setFeedback("");
       setFeedbackRating(null);
@@ -159,7 +137,6 @@ export default function Settings() {
           Como você avalia nossa plataforma?
         </h4>
 
-        {/* Grade responsiva para mobile */}
         <div className="grid grid-cols-6 sm:grid-cols-11 gap-2">
           {[...Array(11).keys()].map((rating) => (
             <button
@@ -221,3 +198,4 @@ export default function Settings() {
     </div>
   );
 }
+

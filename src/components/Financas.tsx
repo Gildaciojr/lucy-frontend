@@ -1,3 +1,4 @@
+// frontend/src/components/Financas.tsx
 "use client";
 
 import React, { useEffect, useMemo, useState, useCallback } from "react";
@@ -20,6 +21,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
+import { apiFetch } from "@/lib/api"; // ✅
 
 type Tipo = "receita" | "despesa";
 type Origem = "dashboard" | "whatsapp";
@@ -68,12 +70,15 @@ export default function Financas() {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [fromManual, setFromManual] = useState<string>("");
   const [toManual, setToManual] = useState<string>("");
-  const [tipoAtivo, setTipoAtivo] = useState<"receita" | "despesa" | "all">("all");
-  const [periodoAtivo, setPeriodoAtivo] = useState<"today" | "week" | "month" | null>(null);
+  const [tipoAtivo, setTipoAtivo] = useState<"receita" | "despesa" | "all">(
+    "all"
+  );
+  const [periodoAtivo, setPeriodoAtivo] = useState<
+    "today" | "week" | "month" | null
+  >(null);
   const [categoriaAtiva, setCategoriaAtiva] = useState<string | null>(null);
   const [menuAberto, setMenuAberto] = useState(false);
 
-  // 🟣 Inicializa o campo "De" com a data atual automaticamente
   useEffect(() => {
     const hoje = new Date().toISOString().split("T")[0];
     setFromManual(hoje);
@@ -88,12 +93,7 @@ export default function Financas() {
         return;
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/financas`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!response.ok) throw new Error("Erro ao buscar finanças.");
-      const data: Financa[] = await response.json();
+      const data = await apiFetch<Financa[]>("/financas"); // ✅
       setTodasFinancas(data);
       setBasePeriodo(data);
       setFinancasFiltradas(data);
@@ -120,7 +120,6 @@ export default function Financas() {
   const aplicarFiltroPeriodo = (mode: "today" | "week" | "month") => {
     const { from, to } = getDateRange(mode);
 
-    // 🔹 Normaliza para início/fim do dia no fuso local
     const normalizeDate = (d: string) => {
       const local = new Date(d);
       local.setHours(0, 0, 0, 0);
@@ -168,15 +167,23 @@ export default function Financas() {
   const aplicarFiltroManual = useCallback(() => {
     if (!fromManual && !toManual) return;
 
-    // 🔹 Função que normaliza datas no horário local
     const normalizeDate = (dateStr: string, isEnd = false) => {
       const d = new Date(dateStr + "T00:00:00");
-      d.setHours(isEnd ? 23 : 0, isEnd ? 59 : 0, isEnd ? 59 : 0, isEnd ? 999 : 0);
+      d.setHours(
+        isEnd ? 23 : 0,
+        isEnd ? 59 : 0,
+        isEnd ? 59 : 0,
+        isEnd ? 999 : 0
+      );
       return d;
     };
 
-    const fromDate = fromManual ? normalizeDate(fromManual) : new Date("1970-01-01");
-    const toDate = toManual ? normalizeDate(toManual, true) : new Date("2999-12-31");
+    const fromDate = fromManual
+      ? normalizeDate(fromManual)
+      : new Date("1970-01-01");
+    const toDate = toManual
+      ? normalizeDate(toManual, true)
+      : new Date("2999-12-31");
 
     const base = todasFinancas.filter((f) => {
       const dataItem = new Date(f.data);
@@ -191,7 +198,6 @@ export default function Financas() {
     setCategoriaAtiva(null);
   }, [fromManual, toManual, todasFinancas, aplicarTipoSobreBase]);
 
-  // Atualiza automaticamente quando as datas mudam manualmente
   useEffect(() => {
     aplicarFiltroManual();
   }, [fromManual, toManual]);
@@ -210,11 +216,24 @@ export default function Financas() {
   const receitas = financasFiltradas.filter((f) => f.tipo === "receita");
   const despesas = financasFiltradas.filter((f) => f.tipo === "despesa");
 
-  const totalReceitas = receitas.reduce((sum, f) => sum + Number(f.valor || 0), 0);
-  const totalDespesas = despesas.reduce((sum, f) => sum + Number(f.valor || 0), 0);
+  const totalReceitas = receitas.reduce(
+    (sum, f) => sum + Number(f.valor || 0),
+    0
+  );
+  const totalDespesas = despesas.reduce(
+    (sum, f) => sum + Number(f.valor || 0),
+    0
+  );
   const saldo = totalReceitas - totalDespesas;
 
-  const COLORS = ["#6d28d9", "#22c55e", "#facc15", "#ef4444", "#3b82f6", "#9333ea"];
+  const COLORS = [
+    "#6d28d9",
+    "#22c55e",
+    "#facc15",
+    "#ef4444",
+    "#3b82f6",
+    "#9333ea",
+  ];
 
   const categoriasUnicas = useMemo(() => {
     return Array.from(new Set(todasFinancas.map((f) => f.categoria))).sort();
@@ -243,7 +262,9 @@ export default function Financas() {
 
   return (
     <div className="p-6 bg-gray-50 rounded-lg shadow-inner">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Controle Financeiro</h2>
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">
+        Controle Financeiro
+      </h2>
       <FinancasForm onSave={fetchFinancas} />
 
       {/* 🔹 Filtros por Categoria */}
@@ -359,17 +380,24 @@ export default function Financas() {
 
       {/* 💰 Cards financeiros */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8 mt-6">
-        <div className="cursor-pointer" onClick={() => aplicarFiltroTipo("receita")}>
+        <div
+          className="cursor-pointer"
+          onClick={() => aplicarFiltroTipo("receita")}
+        >
           <div
             className={`flex items-center space-x-4 p-4 rounded-xl shadow-md border-2 transition-all ${
-              tipoAtivo === "receita" ? "border-green-500 bg-green-50" : "border-transparent bg-white"
+              tipoAtivo === "receita"
+                ? "border-green-500 bg-green-50"
+                : "border-transparent bg-white"
             }`}
           >
             <div className="p-3 rounded-full text-white bg-green-500">
               <FaMoneyBillWave />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-gray-500">Total Receitas</h3>
+              <h3 className="text-sm font-semibold text-gray-500">
+                Total Receitas
+              </h3>
               <p className="text-xl font-bold text-gray-800">
                 R$ {totalReceitas.toFixed(2).replace(".", ",")}
               </p>
@@ -377,17 +405,24 @@ export default function Financas() {
           </div>
         </div>
 
-        <div className="cursor-pointer" onClick={() => aplicarFiltroTipo("despesa")}>
+        <div
+          className="cursor-pointer"
+          onClick={() => aplicarFiltroTipo("despesa")}
+        >
           <div
             className={`flex items-center space-x-4 p-4 rounded-xl shadow-md border-2 transition-all ${
-              tipoAtivo === "despesa" ? "border-red-500 bg-red-50" : "border-transparent bg-white"
+              tipoAtivo === "despesa"
+                ? "border-red-500 bg-red-50"
+                : "border-transparent bg-white"
             }`}
           >
             <div className="p-3 rounded-full text-white bg-red-500">
               <FaArrowDown />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-gray-500">Total Despesas</h3>
+              <h3 className="text-sm font-semibold text-gray-500">
+                Total Despesas
+              </h3>
               <p className="text-xl font-bold text-gray-800">
                 R$ {totalDespesas.toFixed(2).replace(".", ",")}
               </p>
@@ -395,18 +430,27 @@ export default function Financas() {
           </div>
         </div>
 
-        <div className="cursor-pointer" onClick={() => aplicarFiltroTipo("all")}>
+        <div
+          className="cursor-pointer"
+          onClick={() => aplicarFiltroTipo("all")}
+        >
           <div
             className={`flex items-center space-x-4 p-4 rounded-xl shadow-md border-2 transition-all ${
-              tipoAtivo === "all" ? "border-lucy bg-purple-50" : "border-transparent bg-white"
+              tipoAtivo === "all"
+                ? "border-lucy bg-purple-50"
+                : "border-transparent bg-white"
             }`}
           >
-            <div className={`p-3 rounded-full text-white ${saldo >= 0 ? "bg-blue-500" : "bg-orange-500"}`}>
+            <div
+              className={`p-3 rounded-full text-white ${saldo >= 0 ? "bg-blue-500" : "bg-orange-500"}`}
+            >
               <FaBalanceScale />
             </div>
             <div>
               <h3 className="text-sm font-semibold text-gray-500">Saldo</h3>
-              <p className="text-xl font-bold text-gray-800">R$ {saldo.toFixed(2).replace(".", ",")}</p>
+              <p className="text-xl font-bold text-gray-800">
+                R$ {saldo.toFixed(2).replace(".", ",")}
+              </p>
             </div>
           </div>
         </div>
@@ -437,7 +481,8 @@ export default function Financas() {
                   key={`cell-${index}`}
                   fill={COLORS[index % COLORS.length]}
                   style={{
-                    transform: activeIndex === index ? "scale(1.08)" : "scale(1)",
+                    transform:
+                      activeIndex === index ? "scale(1.08)" : "scale(1)",
                     transformOrigin: "center",
                     transition: "transform 0.25s ease-out, filter 0.25s",
                     filter:
@@ -464,9 +509,14 @@ export default function Financas() {
       </div>
 
       {/* 🧾 Lista de lançamentos — agora responsiva (cards no mobile) */}
-      <div id="lista-financas" className="bg-white rounded-xl shadow-md p-6 mt-6">
+      <div
+        id="lista-financas"
+        className="bg-white rounded-xl shadow-md p-6 mt-6"
+      >
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-gray-800">Lançamentos Filtrados</h3>
+          <h3 className="text-lg font-semibold text-gray-800">
+            Lançamentos Filtrados
+          </h3>
           <button
             onClick={limparFiltros}
             className="flex items-center gap-2 bg-lucy hover:bg-lucy text-white px-4 py-2 rounded-lg shadow transition"
@@ -488,7 +538,10 @@ export default function Financas() {
             <div className="grid grid-cols-1 gap-3 sm:hidden">
               {financasFiltradas
                 .slice()
-                .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
+                .sort(
+                  (a, b) =>
+                    new Date(b.data).getTime() - new Date(a.data).getTime()
+                )
                 .map((i) => {
                   const valorNum = Number(i.valor || 0);
                   return (
@@ -516,10 +569,15 @@ export default function Financas() {
                       </div>
                       <div
                         className={`ml-4 shrink-0 font-bold ${
-                          i.tipo === "despesa" ? "text-red-600" : "text-green-600"
+                          i.tipo === "despesa"
+                            ? "text-red-600"
+                            : "text-green-600"
                         }`}
                       >
-                        R$ {Number.isNaN(valorNum) ? "-" : valorNum.toFixed(2).replace(".", ",")}
+                        R${" "}
+                        {Number.isNaN(valorNum)
+                          ? "-"
+                          : valorNum.toFixed(2).replace(".", ",")}
                       </div>
                     </div>
                   );
@@ -531,17 +589,30 @@ export default function Financas() {
               <table className="min-w-full text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="text-left px-4 py-3 text-gray-600 font-semibold">Data</th>
-                    <th className="text-left px-4 py-3 text-gray-600 font-semibold">Categoria</th>
-                    <th className="text-left px-4 py-3 text-gray-600 font-semibold">Tipo</th>
-                    <th className="text-left px-4 py-3 text-gray-600 font-semibold">Origem</th>
-                    <th className="text-right px-4 py-3 text-gray-600 font-semibold">Valor</th>
+                    <th className="text-left px-4 py-3 text-gray-600 font-semibold">
+                      Data
+                    </th>
+                    <th className="text-left px-4 py-3 text-gray-600 font-semibold">
+                      Categoria
+                    </th>
+                    <th className="text-left px-4 py-3 text-gray-600 font-semibold">
+                      Tipo
+                    </th>
+                    <th className="text-left px-4 py-3 text-gray-600 font-semibold">
+                      Origem
+                    </th>
+                    <th className="text-right px-4 py-3 text-gray-600 font-semibold">
+                      Valor
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {financasFiltradas
                     .slice()
-                    .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
+                    .sort(
+                      (a, b) =>
+                        new Date(b.data).getTime() - new Date(a.data).getTime()
+                    )
                     .map((i) => {
                       const valorNum = Number(i.valor || 0);
                       return (
@@ -590,4 +661,3 @@ export default function Financas() {
     </div>
   );
 }
-

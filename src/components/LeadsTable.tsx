@@ -1,8 +1,10 @@
+// frontend/src/components/LeadsTable.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
 import { fetchLeads, Lead } from "../services/leadsService";
 import { FaSpinner } from "react-icons/fa";
+import { apiFetchRaw } from "@/lib/api"; // ✅
 
 export default function LeadsTable() {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -21,29 +23,14 @@ export default function LeadsTable() {
   const downloadFile = async (type: "csv" | "pdf" | "xlsx") => {
     try {
       setDownloading(type);
-      const token = localStorage.getItem("auth_token");
-
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/leads/export.${type}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token ?? ""}`,
-          },
-        }
-      );
-
-      if (!res.ok) throw new Error("Erro ao gerar relatório.");
-
-      const blob = await res.blob();
+      const blob = await apiFetchRaw(`/leads/export.${type}`); // ✅
       const url = window.URL.createObjectURL(blob);
-
       const a = document.createElement("a");
       a.href = url;
       a.download = `leads.${type}`;
       a.style.display = "none";
       document.body.appendChild(a);
       a.click();
-
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
@@ -128,6 +115,7 @@ export default function LeadsTable() {
     </div>
   );
 }
+
 
 
 

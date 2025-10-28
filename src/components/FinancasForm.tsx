@@ -1,7 +1,9 @@
+// frontend/src/components/FinancasForm.tsx
 "use client";
 
 import React, { useState } from "react";
 import { FaPlus, FaSpinner } from "react-icons/fa";
+import { apiFetch } from "@/lib/api"; // ✅
 
 export default function FinancasForm({ onSave }: { onSave: () => void }) {
   const [formState, setFormState] = useState({
@@ -52,26 +54,15 @@ export default function FinancasForm({ onSave }: { onSave: () => void }) {
         return;
       }
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/financas`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            categoria: formState.categoria,
-            valor: parseFloat(formState.valor),
-            tipo: formState.tipo,
-            data: new Date().toISOString(),
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Erro ao adicionar finança.");
-      }
+      await apiFetch("/financas", {
+        method: "POST",
+        body: JSON.stringify({
+          categoria: formState.categoria,
+          valor: parseFloat(formState.valor),
+          tipo: formState.tipo,
+          data: new Date().toISOString(),
+        }),
+      }); // ✅
 
       setStatus("success");
       setFormState({ categoria: "", valor: "", tipo: "despesa" });
@@ -141,6 +132,7 @@ export default function FinancasForm({ onSave }: { onSave: () => void }) {
     </div>
   );
 }
+
 
 
 

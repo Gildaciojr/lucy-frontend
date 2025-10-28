@@ -1,7 +1,9 @@
+// frontend/src/components/AgendaForm.tsx
 "use client";
 
 import React, { useState } from "react";
 import { FaPlus, FaSpinner, FaCheckCircle } from "react-icons/fa";
+import { apiFetch } from "@/lib/api"; // ✅
 
 export default function AgendaForm({ onSave }: { onSave: () => void }) {
   const [formState, setFormState] = useState({
@@ -34,7 +36,6 @@ export default function AgendaForm({ onSave }: { onSave: () => void }) {
         return;
       }
 
-      // 🔹 validação: se a data já passou e o usuário não marcou concluído
       const dataSelecionada = new Date(formState.data);
       if (dataSelecionada < new Date() && !formState.concluido) {
         alert("Compromissos com data no passado devem ser marcados como concluídos.");
@@ -42,19 +43,10 @@ export default function AgendaForm({ onSave }: { onSave: () => void }) {
         return;
       }
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/compromissos`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(formState),
-        }
-      );
-
-      if (!response.ok) throw new Error("Erro ao adicionar compromisso.");
+      await apiFetch("/compromissos", {
+        method: "POST",
+        body: JSON.stringify(formState),
+      }); // ✅
 
       setStatus("success");
       setFormState({ titulo: "", data: "", concluido: false });
@@ -72,7 +64,6 @@ export default function AgendaForm({ onSave }: { onSave: () => void }) {
         Novo Compromisso
       </h3>
       <form onSubmit={handleAddCompromisso} className="space-y-4">
-        {/* título */}
         <input
           type="text"
           name="titulo"
@@ -83,7 +74,6 @@ export default function AgendaForm({ onSave }: { onSave: () => void }) {
           className="w-full p-2 rounded-lg border border-gray-300"
         />
 
-        {/* data */}
         <input
           type="datetime-local"
           name="data"
@@ -93,7 +83,6 @@ export default function AgendaForm({ onSave }: { onSave: () => void }) {
           className="w-full p-2 rounded-lg border border-gray-300"
         />
 
-        {/* marcar concluído */}
         <label className="flex items-center space-x-2 text-sm text-gray-700">
           <input
             type="checkbox"
@@ -105,7 +94,6 @@ export default function AgendaForm({ onSave }: { onSave: () => void }) {
           <span>Já está concluído?</span>
         </label>
 
-        {/* botão */}
         <button
           type="submit"
           className="w-full p-3 bg-blue-500 text-white font-bold rounded-xl flex items-center justify-center space-x-2"
@@ -115,7 +103,6 @@ export default function AgendaForm({ onSave }: { onSave: () => void }) {
           <span>Adicionar Compromisso</span>
         </button>
 
-        {/* feedback */}
         {status === "success" && (
           <p className="flex items-center gap-1 text-green-600 font-medium mt-2">
             <FaCheckCircle /> Compromisso adicionado com sucesso!
@@ -130,6 +117,7 @@ export default function AgendaForm({ onSave }: { onSave: () => void }) {
     </div>
   );
 }
+
 
 
 

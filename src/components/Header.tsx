@@ -1,8 +1,10 @@
+// frontend/src/components/Header.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
 import Logo from "./Logo";
 import { FaUserCircle, FaSignOutAlt } from "react-icons/fa";
+import { apiFetch } from "@/lib/api"; // ✅
 
 interface User {
   id: number;
@@ -25,14 +27,8 @@ export default function Header() {
     const token = localStorage.getItem("auth_token");
     if (!token) return;
 
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Erro ao buscar usuário.");
-        return res.json();
-      })
-      .then((data: User) => {
+    apiFetch<User>("/users/me") // ✅ cacheado 30s e de-duplicado
+      .then((data) => {
         setUser(data);
         setForm({ name: data.name || "", phone: data.phone || "", password: "" });
       })
@@ -52,22 +48,13 @@ export default function Header() {
     const body: Record<string, string> = {};
     body[field] = form[field];
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
+    const updated = await apiFetch<User>("/users/me", {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
       body: JSON.stringify(body),
-    });
+    }); // ✅
 
-    if (res.ok) {
-      const updated = await res.json();
-      setUser(updated);
-      setMessage("✅ Atualizado com sucesso!");
-    } else {
-      setMessage("❌ Erro ao atualizar.");
-    }
+    setUser(updated);
+    setMessage("✅ Atualizado com sucesso!");
     setTimeout(() => setMessage(""), 3000);
   };
 
@@ -160,6 +147,7 @@ export default function Header() {
     </header>
   );
 }
+
 
 
 

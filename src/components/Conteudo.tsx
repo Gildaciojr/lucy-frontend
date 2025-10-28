@@ -1,3 +1,4 @@
+// frontend/src/components/Conteudo.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -8,7 +9,7 @@ import {
   FaChevronLeft,
   FaTrash,
 } from "react-icons/fa";
-// ❌ import ConteudoForm removido
+import { apiFetch } from "@/lib/api"; // ✅
 
 interface Conteudo {
   id: number;
@@ -68,16 +69,7 @@ export default function Conteudo() {
         window.location.href = "/login";
         return;
       }
-
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/conteudo`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (!response.ok) throw new Error("Erro ao buscar ideias.");
-      const data: Conteudo[] = await response.json();
+      const data = await apiFetch<Conteudo[]>("/conteudo"); // ✅
       setConteudos(data);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro desconhecido.");
@@ -90,14 +82,10 @@ export default function Conteudo() {
     const token = localStorage.getItem("auth_token");
     if (!token) return;
 
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/conteudo/${id}`, {
+    await apiFetch(`/conteudo/${id}`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
       body: JSON.stringify(updates),
-    });
+    }); // ✅
 
     fetchConteudos();
   };
@@ -114,11 +102,7 @@ export default function Conteudo() {
     const token = localStorage.getItem("auth_token");
     if (!token) return;
 
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/conteudo/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
+    await apiFetch(`/conteudo/${id}`, { method: "DELETE" }); // ✅
     fetchConteudos();
   };
 
@@ -239,8 +223,6 @@ export default function Conteudo() {
         />
       </div>
 
-      {/* ❌ Bloco de criação de nova ideia removido */}
-
       <div className="bg-white rounded-xl shadow-md p-6 mt-8">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
           Ideias Recentes
@@ -263,6 +245,7 @@ export default function Conteudo() {
     </div>
   );
 }
+
 
 
 

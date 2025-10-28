@@ -1,3 +1,4 @@
+// frontend/src/components/Agenda.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -9,14 +10,14 @@ import {
   FaUndo,
 } from "react-icons/fa";
 import AgendaForm from "./AgendaForm";
-import AgendaCalendar from "./AgendaCalendar"; // 🆕 import do novo calendário
+import AgendaCalendar from "./AgendaCalendar";
+import { apiFetch } from "@/lib/api"; // ✅
 
 interface CompromissoItem {
   id: number;
   titulo: string;
   data: string;
   concluido: boolean;
-  // vem do backend (NormalizadoCompromisso)
   origem: "dashboard" | "whatsapp";
 }
 
@@ -69,15 +70,7 @@ export default function Agenda() {
         window.location.href = "/login";
         return;
       }
-
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/compromissos`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      if (!response.ok) throw new Error("Erro ao buscar compromissos.");
-
-      const data = (await response.json()) as CompromissoItem[];
+      const data = await apiFetch<CompromissoItem[]>("/compromissos"); // ✅
       setCompromissos(data);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro desconhecido.");
@@ -90,14 +83,8 @@ export default function Agenda() {
     const token = localStorage.getItem("auth_token");
     if (!token) return;
 
-    await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/compromissos/${id}/concluir`,
-      {
-        method: "PUT",
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
-
+    await apiFetch(`/compromissos/${id}/concluir`, { method: "PUT" }); // ✅
+    // invalida/refresh
     fetchCompromissos();
   };
 
@@ -105,14 +92,7 @@ export default function Agenda() {
     const token = localStorage.getItem("auth_token");
     if (!token) return;
 
-    await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/compromissos/${id}/reabrir`,
-      {
-        method: "PUT",
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
-
+    await apiFetch(`/compromissos/${id}/reabrir`, { method: "PUT" }); // ✅
     fetchCompromissos();
   };
 
@@ -211,17 +191,13 @@ export default function Agenda() {
         Agenda de Compromissos
       </h2>
 
-      {/* 🗓️ Novo calendário moderno (não quebra o fluxo atual) */}
       <AgendaCalendar
         events={compromissos.map((c) => ({
           id: c.id,
           title: c.titulo,
           start: new Date(c.data),
           end: new Date(c.data),
-          description:
-            c.origem === "whatsapp"
-              ? "Criado via WhatsApp"
-              : "Criado no Dashboard",
+          description: c.origem === "whatsapp" ? "Criado via WhatsApp" : "Criado no Dashboard",
         }))}
       />
 
@@ -255,3 +231,4 @@ export default function Agenda() {
     </div>
   );
 }
+
