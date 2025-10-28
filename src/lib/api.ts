@@ -53,7 +53,6 @@ async function doFetchJson(
 
   if (res.status === 204) return null;
   if (!res.ok) {
-    // propaga erro com payload útil quando possível
     let msg = `Erro ${res.status}: ${res.statusText}`;
     try {
       const j = await res.json();
@@ -63,7 +62,7 @@ async function doFetchJson(
           : String(j.message);
     } catch {}
     const e = new Error(msg);
-    // @ts-expect-error status é adicionado dinamicamente
+    // @ts-expect-error adiciona status dinamicamente
     e.status = res.status;
     throw e;
   }
@@ -79,20 +78,17 @@ export async function apiFetch<T = AnyJson>(
 ): Promise<T> {
   const key = cacheKey(path, options);
 
-  // cache de 30s para GET
   if (key) {
     const c = memCache[key];
     if (c && Date.now() - c.at < CACHE_TIME) {
       return c.data as T;
     }
-    // de-dupe: se já existe uma chamada GET em andamento para a mesma rota, reuse
     const running = inflight.get(key);
     if (running) {
       return (await running) as T;
     }
   }
 
-  // retry/backoff para 429/503
   let attempt = 0;
   const runner = (async () => {
     while (true) {
@@ -116,7 +112,6 @@ export async function apiFetch<T = AnyJson>(
         throw err;
       } finally {
         if (key && inflight.get(key)) {
-          // limpar inflight ao término (success/throw)
           inflight.delete(key);
         }
       }
@@ -136,7 +131,6 @@ export async function apiFetchRaw(
   const token =
     typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
 
-  // debounce leve
   const since = Date.now() - lastFetchAt;
   if (since < MIN_INTERVAL) {
     await sleep(MIN_INTERVAL - since);
@@ -170,4 +164,24 @@ export function apiInvalidate(path: string) {
   const key = cacheKey(path, { method: "GET" });
   if (key && memCache[key]) delete memCache[key];
 }
+
+// ===================================================
+// 🔹 Funções compatíveis com versões anteriores (v1)
+// ===================================================
+
+// ⚙️ Recupera todos os registros financeiros
+export async function getRegistrosFinanceiros() {
+  return apiFetch("/registros-financeiros");
+}
+
+// ⚙️ Cria um novo registro financeiro
+export async function createRegistroFinanceiro(
+  data: Record<string, unknown>
+) {
+  return apiFetch("/registros-financeiros", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
 
