@@ -1,4 +1,3 @@
-// frontend/src/components/Conteudo.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -9,10 +8,10 @@ import {
   FaChevronLeft,
   FaTrash,
 } from "react-icons/fa";
-import { apiFetch } from "@/lib/api"; // ✅
+import { apiFetch } from "@/lib/api";
 
 interface Conteudo {
-  id: number;
+  id: string; // ✅ bigint → string
   ideia: string;
   favorito: boolean;
   agendado: boolean;
@@ -34,32 +33,28 @@ const Card: React.FC<CardProps> = ({
   value,
   onClick,
   isActive,
-}) => {
-  return (
-    <div
-      className={`flex items-center space-x-4 p-4 bg-white rounded-xl shadow-md cursor-pointer transition-transform transform hover:scale-105 ${
-        isActive ? "ring-2 ring-blue-500" : ""
-      }`}
-      onClick={onClick}
-    >
-      <div className="p-3 rounded-full bg-yellow-500 text-white text-xl">
-        {icon}
-      </div>
-      <div>
-        <h3 className="text-sm font-semibold text-gray-500">{title}</h3>
-        <p className="text-xl font-bold text-gray-800">{value}</p>
-      </div>
+}) => (
+  <div
+    className={`flex items-center space-x-4 p-4 bg-white rounded-xl shadow-md cursor-pointer transition-transform transform hover:scale-105 ${
+      isActive ? "ring-2 ring-blue-500" : ""
+    }`}
+    onClick={onClick}
+  >
+    <div className="p-3 rounded-full bg-yellow-500 text-white text-xl">
+      {icon}
     </div>
-  );
-};
+    <div>
+      <h3 className="text-sm font-semibold text-gray-500">{title}</h3>
+      <p className="text-xl font-bold text-gray-800">{value}</p>
+    </div>
+  </div>
+);
 
 export default function Conteudo() {
   const [conteudos, setConteudos] = useState<Conteudo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [viewDetails, setViewDetails] = useState<
-    null | "favoritos" | "agendados"
-  >(null);
+  const [viewDetails, setViewDetails] = useState<null | "favoritos" | "agendados">(null);
 
   const fetchConteudos = async () => {
     setLoading(true);
@@ -69,7 +64,7 @@ export default function Conteudo() {
         window.location.href = "/login";
         return;
       }
-      const data = await apiFetch<Conteudo[]>("/conteudo"); // ✅
+      const data = await apiFetch<Conteudo[]>("/conteudo");
       setConteudos(data);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro desconhecido.");
@@ -78,31 +73,24 @@ export default function Conteudo() {
     }
   };
 
-  const updateConteudo = async (id: number, updates: Partial<Conteudo>) => {
-    const token = localStorage.getItem("auth_token");
-    if (!token) return;
-
+  const updateConteudo = async (id: string, updates: Partial<Conteudo>) => {
     await apiFetch(`/conteudo/${id}`, {
       method: "PUT",
       body: JSON.stringify(updates),
-    }); // ✅
-
+    });
     fetchConteudos();
   };
 
-  const toggleFavorito = (id: number, current: boolean) => {
+  const toggleFavorito = (id: string, current: boolean) => {
     updateConteudo(id, { favorito: !current });
   };
 
-  const toggleAgendado = (id: number, current: boolean) => {
+  const toggleAgendado = (id: string, current: boolean) => {
     updateConteudo(id, { agendado: !current });
   };
 
-  const deleteConteudo = async (id: number) => {
-    const token = localStorage.getItem("auth_token");
-    if (!token) return;
-
-    await apiFetch(`/conteudo/${id}`, { method: "DELETE" }); // ✅
+  const deleteConteudo = async (id: string) => {
+    await apiFetch(`/conteudo/${id}`, { method: "DELETE" });
     fetchConteudos();
   };
 
@@ -110,18 +98,15 @@ export default function Conteudo() {
     fetchConteudos();
   }, []);
 
-  if (loading) {
+  if (loading)
     return (
       <div className="text-center p-6 flex items-center justify-center space-x-2">
         <FaSpinner className="animate-spin" />
         <span>Carregando ideias...</span>
       </div>
     );
-  }
 
-  if (error) {
-    return <div className="text-center p-6 text-red-500">{error}</div>;
-  }
+  if (error) return <div className="text-center p-6 text-red-500">{error}</div>;
 
   const renderDetails = () => {
     let title = "";
@@ -245,6 +230,7 @@ export default function Conteudo() {
     </div>
   );
 }
+
 
 
 
