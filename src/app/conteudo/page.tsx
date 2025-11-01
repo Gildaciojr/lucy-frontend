@@ -5,6 +5,10 @@ import { useState, useEffect, useRef } from "react";
 import { FaCamera, FaTimes, FaTrash, FaPaperPlane } from "react-icons/fa";
 import Image from "next/image";
 
+// ✅ NOVO — Suporte a markdown tipo ChatGPT
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
 export default function ConteudoPage() {
   const [imagens, setImagens] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -89,10 +93,7 @@ export default function ConteudoPage() {
     if (!input.trim()) return;
     const userMessage = input.trim();
     setInput("");
-    setConversation((prev) => [
-      ...prev,
-      { role: "user", content: userMessage },
-    ]);
+    setConversation((prev) => [...prev, { role: "user", content: userMessage }]);
 
     try {
       setLoadingAI(true);
@@ -108,7 +109,7 @@ export default function ConteudoPage() {
             {
               role: "system",
               content:
-                "Você é a Lucy 💜 — uma assistente pessoal de IA da plataforma MyLucy. Sua função é ajudar o usuário com finanças, agenda, conteúdos e motivação, de forma leve e clara. Quando o usuário disser 'Oi Lucy', responda: 'Oi 💜 Eu sou a Lucy, sua assistente pessoal de IA. Posso simplificar sua rotina — te ajudando a cuidar das finanças, organizar a agenda e criar conteúdos incríveis direto no WhatsApp. É só me chamar quando quiser uma ideia, um roteiro ou aquele empurrãozinho pra postar algo que engaja.'",
+                "Você é a Lucy 💜 — uma assistente pessoal de IA da plataforma MyLucy. Sempre responda com formatação clara (parágrafos, listas, títulos quando útil) e com tom humano, nunca em bloco único. Quando disserem 'Oi Lucy', responda com sua mensagem oficial de boas-vindas.",
             },
             ...conversation.map((m) => ({ role: m.role, content: m.content })),
             { role: "user", content: userMessage },
@@ -126,10 +127,7 @@ export default function ConteudoPage() {
       console.error(err);
       setConversation((prev) => [
         ...prev,
-        {
-          role: "assistant",
-          content: "⚠️ Erro ao processar a resposta da Lucy.",
-        },
+        { role: "assistant", content: "⚠️ Erro ao processar a resposta da Lucy." },
       ]);
     } finally {
       setLoadingAI(false);
@@ -148,13 +146,11 @@ export default function ConteudoPage() {
         </p>
       </div>
 
-      {/* 🔮 Card IA GPT */}
+      {/* Card IA */}
       <div className="max-w-6xl mx-auto mt-6 px-6">
         <div className="bg-white rounded-2xl shadow-md border border-lucy/30 p-6 flex flex-col sm:flex-row justify-between items-center gap-4">
           <div>
-            <h3 className="text-xl font-semibold text-lucy">
-              ✨ Converse com a Lucy
-            </h3>
+            <h3 className="text-xl font-semibold text-lucy">✨ Converse com a Lucy</h3>
             <p className="text-sm text-gray-600">
               Tenha ideias criativas, dicas de conteúdo e muito mais com a Lucy.
             </p>
@@ -176,8 +172,7 @@ export default function ConteudoPage() {
           {/* Galeria */}
           <div className="bg-white rounded-2xl shadow-md border border-lucy/30 p-5 sm:p-6">
             <h3 className="text-lg font-semibold text-lucy mb-4 flex items-center gap-2">
-              <FaCamera className="text-lucy" />
-              Galeria 📸
+              <FaCamera className="text-lucy" /> Galeria 📸
             </h3>
 
             <div className="flex justify-center mb-4">
@@ -194,9 +189,7 @@ export default function ConteudoPage() {
             </div>
 
             {imagens.length === 0 ? (
-              <p className="text-center text-gray-500 text-sm">
-                Nenhuma imagem enviada ainda.
-              </p>
+              <p className="text-center text-gray-500 text-sm">Nenhuma imagem enviada ainda.</p>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                 {imagens.map((url, i) => (
@@ -248,7 +241,7 @@ export default function ConteudoPage() {
         </div>
       </main>
 
-      {/* 💬 Modal Chat da Lucy */}
+      {/* 💬 Modal Chat Lucy */}
       {showAI && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-xl shadow-xl relative flex flex-col h-[80vh]">
@@ -265,29 +258,42 @@ export default function ConteudoPage() {
 
             <div className="flex-1 overflow-y-auto border p-3 rounded-lg bg-gray-50 mb-3 space-y-3">
               {conversation.length === 0 && (
-                <p className="text-center text-gray-500 text-sm">
-                  Inicie uma conversa com a Lucy!
-                </p>
+                <p className="text-center text-gray-500 text-sm">Inicie uma conversa com a Lucy!</p>
               )}
 
               {conversation.map((msg, idx) => (
-                <div
-                  key={idx}
-                  className={`flex ${
-                    msg.role === "user" ? "justify-end" : "justify-start"
-                  }`}
-                >
+                <div key={idx} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                   <div
-                    className={`max-w-[80%] p-3 rounded-2xl text-sm shadow-sm ${
+                    className={`max-w-[80%] p-3 rounded-2xl text-sm shadow-sm whitespace-pre-wrap ${
                       msg.role === "user"
                         ? "bg-lucy text-white rounded-br-none"
                         : "bg-gray-200 text-gray-800 rounded-bl-none"
                     }`}
                   >
-                    {msg.content}
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        p: ({ children }) => (
+                          <p className="mb-2 leading-relaxed">{children}</p>
+                        ),
+                        li: ({ children }) => (
+                          <li className="ml-4 list-disc">{children}</li>
+                        ),
+                        strong: ({ children }) => (
+                          <strong className="font-semibold">{children}</strong>
+                        ),
+                        em: ({ children }) => <em className="italic">{children}</em>,
+                        code: ({ children }) => (
+                          <code className="bg-gray-300 px-1 rounded text-xs">{children}</code>
+                        )
+                      }}
+                    >
+                      {msg.content}
+                    </ReactMarkdown>
                   </div>
                 </div>
               ))}
+
               <div ref={chatEndRef} />
             </div>
 
