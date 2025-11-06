@@ -4,8 +4,6 @@ import Conteudo from "@/components/Conteudo";
 import { useState, useEffect, useRef } from "react";
 import { FaCamera, FaTimes, FaTrash, FaPaperPlane } from "react-icons/fa";
 import Image from "next/image";
-
-// ✅ NOVO — Suporte a markdown tipo ChatGPT
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -14,7 +12,6 @@ export default function ConteudoPage() {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
 
-  // 🔹 Estados da IA com chat
   const [showAI, setShowAI] = useState(false);
   const [input, setInput] = useState("");
   const [conversation, setConversation] = useState<
@@ -52,7 +49,6 @@ export default function ConteudoPage() {
       );
 
       if (!response.ok) throw new Error(`Erro ao enviar: ${response.status}`);
-
       const result = await response.json();
       setImagens((prev) => [result.url, ...prev]);
     } catch (err) {
@@ -63,10 +59,9 @@ export default function ConteudoPage() {
     }
   };
 
+  // 🔹 Excluir imagem
   const handleDelete = async (url: string) => {
-    const confirmDelete = confirm("Deseja realmente excluir esta imagem?");
-    if (!confirmDelete) return;
-
+    if (!confirm("Deseja realmente excluir esta imagem?")) return;
     try {
       const token = localStorage.getItem("auth_token");
       const parts = url.split("/");
@@ -80,7 +75,6 @@ export default function ConteudoPage() {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-
       setImagens((prev) => prev.filter((img) => img !== url));
     } catch (err) {
       console.error(err);
@@ -88,14 +82,13 @@ export default function ConteudoPage() {
     }
   };
 
-  // 🔹 Enviar mensagem para IA com histórico
+  // 🔹 Enviar mensagem ao chat
   const handleSend = async () => {
     if (!input.trim()) return;
     const userMessage = input.trim();
     const lower = userMessage.toLowerCase();
     setInput("");
 
-    // ✅ Lista de saudações que devem gerar a mensagem fixa
     const saudacoes = [
       "oi",
       "olá",
@@ -108,7 +101,7 @@ export default function ConteudoPage() {
       "eai",
     ];
 
-    // ✅ Se for saudação, responde imediatamente e encerra a função
+    // ✅ Saudação fixa — apenas resposta imediata
     if (saudacoes.some((s) => lower === s || lower.includes(s))) {
       setConversation((prev) => [
         ...prev,
@@ -119,19 +112,24 @@ export default function ConteudoPage() {
             "Oii 💜 Que bom te ver por aqui! Eu sou a Lucy, sua parceira para simplificar o dia a dia. Bora organizar suas ideias, finanças ou rotina? Só me chamar que eu tô aqui contigo!",
         },
       ]);
-      // 🚫 Pare o fluxo aqui, não chama a API da IA
       return;
     }
 
-    // ✅ Caso contrário, envia mensagem normalmente para IA
-    setConversation((prev) => [
-      ...prev,
-      { role: "user", content: userMessage },
-    ]);
+    // ✅ Adiciona mensagem do usuário no histórico
+    setConversation((prev) => [...prev, { role: "user", content: userMessage }]);
 
     try {
       setLoadingAI(true);
       const token = localStorage.getItem("auth_token");
+
+      // ✅ Remove qualquer mensagem de boas-vindas anterior do histórico
+      const filteredConversation = conversation.filter(
+        (m) =>
+          !m.content.includes(
+            "Oii 💜 Que bom te ver por aqui! Eu sou a Lucy, sua parceira para simplificar o dia a dia"
+          )
+      );
+
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ai/chat`, {
         method: "POST",
         headers: {
@@ -143,9 +141,12 @@ export default function ConteudoPage() {
             {
               role: "system",
               content:
-                "Você é a Lucy 💜 — a assistente pessoal de IA da plataforma MyLucy. Use markdown, parágrafos curtos, tom leve e humano. Se alguém disser 'Oi Lucy' ou qualquer saudação, apenas responda gentilmente e siga a conversa, sem repetir a mensagem de boas-vindas fixa.",
+                "Você é a Lucy 💜 — a assistente pessoal da plataforma MyLucy. Use markdown, parágrafos curtos e tom humano leve. Nunca repita mensagens de boas-vindas; siga a conversa naturalmente.",
             },
-            ...conversation.map((m) => ({ role: m.role, content: m.content })),
+            ...filteredConversation.map((m) => ({
+              role: m.role,
+              content: m.content,
+            })),
             { role: "user", content: userMessage },
           ],
         }),
@@ -153,11 +154,12 @@ export default function ConteudoPage() {
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Erro ao gerar resposta.");
+
       setConversation((prev) => [
         ...prev,
         { role: "assistant", content: data.reply },
       ]);
-    } catch (err: unknown) {
+    } catch (err) {
       console.error(err);
       setConversation((prev) => [
         ...prev,
@@ -175,9 +177,7 @@ export default function ConteudoPage() {
     <div className="flex flex-col min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-lucy rounded-2xl shadow-md border border-lucy-dark p-5 flex flex-col items-center justify-center mx-6 mt-6">
-        <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-          Lucy Creator
-        </h1>
+        <h1 className="text-3xl font-bold text-white">Lucy Creator</h1>
         <p className="text-white/80 mt-2 text-center text-sm">
           Gerencie suas ideias, conteúdos e imagens 💜
         </p>
@@ -307,7 +307,9 @@ export default function ConteudoPage() {
               {conversation.map((msg, idx) => (
                 <div
                   key={idx}
-                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                  className={`flex ${
+                    msg.role === "user" ? "justify-end" : "justify-start"
+                  }`}
                 >
                   <div
                     className={`max-w-[80%] p-3 rounded-2xl text-sm shadow-sm whitespace-pre-wrap ${
@@ -376,3 +378,4 @@ export default function ConteudoPage() {
     </div>
   );
 }
+
