@@ -95,7 +95,7 @@ export default function ConteudoPage() {
     const lower = userMessage.toLowerCase();
     setInput("");
 
-    // ✅ Se for uma saudação, responde com a mensagem fixa
+    // ✅ Lista de saudações que devem gerar a mensagem fixa
     const saudacoes = [
       "oi",
       "olá",
@@ -107,6 +107,8 @@ export default function ConteudoPage() {
       "e aí",
       "eai",
     ];
+
+    // ✅ Se for saudação, responde imediatamente e encerra a função
     if (saudacoes.some((s) => lower === s || lower.includes(s))) {
       setConversation((prev) => [
         ...prev,
@@ -117,10 +119,11 @@ export default function ConteudoPage() {
             "Oii 💜 Que bom te ver por aqui! Eu sou a Lucy, sua parceira para simplificar o dia a dia. Bora organizar suas ideias, finanças ou rotina? Só me chamar que eu tô aqui contigo!",
         },
       ]);
+      // 🚫 Pare o fluxo aqui, não chama a API da IA
       return;
     }
 
-    // ✅ Caso contrário, envia mensagem para IA normalmente
+    // ✅ Caso contrário, envia mensagem normalmente para IA
     setConversation((prev) => [
       ...prev,
       { role: "user", content: userMessage },
@@ -140,7 +143,7 @@ export default function ConteudoPage() {
             {
               role: "system",
               content:
-                "Você é a Lucy 💜 — uma assistente pessoal de IA da plataforma MyLucy. Use sempre markdown, parágrafos curtos, espaçamento e tom humano leve. Se disserem 'Oi Lucy', responda com sua saudação oficial alegre e acolhedora. Quando disserem 'oi lucy' ou qualquer saudação, use a mensagem fixa oficial de boas-vindas da Lucy.",
+                "Você é a Lucy 💜 — a assistente pessoal de IA da plataforma MyLucy. Use markdown, parágrafos curtos, tom leve e humano. Se alguém disser 'Oi Lucy' ou qualquer saudação, apenas responda gentilmente e siga a conversa, sem repetir a mensagem de boas-vindas fixa.",
             },
             ...conversation.map((m) => ({ role: m.role, content: m.content })),
             { role: "user", content: userMessage },
