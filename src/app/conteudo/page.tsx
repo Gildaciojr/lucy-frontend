@@ -92,8 +92,39 @@ export default function ConteudoPage() {
   const handleSend = async () => {
     if (!input.trim()) return;
     const userMessage = input.trim();
+    const lower = userMessage.toLowerCase();
     setInput("");
-    setConversation((prev) => [...prev, { role: "user", content: userMessage }]);
+
+    // ✅ Se for uma saudação, responde com a mensagem fixa
+    const saudacoes = [
+      "oi",
+      "olá",
+      "ola",
+      "oi lucy",
+      "olá lucy",
+      "ola lucy",
+      "ei",
+      "e aí",
+      "eai",
+    ];
+    if (saudacoes.some((s) => lower === s || lower.includes(s))) {
+      setConversation((prev) => [
+        ...prev,
+        { role: "user", content: userMessage },
+        {
+          role: "assistant",
+          content:
+            "Oii 💜 Que bom te ver por aqui! Eu sou a Lucy, sua parceira para simplificar o dia a dia. Bora organizar suas ideias, finanças ou rotina? Só me chamar que eu tô aqui contigo!",
+        },
+      ]);
+      return;
+    }
+
+    // ✅ Caso contrário, envia mensagem para IA normalmente
+    setConversation((prev) => [
+      ...prev,
+      { role: "user", content: userMessage },
+    ]);
 
     try {
       setLoadingAI(true);
@@ -109,7 +140,7 @@ export default function ConteudoPage() {
             {
               role: "system",
               content:
-                "Você é a Lucy 💜 — uma assistente pessoal de IA da plataforma MyLucy. Use sempre markdown, parágrafos curtos, espaçamento e tom humano leve. Se disserem 'Oi Lucy', responda com sua saudação oficial alegre e acolhedora. Quando disserem 'oi lucy', responda com a mensagem oficial da lucy, de forma alegre e acolhedora."
+                "Você é a Lucy 💜 — uma assistente pessoal de IA da plataforma MyLucy. Use sempre markdown, parágrafos curtos, espaçamento e tom humano leve. Se disserem 'Oi Lucy', responda com sua saudação oficial alegre e acolhedora. Quando disserem 'oi lucy' ou qualquer saudação, use a mensagem fixa oficial de boas-vindas da Lucy.",
             },
             ...conversation.map((m) => ({ role: m.role, content: m.content })),
             { role: "user", content: userMessage },
@@ -127,7 +158,10 @@ export default function ConteudoPage() {
       console.error(err);
       setConversation((prev) => [
         ...prev,
-        { role: "assistant", content: "⚠️ Erro ao processar a resposta da Lucy." },
+        {
+          role: "assistant",
+          content: "⚠️ Erro ao processar a resposta da Lucy.",
+        },
       ]);
     } finally {
       setLoadingAI(false);
@@ -150,7 +184,9 @@ export default function ConteudoPage() {
       <div className="max-w-6xl mx-auto mt-6 px-6">
         <div className="bg-white rounded-2xl shadow-md border border-lucy/30 p-6 flex flex-col sm:flex-row justify-between items-center gap-4">
           <div>
-            <h3 className="text-xl font-semibold text-lucy">✨ Converse com a Lucy</h3>
+            <h3 className="text-xl font-semibold text-lucy">
+              ✨ Converse com a Lucy
+            </h3>
             <p className="text-sm text-gray-600">
               Tenha ideias criativas, dicas de conteúdo e muito mais com a Lucy.
             </p>
@@ -189,7 +225,9 @@ export default function ConteudoPage() {
             </div>
 
             {imagens.length === 0 ? (
-              <p className="text-center text-gray-500 text-sm">Nenhuma imagem enviada ainda.</p>
+              <p className="text-center text-gray-500 text-sm">
+                Nenhuma imagem enviada ainda.
+              </p>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                 {imagens.map((url, i) => (
@@ -258,11 +296,16 @@ export default function ConteudoPage() {
 
             <div className="flex-1 overflow-y-auto border p-3 rounded-lg bg-gray-50 mb-3 space-y-3">
               {conversation.length === 0 && (
-                <p className="text-center text-gray-500 text-sm">Inicie uma conversa com a Lucy!</p>
+                <p className="text-center text-gray-500 text-sm">
+                  Inicie uma conversa com a Lucy!
+                </p>
               )}
 
               {conversation.map((msg, idx) => (
-                <div key={idx} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                <div
+                  key={idx}
+                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                >
                   <div
                     className={`max-w-[80%] p-3 rounded-2xl text-sm shadow-sm whitespace-pre-wrap ${
                       msg.role === "user"
@@ -282,10 +325,14 @@ export default function ConteudoPage() {
                         strong: ({ children }) => (
                           <strong className="font-semibold">{children}</strong>
                         ),
-                        em: ({ children }) => <em className="italic">{children}</em>,
+                        em: ({ children }) => (
+                          <em className="italic">{children}</em>
+                        ),
                         code: ({ children }) => (
-                          <code className="bg-gray-300 px-1 rounded text-xs">{children}</code>
-                        )
+                          <code className="bg-gray-300 px-1 rounded text-xs">
+                            {children}
+                          </code>
+                        ),
                       }}
                     >
                       {msg.content}
