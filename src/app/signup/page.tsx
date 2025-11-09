@@ -85,7 +85,7 @@ export default function SignupPage() {
 
           <input
             name="phone"
-            placeholder="Telefone (opcional)"
+            placeholder="Telefone"
             value={form.phone}
             onChange={handleChange}
             className="w-full p-3 border rounded-lg"
