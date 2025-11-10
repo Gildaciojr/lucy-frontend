@@ -82,38 +82,11 @@ export default function ConteudoPage() {
     }
   };
 
-  // 🔹 Enviar mensagem ao chat
+  // 🔹 Enviar mensagem ao chat (Lucy)
   const handleSend = async () => {
     if (!input.trim()) return;
     const userMessage = input.trim();
-    const lower = userMessage.toLowerCase();
     setInput("");
-
-    const saudacoes = [
-      "oi",
-      "olá",
-      "ola",
-      "oi lucy",
-      "olá lucy",
-      "ola lucy",
-      "ei",
-      "e aí",
-      "eai",
-    ];
-
-    // ✅ Saudação fixa — apenas resposta imediata
-    if (saudacoes.some((s) => lower === s || lower.includes(s))) {
-      setConversation((prev) => [
-        ...prev,
-        { role: "user", content: userMessage },
-        {
-          role: "assistant",
-          content:
-            "Oii 💜 Que bom te ver por aqui! Eu sou a Lucy, sua parceira para simplificar o dia a dia. Bora organizar suas ideias, finanças ou rotina? Só me chamar que eu tô aqui contigo!",
-        },
-      ]);
-      return;
-    }
 
     // ✅ Adiciona mensagem do usuário no histórico
     setConversation((prev) => [...prev, { role: "user", content: userMessage }]);
@@ -122,14 +95,7 @@ export default function ConteudoPage() {
       setLoadingAI(true);
       const token = localStorage.getItem("auth_token");
 
-      // ✅ Remove qualquer mensagem de boas-vindas anterior do histórico
-      const filteredConversation = conversation.filter(
-        (m) =>
-          !m.content.includes(
-            "Oii 💜 Que bom te ver por aqui! Eu sou a Lucy, sua parceira para simplificar o dia a dia"
-          )
-      );
-
+      // ✅ Chama backend (AI Controller)
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ai/chat`, {
         method: "POST",
         headers: {
@@ -138,12 +104,7 @@ export default function ConteudoPage() {
         },
         body: JSON.stringify({
           messages: [
-            {
-              role: "system",
-              content:
-                "Você é a Lucy 💜 — a assistente pessoal da plataforma MyLucy. Use markdown, parágrafos curtos e tom humano leve. Nunca repita mensagens de boas-vindas; siga a conversa naturalmente.",
-            },
-            ...filteredConversation.map((m) => ({
+            ...conversation.map((m) => ({
               role: m.role,
               content: m.content,
             })),
@@ -378,4 +339,5 @@ export default function ConteudoPage() {
     </div>
   );
 }
+
 
