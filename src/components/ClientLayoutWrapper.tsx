@@ -46,12 +46,24 @@ export default function ClientLayoutWrapper({
             return;
           }
 
-          // ✅ Só redireciona se o plano for "Free" (expirado ou cancelado)
-          if (user.plan === "Free") {
-            router.push("/plan-inactive");
+          // ✅ Admins e Superadmins sempre têm acesso
+          if (user.role === "admin" || user.role === "superadmin") {
+            setReady(true);
+            return;
           }
+
+          // ✅ Usuários comuns precisam ter plano ativo
+          const isPaid = user.plan === "Pro" || user.plan === "Premium";
+          if (!isPaid) {
+            router.push("/plan-inactive");
+            return;
+          }
+
+          setReady(true);
         })
-        .finally(() => setReady(true));
+        .catch(() => {
+          router.push("/login");
+        });
     } else {
       setReady(true);
     }
@@ -70,7 +82,7 @@ export default function ClientLayoutWrapper({
 
   if (!ready) {
     return (
-      <div className="flex items-center justify-center h-screen text-lucy font-medium">
+      <div className="flex items-center justify-center h-screen text-lucy font-medium bg-gray-50">
         Carregando Lucy 💜...
       </div>
     );
@@ -78,7 +90,7 @@ export default function ClientLayoutWrapper({
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      {/* ✅ Header só para usuários logados */}
+      {/* ✅ Header apenas para usuários logados */}
       {!isPublic && <Header />}
 
       <main className="flex-1 pb-20">{children}</main>
@@ -86,11 +98,11 @@ export default function ClientLayoutWrapper({
       {/* ✅ Navigation apenas para páginas internas */}
       {!isPublic && <Navigation />}
 
-      {/* ✅ Botão de logout fixo e estilizado Lucy */}
+      {/* ✅ Botão de logout fixo, elegante e responsivo */}
       {!isPublic && (
         <button
           onClick={handleLogout}
-          className="fixed top-4 right-4 p-2 bg-lucy text-white font-bold rounded-full shadow-lg hover:bg-lucy/80 transition-colors z-50"
+          className="fixed top-4 right-4 p-3 bg-lucy text-white font-bold rounded-full shadow-lg hover:bg-lucy/80 transition-colors z-50 text-sm sm:text-base"
         >
           Sair
         </button>
@@ -98,4 +110,5 @@ export default function ClientLayoutWrapper({
     </div>
   );
 }
+
 
