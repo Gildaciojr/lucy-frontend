@@ -7,6 +7,8 @@ export interface UserProfile {
   username: string;
   email: string;
   role: "user" | "admin" | "superadmin";
+  plan?: "Free" | "Pro" | "Premium";
+  plan_expires_at?: string | null;
 }
 
 export interface LoginResponse {
@@ -28,6 +30,7 @@ export async function login(
   localStorage.setItem("user_id", String(res.user.id));
   localStorage.setItem("username", res.user.username);
   localStorage.setItem("email", res.user.email);
+  if (res.user.plan) localStorage.setItem("plan", res.user.plan);
 
   return res;
 }
@@ -35,6 +38,7 @@ export async function login(
 export async function getCurrentUser(): Promise<UserProfile | null> {
   try {
     const me = await apiFetch<UserProfile>("/users/me");
+    if (me?.plan) localStorage.setItem("plan", me.plan);
     return me;
   } catch {
     return null;
@@ -46,6 +50,8 @@ export function logout(): void {
   localStorage.removeItem("user_id");
   localStorage.removeItem("username");
   localStorage.removeItem("email");
+  localStorage.removeItem("plan");
 }
+
 
 

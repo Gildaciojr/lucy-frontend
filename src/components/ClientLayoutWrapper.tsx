@@ -20,8 +20,9 @@ export default function ClientLayoutWrapper({
     "/login",
     "/signup",
     "/register",
-    "/forgot-password",   // nova rota do card de recuperação
-    "/reset-password",    // rota legacy (com usuário/senha)
+    "/forgot-password",
+    "/reset-password", // legacy
+    "/plan-inactive",
   ];
 
   // ✅ Detectar também rotas dinâmicas tipo /reset-password/[token]
@@ -29,13 +30,22 @@ export default function ClientLayoutWrapper({
     PUBLIC_ROUTES.includes(pathname) ||
     pathname.startsWith("/reset-password/");
 
-  // 🔐 Autenticação automática
+  // 🔐 Autenticação automática + verificação de plano ativo
   useEffect(() => {
     if (!isPublic) {
       getCurrentUser()
         .then((user) => {
           if (!user) {
             router.push("/login");
+            return;
+          }
+          const isPaid = user.plan === "Pro" || user.plan === "Premium";
+          const notExpired =
+            !user.plan_expires_at ||
+            new Date(user.plan_expires_at).getTime() > Date.now();
+          const isActive = isPaid && notExpired;
+          if (!isActive) {
+            router.push("/plan-inactive");
           }
         })
         .finally(() => setReady(true));
@@ -50,6 +60,8 @@ export default function ClientLayoutWrapper({
       localStorage.removeItem("auth_token");
       localStorage.removeItem("user_id");
       localStorage.removeItem("username");
+      localStorage.removeItem("plan");
+      localStorage.removeItem("email");
     } catch {}
     router.push("/login");
   };
@@ -84,6 +96,7 @@ export default function ClientLayoutWrapper({
     </div>
   );
 }
+
 
 
 
