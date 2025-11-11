@@ -1,42 +1,55 @@
+// frontend/src/app/plan-inactive/page.tsx
 "use client";
 
 import Link from "next/link";
+import { FaLock, FaCrown, FaArrowLeft } from "react-icons/fa";
 
 export default function PlanInactivePage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-purple-50 to-white p-6">
-      <div className="max-w-xl w-full bg-white rounded-2xl shadow-lg border border-purple-100 p-8 text-center">
-        <h1 className="text-2xl font-extrabold text-lucy mb-2">
-          Seu plano está inativo
-        </h1>
-        <p className="text-gray-600">
-          Identificamos que seu plano foi cancelado, expirou ou não está ativo.
-          Para continuar usando o dashboard, ative ou adquira um plano.
-        </p>
-
-        <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
-          <Link
-            href="/login"
-            className="px-5 py-3 rounded-xl bg-gray-100 text-gray-800 font-semibold hover:bg-gray-200 transition"
-          >
-            Entrar novamente
-          </Link>
-          <a
-            href="https://wa.me/5511999892575?text=Olá!%20Preciso%20reativar%20meu%20plano%20Lucy."
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-5 py-3 rounded-xl bg-lucy text-white font-bold hover:opacity-90 transition"
-          >
-            Falar com o suporte
-          </a>
-        </div>
-
-        <p className="text-xs text-gray-400 mt-6">
-          Dica: se você reativou o pagamento agora, aguarde alguns minutos para
-          a confirmação e tente novamente.
-        </p>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-purple-50 via-purple-100 to-white p-6 text-center">
+      {/* Ícone principal */}
+      <div className="bg-lucy text-white p-5 rounded-full shadow-lg mb-6">
+        <FaLock className="w-10 h-10" />
       </div>
+
+      {/* Título */}
+      <h1 className="text-3xl font-bold text-lucy mb-3">
+        Acesso indisponível 💜
+      </h1>
+
+      {/* Mensagem explicativa */}
+      <p className="text-gray-600 max-w-md mb-8 leading-relaxed">
+        O seu plano foi <strong>cancelado</strong> ou <strong>expirou</strong>.
+        <br />
+        Para continuar aproveitando todos os recursos da <strong>Lucy</strong>,
+        é necessário renovar ou adquirir um novo plano.
+      </p>
+
+      {/* Botões de ação */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <Link
+          href="https://mylucy.app"
+          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-lucy text-white font-semibold hover:bg-lucy/90 transition-colors shadow-md"
+        >
+          <FaCrown className="text-amber-300" />
+          Renovar Plano
+        </Link>
+
+        <Link
+          href="/login"
+          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition-colors"
+        >
+          <FaArrowLeft />
+          Voltar ao Login
+        </Link>
+      </div>
+
+      {/* Rodapé sutil */}
+      <footer className="mt-12 text-sm text-gray-400">
+        Lucy Dashboard © {new Date().getFullYear()} — Todos os direitos reservados
+      </footer>
     </div>
   );
 }
+
 

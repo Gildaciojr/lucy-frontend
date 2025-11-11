@@ -1,3 +1,4 @@
+// frontend/src/components/ClientLayoutWrapper.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -21,8 +22,7 @@ export default function ClientLayoutWrapper({
     "/signup",
     "/register",
     "/forgot-password",
-    "/reset-password", // legacy
-    "/plan-inactive",
+    "/reset-password",
   ];
 
   // ✅ Detectar também rotas dinâmicas tipo /reset-password/[token]
@@ -30,21 +30,24 @@ export default function ClientLayoutWrapper({
     PUBLIC_ROUTES.includes(pathname) ||
     pathname.startsWith("/reset-password/");
 
-  // 🔐 Autenticação automática + verificação de plano ativo
+  // 🔐 Autenticação automática
   useEffect(() => {
     if (!isPublic) {
+      const token = localStorage.getItem("auth_token");
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
       getCurrentUser()
         .then((user) => {
           if (!user) {
             router.push("/login");
             return;
           }
-          const isPaid = user.plan === "Pro" || user.plan === "Premium";
-          const notExpired =
-            !user.plan_expires_at ||
-            new Date(user.plan_expires_at).getTime() > Date.now();
-          const isActive = isPaid && notExpired;
-          if (!isActive) {
+
+          // ✅ Só redireciona se o plano for "Free" (expirado ou cancelado)
+          if (user.plan === "Free") {
             router.push("/plan-inactive");
           }
         })
@@ -60,7 +63,6 @@ export default function ClientLayoutWrapper({
       localStorage.removeItem("auth_token");
       localStorage.removeItem("user_id");
       localStorage.removeItem("username");
-      localStorage.removeItem("plan");
       localStorage.removeItem("email");
     } catch {}
     router.push("/login");
@@ -68,27 +70,27 @@ export default function ClientLayoutWrapper({
 
   if (!ready) {
     return (
-      <div className="flex items-center justify-center h-screen text-gray-600">
-        Carregando...
+      <div className="flex items-center justify-center h-screen text-lucy font-medium">
+        Carregando Lucy 💜...
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* ✅ Mostra Header apenas para usuários logados */}
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      {/* ✅ Header só para usuários logados */}
       {!isPublic && <Header />}
 
       <main className="flex-1 pb-20">{children}</main>
 
-      {/* ✅ Navigation apenas no dashboard */}
+      {/* ✅ Navigation apenas para páginas internas */}
       {!isPublic && <Navigation />}
 
-      {/* ✅ Botão de logout fixo */}
+      {/* ✅ Botão de logout fixo e estilizado Lucy */}
       {!isPublic && (
         <button
           onClick={handleLogout}
-          className="fixed top-4 right-4 p-2 bg-red-500 text-white font-bold rounded-full shadow-md hover:bg-red-600 transition-colors z-50"
+          className="fixed top-4 right-4 p-2 bg-lucy text-white font-bold rounded-full shadow-lg hover:bg-lucy/80 transition-colors z-50"
         >
           Sair
         </button>
@@ -96,19 +98,4 @@ export default function ClientLayoutWrapper({
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
