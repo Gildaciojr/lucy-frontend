@@ -25,48 +25,57 @@ export default function ClientLayoutWrapper({
     "/reset-password",
   ];
 
-  // ✅ Detectar também rotas dinâmicas tipo /reset-password/[token]
+  // ✅ Detectar rotas dinâmicas (ex: /reset-password/[token])
   const isPublic =
     PUBLIC_ROUTES.includes(pathname) ||
     pathname.startsWith("/reset-password/");
 
-  // 🔐 Autenticação automática
+  // 🔐 Autenticação e verificação de plano
   useEffect(() => {
-    if (!isPublic) {
-      const token = localStorage.getItem("auth_token");
-      if (!token) {
-        router.push("/login");
-        return;
-      }
-
-      getCurrentUser()
-        .then((user) => {
-          if (!user) {
-            router.push("/login");
-            return;
-          }
-
-          // ✅ Admins e Superadmins sempre têm acesso
-          if (user.role === "admin" || user.role === "superadmin") {
-            setReady(true);
-            return;
-          }
-
-          // ✅ Usuários comuns precisam ter plano ativo
-          const isPaid = user.plan === "Pro" || user.plan === "Premium";
-          if (!isPaid) {
-            router.push("/plan-inactive");
-            return;
-          }
-
-          setReady(true);
-        })
-        .catch(() => {
-          router.push("/login");
-        });
-    } else {
+    // Ignora páginas públicas
+    if (isPublic) {
       setReady(true);
+      return;
     }
+
+    const token = localStorage.getItem("auth_token");
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
+    getCurrentUser()
+      .then((user) => {
+        if (!user) {
+          router.push("/login");
+          return;
+        }
+
+        // ✅ Admins e Superadmins sempre têm acesso total
+        if (user.role === "admin" || user.role === "superadmin") {
+          setReady(true);
+          return;
+        }
+
+        // ✅ Usuários comuns precisam ter plano ativo
+        const plan = user.plan?.toLowerCase?.() ?? "free";
+        const isPaid =
+          plan.includes("pro") ||
+          plan.includes("premium") ||
+          plan.includes("mensal") ||
+          plan.includes("anual");
+
+        // 🚫 Se for Free ou plano expirado → redireciona
+        if (!isPaid || plan === "free") {
+          router.push("/plan-inactive");
+          return;
+        }
+
+        setReady(true);
+      })
+      .catch(() => {
+        router.push("/login");
+      });
   }, [isPublic, router]);
 
   // 🔴 Logout
@@ -80,6 +89,7 @@ export default function ClientLayoutWrapper({
     router.push("/login");
   };
 
+  // 💬 Estado de carregamento
   if (!ready) {
     return (
       <div className="flex items-center justify-center h-screen text-lucy font-medium bg-gray-50">
@@ -98,7 +108,7 @@ export default function ClientLayoutWrapper({
       {/* ✅ Navigation apenas para páginas internas */}
       {!isPublic && <Navigation />}
 
-      {/* ✅ Botão de logout fixo, elegante e responsivo */}
+      {/* ✅ Botão de logout fixo e elegante */}
       {!isPublic && (
         <button
           onClick={handleLogout}
@@ -110,5 +120,6 @@ export default function ClientLayoutWrapper({
     </div>
   );
 }
+
 
 
