@@ -2,7 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import Agenda from "../../components/Agenda";
-import { FaGoogle, FaSyncAlt, FaCalendarAlt, FaCheckCircle } from "react-icons/fa";
+import {
+  FaGoogle,
+  FaSyncAlt,
+  FaCalendarAlt,
+  FaCheckCircle,
+} from "react-icons/fa";
 import { apiFetch } from "@/lib/api";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
@@ -22,12 +27,50 @@ export default function AgendaPage() {
   // 🔹 Novos estados para o calendário mobile
   const [compromissos, setCompromissos] = useState<Compromisso[]>([]);
   const [loadingCompromissos, setLoadingCompromissos] = useState(true);
-  const [errorCompromissos, setErrorCompromissos] = useState<string | null>(null);
+  const [errorCompromissos, setErrorCompromissos] = useState<string | null>(
+    null
+  );
+
+  /**
+   * Decodifica o JWT simples para extrair o `sub` (id do usuário Lucy).
+   */
+  const getUserIdFromToken = (): number | null => {
+    try {
+      const token = localStorage.getItem("auth_token");
+      if (!token) return null;
+
+      const parts = token.split(".");
+      if (parts.length !== 3) return null;
+
+      const payloadBase64 = parts[1]
+        .replace(/-/g, "+")
+        .replace(/_/g, "/");
+      const jsonPayload = atob(payloadBase64);
+      const payload = JSON.parse(jsonPayload) as { sub?: number };
+
+      if (!payload.sub || Number.isNaN(Number(payload.sub))) return null;
+      return Number(payload.sub);
+    } catch {
+      return null;
+    }
+  };
 
   const connectGoogleCalendar = async () => {
     try {
       setLoadingConnect(true);
-      window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/google-calendar/auth`;
+
+      const userId = getUserIdFromToken();
+      if (!userId) {
+        alert("Você precisa estar logado para conectar o Google Calendar.");
+        window.location.href = "/login";
+        return;
+      }
+
+      const apiBase =
+        process.env.NEXT_PUBLIC_API_URL || "https://api.mylucy.app";
+
+      // 👉 Passamos o userId para o backend via query param.
+      window.location.href = `${apiBase}/google-calendar/auth?userId=${userId}`;
     } catch (err) {
       console.error("Erro ao conectar com Google Calendar:", err);
       alert("Falha ao conectar com o Google Calendar.");
@@ -41,6 +84,7 @@ export default function AgendaPage() {
       const token = localStorage.getItem("auth_token");
       if (!token) {
         alert("Você precisa estar logado para sincronizar.");
+        window.location.href = "/login";
         return;
       }
       const headers = { Authorization: `Bearer ${token}` };
@@ -91,7 +135,9 @@ export default function AgendaPage() {
     <div className="flex flex-col min-h-screen p-4 bg-gray-100">
       <header className="py-4 text-center">
         <div className="p-3 sm:p-4 bg-lucy rounded-xl shadow-md hover:bg-lucy transition">
-          <h1 className="text-2xl sm:text-3xl font-bold text-white">Lucy Agenda</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white">
+            Lucy Agenda
+          </h1>
           <p className="text-gray-100 text-sm sm:text-base">
             Gerencie sua agenda e compromissos
           </p>
@@ -126,7 +172,7 @@ export default function AgendaPage() {
               <button
                 onClick={syncGoogleCalendar}
                 disabled={loadingSync}
-                className={`flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 rounded-lg font-semibold text-white ${
+                className={`flex items.center gap-2 px-3 py-2 sm:px-4 sm:py-2 rounded-lg font-semibold text-white ${
                   loadingSync ? "bg-gray-400" : "bg-green-600 hover:bg-green-700"
                 }`}
               >
@@ -145,7 +191,9 @@ export default function AgendaPage() {
               </h3>
 
               {loadingCompromissos ? (
-                <p className="text-sm text-gray-500">Carregando compromissos…</p>
+                <p className="text-sm text-gray-500">
+                  Carregando compromissos…
+                </p>
               ) : errorCompromissos ? (
                 <p className="text-sm text-red-600">Erro: {errorCompromissos}</p>
               ) : (
@@ -158,7 +206,8 @@ export default function AgendaPage() {
                     tileClassName={({ date }) => {
                       const hasEvent = compromissos.some(
                         (c) =>
-                          new Date(c.data).toDateString() === date.toDateString()
+                          new Date(c.data).toDateString() ===
+                          date.toDateString()
                       );
                       return hasEvent
                         ? "bg-purple-100 text-purple-700 font-semibold rounded-md"
@@ -220,6 +269,7 @@ export default function AgendaPage() {
     </div>
   );
 }
+
 
 
 
